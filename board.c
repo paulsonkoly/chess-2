@@ -161,7 +161,7 @@ BOARD * parse_fen(const char * fen) {
   for (; *ptr == ' '; ++ptr);
 
   for (; *ptr != ' '; ++ptr) {
-    switch (*ptr++) {
+    switch (*ptr) {
       case 'K': board->castle |= CALC_CASTLE(WHITE, SHORT_CASTLE); break;
       case 'Q': board->castle |= CALC_CASTLE(WHITE, LONG_CASTLE); break;
       case 'k': board->castle |= CALC_CASTLE(BLACK, SHORT_CASTLE); break;
@@ -218,6 +218,52 @@ void print_board(BOARD* board) {
   }
 }
 
+void print_fen(BOARD* board) {
+
+  const char * s = " PNBRQKpnbrqk";
+  int count = 0;
+
+  for (SQUARE r = 56; r < 64; r -= 8) {
+    for (SQUARE f = 0; f != 8; f += 1) {
+      SQUARE sq = r | f;
+      PIECE p = piece_at_board(board, sq);
+      COLOUR c = colour_at_board(board, sq);
+
+      if (p) {
+        if (count) {
+          printf("%d", count);
+          count = 0;
+        }
+
+        printf("%c", s[6 * c + p]);
+      }
+      else count++;
+    }
+
+    if (count) {
+      printf("%d", count);
+      count = 0;
+    }
+    if (r != 0) printf("/");
+  }
+
+  printf(" %c ", "wb"[board->next]);
+
+  if (board->castle & CALC_CASTLE(WHITE, SHORT_CASTLE)) printf("K");
+  if (board->castle & CALC_CASTLE(WHITE, LONG_CASTLE)) printf("Q");
+  if (board->castle & CALC_CASTLE(BLACK, SHORT_CASTLE)) printf("k");
+  if (board->castle & CALC_CASTLE(BLACK, LONG_CASTLE)) printf("q");
+
+  if (board->en_passant != NO_SQUARE) {
+    SQUARE f = (board->en_passant & 7), r = (board->en_passant >> 3);
+
+    printf(" %c%c 0 1 ", 'a' + f, '1' + r);
+  }
+  else {
+    printf(" - 0 1 ");
+  }
+}
+
 void print_bitboard(BITBOARD bb) {
 
   printf("--------\n");
@@ -248,31 +294,37 @@ typedef struct _MOVE_ {
 } MOVE;
 
 void print_move(BOARD * board, MOVE * move) {
-
   if (IS_CASTLE & move->castle) {
     CASTLE c = ALL_CASTLES & move->castle;
-    const char * cs = "O-O\0O-O-O";
+    const char * cs = "e1g1\0e1c1\0e8g8\0e8c8";
 
-    c = (c | (c >> 2)) - 1;
+    c = (c >> 1) | (c >> 3) | ((c >> 3) << 1);
 
-    printf("%s", &cs[c*4]);
+    printf("%s", &cs[c*5]);
+  } else {
+    SQUARE from = move->from;
+    SQUARE to   = move->to;
+
+    SQUARE ff = from & 7, fr = from >> 3, tf = to & 7, tr = to >> 3;
+
+    printf("%c%c%c%c", 'a' + ff, '1' + fr, 'a' + tf, '1' + tr);
   }
-  else {
-    const char * ps = "  NBRQK";
-    const char * fs = "abcdefgh";
+  /* else { */
+  /*   const char * ps = "  NBRQK"; */
+  /*   const char * fs = "abcdefgh"; */
 
-    if (OCCUPANCY_BB(board) & ((BITBOARD)1 << move->to)) {
-      if (move->piece == PAWN) {
-        printf("%cx%c%d", fs[move->from % 8], fs[move->to % 8], 1 + move->to / 8);
-      }
-      else {
-        printf("%cx%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8);
-      }
-    }
-    else {
-      printf("%c%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8);
-    }
-  }
+  /*   if (OCCUPANCY_BB(board) & ((BITBOARD)1 << move->to)) { */
+  /*     if (move->piece == PAWN) { */
+  /*       printf("%cx%c%d", fs[move->from % 8], fs[move->to % 8], 1 + move->to / 8); */
+  /*     } */
+  /*     else { */
+  /*       printf("%cx%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8); */
+  /*     } */
+  /*   } */
+  /*   else { */
+  /*     printf("%c%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8); */
+  /*   } */
+  /* } */
 }
 
 static const BITBOARD knight_attacks[] = {
@@ -904,11 +956,13 @@ int perft(BOARD * board, int depth, int print) {
 
     copy.next = 1 - copy.next;
 
+    if (print) print_fen(&copy);
+
     current = perft(&copy, depth - 1, 0);
 
     if (print) {
       print_move(board, ptr);
-      printf("\t%d\n", current);
+      printf(" %d\n", current);
     }
 
     count += current;

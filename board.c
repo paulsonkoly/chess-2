@@ -929,11 +929,11 @@ if ((ba) != (bb)) {                                                             
 #endif
 }
 
-int perft(BOARD * board, int depth, int print) {
+unsigned long long perft(BOARD * board, int depth, int print) {
   MOVE moves[60];
   MOVE * moveptr = moves;
   BOARD copy;
-  int count = 0;
+  unsigned long long int count = 0;
 
   if (depth == 0) {
     return 1;
@@ -949,7 +949,7 @@ int perft(BOARD * board, int depth, int print) {
 
   for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
     copy = *board;
-    int current;
+    unsigned long long int current;
 
     execute_move(&copy, ptr);
 
@@ -965,7 +965,7 @@ int perft(BOARD * board, int depth, int print) {
 
     if (print) {
       print_move(board, ptr);
-      printf(" %d\n", current);
+      printf(" %lld\n", current);
     }
 
     count += current;
@@ -988,7 +988,7 @@ int main(int argc, const char * argv[]) {
     b = parse_fen(argv[2]);
   }
 
-  printf("%d\n", perft(b, depth, 1));
+  printf("%lld\n", perft(b, depth, 1));
 
   free(b);
 

@@ -308,6 +308,12 @@ void print_move(BOARD * board, MOVE * move) {
     SQUARE ff = from & 7, fr = from >> 3, tf = to & 7, tr = to >> 3;
 
     printf("%c%c%c%c", 'a' + ff, '1' + fr, 'a' + tf, '1' + tr);
+
+    if (move->promotion) {
+      const char * p = "  kbrq";
+
+      printf("%c", p[move->promotion]);
+    }
   }
   /* else { */
   /*   const char * ps = "  NBRQK"; */
@@ -689,15 +695,17 @@ BITBOARD pawn_captures(BITBOARD pawns, BITBOARD opp, COLOUR colour) {
   return (left_captures | right_captures) & opp;
 }
 
+#define PROMOTIONS ((BITBOARD)0xff000000000000ff)
+
 MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD opp    = COLOUR_BB(board, 1 - board->next);
-  BITBOARD pawns = board->pawns & colour;
-  BITBOARD empty = ~ OCCUPANCY_BB(board);
+  BITBOARD pawns  = board->pawns & colour;
+  BITBOARD empty  = ~ OCCUPANCY_BB(board);
+  BITBOARD s      = single_pawn_pushes(pawns, empty, board->next);
   BITBOARD t;
 
-  t = single_pawn_pushes(pawns, empty, board->next);
-
+  t = s & ~PROMOTIONS;
   BITBOARD_SCAN(t) {
     SQUARE to = BITBOARD_SCAN_ITER(t);
     SQUARE from = to + 8 * (2 * board->next - 1);
@@ -711,6 +719,24 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
     move->castle          = NO_CASTLE;
 
     move++;
+  }
+
+  t = s & PROMOTIONS;
+  BITBOARD_SCAN(t) {
+    SQUARE to = BITBOARD_SCAN_ITER(t);
+    SQUARE from = to + 8 * (2 * board->next - 1);
+
+    for (PIECE piece = QUEEN; piece > PAWN; --piece) {
+      move->from            = from;
+      move->to              = to;
+      move->piece           = PAWN;
+      move->promotion       = piece;
+      move->en_passant      = 0;
+      move->next_en_passant = NO_SQUARE;
+      move->castle          = NO_CASTLE;
+
+      move++;
+    }
   }
 
   t = double_pawn_pushes(pawns, empty, board->next);
@@ -730,11 +756,11 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
     move++;
   }
 
-  /* TODO the en-passant can set bit 63 when NO_SQUARE and that's a valid square to capture to */
   {
     BITBOARD en_passant = board->en_passant == NO_SQUARE ? 0 : (BITBOARD)1 << board->en_passant;
-    t = pawn_captures(pawns, opp | en_passant, board->next);
+    BITBOARD c = pawn_captures(pawns, opp | en_passant, board->next);
 
+    t = c & ~PROMOTIONS;
     BITBOARD_SCAN(t) {
       SQUARE to = BITBOARD_SCAN_ITER(t);
       BITBOARD capture = (BITBOARD)1 << to;
@@ -752,6 +778,38 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
         move->castle          = NO_CASTLE;
 
         move++;
+      }
+    }
+
+    t = c & PROMOTIONS;
+    BITBOARD_SCAN(t) {
+      SQUARE to = BITBOARD_SCAN_ITER(t);
+      BITBOARD capture = (BITBOARD)1 << to;
+      BITBOARD pawnbb;
+
+      if (to >= 56) {
+        /* TODO we should avoid conditional if we could but assumption is that promotions are very rare so shouldn't 
+         * hurt performance
+         */
+        pawnbb = pawns &
+          ((((capture & pawn_capture_files[0]) << 1) >> 8) | (((capture & pawn_capture_files[1]) >> 1) >> 8));
+      } else
+        pawnbb = pawn_captures(capture, pawns, 1 - board->next);
+
+      BITBOARD_SCAN(pawnbb) {
+        SQUARE from = BITBOARD_SCAN_ITER(pawnbb);
+
+        for (PIECE piece = QUEEN; piece > PAWN; --piece) {
+          move->from            = from;
+          move->to              = to;
+          move->piece           = PAWN;
+          move->promotion       = piece;
+          move->en_passant      = 0;
+          move->next_en_passant = NO_SQUARE;
+          move->castle          = NO_CASTLE;
+
+          move++;
+        }
       }
     }
   }
@@ -868,6 +926,11 @@ static const BITBOARD castle_rook_flip[4] = {
   0x00000000000000a0, 0x0000000000000009, 0xa000000000000000, 0x0900000000000000,
 };
 
+static const BITBOARD promotion_mask[6] = {
+  0x0000000000000000, 0x0000000000000000, 0xff000000000000ff,
+  0xff000000000000ff, 0xff000000000000ff, 0xff000000000000ff
+};
+
 void execute_move(BOARD * board, MOVE * move) {
   BITBOARD * my = (BITBOARD*)&board->by_colour + board->next;
 
@@ -891,6 +954,7 @@ void execute_move(BOARD * board, MOVE * move) {
     BITBOARD * opp      = (BITBOARD*)&board->by_colour + (1 - board->next);
     BITBOARD * mypiece  = &board->pawns + (move->piece - 1);
     BITBOARD en_passant = ~SINGLE_PAWN_PUSH(1 - board->next, move->en_passant);
+    BITBOARD promotion  = ((BITBOARD) 1 << move->to) & promotion_mask[move->promotion];
 
     board->pawns   &= remove & en_passant;
     board->knights &= remove;
@@ -901,6 +965,9 @@ void execute_move(BOARD * board, MOVE * move) {
 
     *mypiece ^= fromto;
     *my      ^= fromto;
+
+    board->pawns &= ~promotion;
+    *(&(board->pawns)+move->promotion - 1) |= promotion;
 
     board->en_passant = move->next_en_passant;
     board->castle &= ~move->castle;

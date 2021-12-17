@@ -286,11 +286,11 @@ typedef struct _MOVE_ {
   PIECE  piece;
   PIECE  promotion;
   /* 4 byte */
-  SQUARE en_passant;
   SQUARE next_en_passant;
   CASTLE castle;
-  uint8_t pad;
+  uint8_t pad[2];
   /* 4 byte */
+  BITBOARD en_passant;
 } MOVE;
 
 void print_move(BOARD * board, MOVE * move) {
@@ -361,7 +361,7 @@ MOVE * add_knight_moves(BOARD * board, MOVE * move) {
       move->to              = to;
       move->piece           = KNIGHT;
       move->promotion       = NO_PIECE;
-      move->en_passant      = NO_SQUARE;
+      move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
 
@@ -590,7 +590,7 @@ MOVE * add_bishop_moves(BOARD * board, MOVE * move) {
       move->to              = to;
       move->piece           = BISHOP;
       move->promotion       = NO_PIECE;
-      move->en_passant      = NO_SQUARE;
+      move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
 
@@ -617,7 +617,7 @@ MOVE * add_rook_moves(BOARD * board, MOVE * move) {
       move->to              = to;
       move->piece           = ROOK;
       move->promotion       = NO_PIECE;
-      move->en_passant      = NO_SQUARE;
+      move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
 
       castle =
@@ -651,7 +651,7 @@ MOVE * add_queen_moves(BOARD * board, MOVE * move) {
       move->to              = to;
       move->piece           = QUEEN;
       move->promotion       = NO_PIECE;
-      move->en_passant      = NO_SQUARE;
+      move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
 
@@ -662,7 +662,7 @@ MOVE * add_queen_moves(BOARD * board, MOVE * move) {
   return move;
 }
 
-#define SINGLE_PAWN_PUSH(colour, bitboard) ((bitboard << 8) >> (colour << 4))
+#define SINGLE_PAWN_PUSH(colour, bitboard) (((bitboard) << 8) >> ((colour) << 4))
 
 BITBOARD single_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour) {
   return SINGLE_PAWN_PUSH(colour, pawns) & empty;
@@ -706,7 +706,7 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
     move->to              = to;
     move->piece           = PAWN;
     move->promotion       = NO_PIECE;
-    move->en_passant      = NO_SQUARE;
+    move->en_passant      = 0;
     move->next_en_passant = NO_SQUARE;
     move->castle          = NO_CASTLE;
 
@@ -723,7 +723,7 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
     move->to              = to;
     move->piece           = PAWN;
     move->promotion       = NO_PIECE;
-    move->en_passant      = NO_SQUARE;
+    move->en_passant      = 0;
     move->next_en_passant = (from + to) / 2;
     move->castle          = NO_CASTLE;
 
@@ -731,26 +731,28 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
   }
 
   /* TODO the en-passant can set bit 63 when NO_SQUARE and that's a valid square to capture to */
-  t = pawn_captures(pawns, opp | ((BITBOARD)1 << board->en_passant), board->next);
+  {
+    BITBOARD en_passant = board->en_passant == NO_SQUARE ? 0 : (BITBOARD)1 << board->en_passant;
+    t = pawn_captures(pawns, opp | en_passant, board->next);
 
-  BITBOARD_SCAN(t) {
-    SQUARE to = BITBOARD_SCAN_ITER(t);
-    BITBOARD capture = (BITBOARD)1 << to;
-    BITBOARD pawnbb = pawn_captures(capture, pawns, 1 - board->next);
+    BITBOARD_SCAN(t) {
+      SQUARE to = BITBOARD_SCAN_ITER(t);
+      BITBOARD capture = (BITBOARD)1 << to;
+      BITBOARD pawnbb = pawn_captures(capture, pawns, 1 - board->next);
 
-    BITBOARD_SCAN(pawnbb) {
-      SQUARE from = BITBOARD_SCAN_ITER(pawnbb);
-      SQUARE en_passant = board->en_passant == to ? to : NO_SQUARE;
+      BITBOARD_SCAN(pawnbb) {
+        SQUARE from = BITBOARD_SCAN_ITER(pawnbb);
 
-      move->from            = from;
-      move->to              = to;
-      move->piece           = PAWN;
-      move->promotion       = NO_PIECE;
-      move->en_passant      = en_passant;
-      move->next_en_passant = NO_SQUARE;
-      move->castle          = NO_CASTLE;
+        move->from            = from;
+        move->to              = to;
+        move->piece           = PAWN;
+        move->promotion       = NO_PIECE;
+        move->en_passant      = en_passant & capture;
+        move->next_en_passant = NO_SQUARE;
+        move->castle          = NO_CASTLE;
 
-      move++;
+        move++;
+      }
     }
   }
 
@@ -821,7 +823,7 @@ MOVE * add_king_moves(BOARD * board, MOVE * move) {
     move->to              = to;
     move->piece           = KING;
     move->promotion       = NO_PIECE;
-    move->en_passant      = NO_SQUARE;
+    move->en_passant      = 0;
     move->next_en_passant = NO_SQUARE;
     move->castle          = (SHORT_CASTLE | LONG_CASTLE) << (board->next * 2);
 
@@ -884,17 +886,18 @@ void execute_move(BOARD * board, MOVE * move) {
     board->castle &= ~((SHORT_CASTLE + 2 * board->next) | (LONG_CASTLE + 2 * board->next));
 
   } else {
-    BITBOARD remove    = ~((BITBOARD) 1 << move->to);
-    BITBOARD fromto    = ((BITBOARD)1 << move->from) | ((BITBOARD) 1 << move->to);
-    BITBOARD * opp     = (BITBOARD*)&board->by_colour + (1 - board->next);
-    BITBOARD * mypiece = &board->pawns + (move->piece - 1);
+    BITBOARD remove     = ~((BITBOARD) 1 << move->to);
+    BITBOARD fromto     = ((BITBOARD)1 << move->from) | ((BITBOARD) 1 << move->to);
+    BITBOARD * opp      = (BITBOARD*)&board->by_colour + (1 - board->next);
+    BITBOARD * mypiece  = &board->pawns + (move->piece - 1);
+    BITBOARD en_passant = ~SINGLE_PAWN_PUSH(1 - board->next, move->en_passant);
 
-    board->pawns   &= remove & ~ ((BITBOARD) 1 << move->en_passant);
+    board->pawns   &= remove & en_passant;
     board->knights &= remove;
     board->bishops &= remove;
     board->rooks   &= remove;
     board->queens  &= remove;
-    *opp           &= remove;
+    *opp           &= remove & en_passant;
 
     *mypiece ^= fromto;
     *my      ^= fromto;

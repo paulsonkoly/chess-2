@@ -171,8 +171,8 @@ BOARD * parse_fen(const char * fen) {
   for (; *ptr == ' '; ++ptr);
 
   if (*ptr != '-') {
-    r = *ptr++ - 'a';
-    f = *ptr - '0';
+    f = *ptr++ - 'a';
+    r = *ptr - '1';
     board->en_passant = r * 8 + f;
   }
 

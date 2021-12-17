@@ -616,7 +616,7 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
 
   BITBOARD_SCAN(t) {
     SQUARE to = BITBOARD_SCAN_ITER(t);
-    BITBOARD capture = 1 << to;
+    BITBOARD capture = (BITBOARD)1 << to;
     BITBOARD pawnbb = pawn_captures(capture, pawns, 1 - board->next);
 
     BITBOARD_SCAN(pawnbb) {
@@ -807,7 +807,7 @@ if ((ba) != (bb)) {                                                             
 #endif
 }
 
-int perft(BOARD * board, int depth) {
+int perft(BOARD * board, int depth, int print) {
   MOVE moves[60];
   MOVE * moveptr = moves;
   BOARD copy;
@@ -827,6 +827,7 @@ int perft(BOARD * board, int depth) {
 
   for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
     copy = *board;
+    int current;
 
     execute_move(&copy, ptr);
 
@@ -836,7 +837,14 @@ int perft(BOARD * board, int depth) {
 
     copy.next = 1 - copy.next;
 
-    count += perft(&copy, depth - 1);
+    current = perft(&copy, depth - 1, 0);
+
+    if (print) {
+      print_move(board, ptr);
+      printf("\t%d\n", current);
+    }
+
+    count += current;
   }
 
   return count;
@@ -847,7 +855,7 @@ int main() {
 
   initialize_magic();
 
-  printf("%d\n", perft(b, 7));
+  printf("%d\n", perft(b, 6, 1));
 
   free(b);
 

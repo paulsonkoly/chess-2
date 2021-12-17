@@ -112,6 +112,73 @@ BOARD * initial_board() {
   return board;
 }
 
+BOARD * parse_fen(const char * fen) {
+  BOARD * board;
+
+  SQUARE f = 0;
+  SQUARE r = 7;
+  const char * ptr;
+
+  int finished = 0;
+
+  if (NULL == (board = malloc(sizeof(BOARD)))) {
+    return NULL;
+  }
+
+  memset(board, 0, sizeof(BOARD));
+
+  for (ptr = fen; *ptr && !finished; ++ptr) {
+    BITBOARD flag = ((BITBOARD)1 << ((8 * r) + f));
+    switch (*ptr) {
+      case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8':
+        f += *ptr - '0';
+        break;
+      case '/':
+        f = 0;
+        r -= 1;
+        break;
+      case 'R': board->rooks   |= flag; board->by_colour.whitepieces |= flag; f++; break;
+      case 'r': board->rooks   |= flag; board->by_colour.blackpieces |= flag; f++; break;
+      case 'N': board->knights |= flag; board->by_colour.whitepieces |= flag; f++; break;
+      case 'n': board->knights |= flag; board->by_colour.blackpieces |= flag; f++; break;
+      case 'B': board->bishops |= flag; board->by_colour.whitepieces |= flag; f++; break;
+      case 'b': board->bishops |= flag; board->by_colour.blackpieces |= flag; f++; break;
+      case 'Q': board->queens  |= flag; board->by_colour.whitepieces |= flag; f++; break;
+      case 'q': board->queens  |= flag; board->by_colour.blackpieces |= flag; f++; break;
+      case 'K': board->kings   |= flag; board->by_colour.whitepieces |= flag; f++; break;
+      case 'k': board->kings   |= flag; board->by_colour.blackpieces |= flag; f++; break;
+      case 'P': board->pawns   |= flag; board->by_colour.whitepieces |= flag; f++; break;
+      case 'p': board->pawns   |= flag; board->by_colour.blackpieces |= flag; f++; break;
+      default: finished = 1;
+    }
+  }
+  for (; *ptr == ' '; ++ptr);
+
+  switch (*ptr++) {
+    case 'w': board->next = WHITE; break;
+    case 'b': board->next = BLACK; break;
+  }
+  for (; *ptr == ' '; ++ptr);
+
+  for (; *ptr != ' '; ++ptr) {
+    switch (*ptr++) {
+      case 'K': board->castle |= CALC_CASTLE(WHITE, SHORT_CASTLE); break;
+      case 'Q': board->castle |= CALC_CASTLE(WHITE, LONG_CASTLE); break;
+      case 'k': board->castle |= CALC_CASTLE(BLACK, SHORT_CASTLE); break;
+      case 'q': board->castle |= CALC_CASTLE(BLACK, LONG_CASTLE); break;
+    }
+  }
+  for (; *ptr == ' '; ++ptr);
+
+  if (*ptr != '-') {
+    r = *ptr++ - 'a';
+    f = *ptr - '0';
+    board->en_passant = r * 8 + f;
+  }
+
+  return board;
+}
+
 PIECE piece_at_board(const BOARD* board, SQUARE sq) {
   BITBOARD bb = (BITBOARD)1 << sq;
 
@@ -850,12 +917,21 @@ int perft(BOARD * board, int depth, int print) {
   return count;
 }
 
-int main() {
-  BOARD * b = initial_board();
+int main(int argc, const char * argv[]) {
+  BOARD * b;
+  int depth;
 
   initialize_magic();
 
-  printf("%d\n", perft(b, 6, 1));
+  if (argc == 1) {
+    b = initial_board();
+    depth = 3;
+  } else {
+    sscanf(argv[1], "%d", &depth);
+    b = parse_fen(argv[2]);
+  }
+
+  printf("%d\n", perft(b, depth, 1));
 
   free(b);
 

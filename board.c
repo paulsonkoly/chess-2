@@ -318,7 +318,7 @@ void print_move(BOARD * board, MOVE * move) {
     printf("%c%c%c%c", 'a' + ff, '1' + fr, 'a' + tf, '1' + tr);
 
     if (move->promotion) {
-      const char * p = "  kbrq";
+      const char * p = "  nbrq";
 
       printf("%c", p[move->promotion]);
     }
@@ -861,13 +861,12 @@ static const BITBOARD king_attacks[] = {
 };
 
 BITBOARD is_attacked(BOARD * board, BITBOARD squares, COLOUR colour) {
-  COLOUR opp = 1 - colour;
 
   /* if (board->attacks[opp]) { */
   /*   return (squares & board->attacks[opp]); */
   /* } */
   /* else { */
-    BITBOARD oppbb = COLOUR_BB(board, opp);
+    BITBOARD oppbb = COLOUR_BB(board, colour);
     BITBOARD res = 0;
 
     BITBOARD_SCAN(squares) {
@@ -883,7 +882,7 @@ BITBOARD is_attacked(BOARD * board, BITBOARD squares, COLOUR colour) {
       res |= sub & oppbb;
     }
 
-    res |= pawn_captures(squares, colour) & oppbb & board->pawns;
+    res |= pawn_captures(squares, 1 - colour) & oppbb & board->pawns;
 
     return res;
   /* } */
@@ -892,7 +891,7 @@ BITBOARD is_attacked(BOARD * board, BITBOARD squares, COLOUR colour) {
 BITBOARD in_check(BOARD * board, COLOUR colour) {
   BITBOARD king = board->kings & COLOUR_BB(board, colour);
 
-  return is_attacked(board, king, colour);
+  return is_attacked(board, king, 1 - colour);
 }
 
 MOVE * add_king_moves(BOARD * board, MOVE * move) {

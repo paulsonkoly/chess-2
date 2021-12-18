@@ -306,8 +306,6 @@ void print_move(BOARD * board, MOVE * move) {
     CASTLE c = ALL_CASTLES & move->castle;
     const char * cs = "e1g1\0e1c1\0e8g8\0e8c8";
 
-    c = (c >> 1) | (c >> 3) | ((c >> 3) << 1);
-
     printf("%s", &cs[c*5]);
   } else {
     SQUARE from = move->from;
@@ -621,6 +619,12 @@ MOVE * add_bishop_moves(BOARD * board, MOVE * move) {
   return move;
 }
 
+CASTLE castle_update(BITBOARD squares) {
+  return
+    ((squares & ((BITBOARD)1 << 0)) << 1) | ((squares & ((BITBOARD)1 << 7)) >> 7) |
+    ((squares & ((BITBOARD)1 << 56)) >> 53) | ((squares & ((BITBOARD)1 << 63)) >> 61);
+}
+
 MOVE * add_rook_moves(BOARD * board, MOVE * move) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD rooks = board->rooks & colour;
@@ -634,7 +638,6 @@ MOVE * add_rook_moves(BOARD * board, MOVE * move) {
 
     BITBOARD_SCAN(t) {
       SQUARE   to = BITBOARD_SCAN_ITER(t);
-      BITBOARD castle = ((BITBOARD)1 << from);
 
       move->from            = from;
       move->to              = to;
@@ -642,14 +645,7 @@ MOVE * add_rook_moves(BOARD * board, MOVE * move) {
       move->promotion       = NO_PIECE;
       move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
-
-      castle =
-        (castle & ((BITBOARD)1 << 0) << 1)   |
-        (castle & ((BITBOARD)1 << 7) >> 6)   |
-        (castle & ((BITBOARD)1 << 56) >> 52) |
-        (castle & ((BITBOARD)1 << 63) >> 60);
-
-      move->castle = castle;
+      move->castle          = NO_CASTLE;
 
       move++;
     }
@@ -926,19 +922,18 @@ static const BITBOARD castle_squares[4] = {
 };
 
 static const BITBOARD castle_check_squares[4] = {
-  0x0000000000000070, 0x000000000000001d, 0x7000000000000000, 0x1d00000000000000
+  0x0000000000000070, 0x000000000000001c, 0x7000000000000000, 0x1c00000000000000
 };
 
 MOVE * add_castles(BOARD * board, MOVE * move) {
   BITBOARD occ = OCCUPANCY_BB(board);
 
   for (CASTLE castle = 0; castle <= 1; ++castle) {
-    CASTLE c = 2 * board->next + castle;
-
-    if (is_attacked(board, castle_check_squares[c], 1 - board->next)) continue;
+    CASTLE c = (board->next << 1) | castle;
 
     if (board->castle & ((CASTLE)1 << c)) {
       if (!(castle_squares[c] & occ)) {
+        if (is_attacked(board, castle_check_squares[c], 1 - board->next)) continue;
         move->castle = IS_CASTLE | c;
 
         move++;
@@ -967,8 +962,7 @@ void execute_move(BOARD * board, MOVE * move) {
 
   if (move->castle & IS_CASTLE) {
     CASTLE c = move->castle & ALL_CASTLES;
-    /* 4 bit one hot to 2 complement */
-    c = (c >> 1) | (c >> 3) | ((c >> 3) << 1);
+
     BITBOARD king_flip = castle_king_flip[c];
     BITBOARD rook_flip = castle_rook_flip[c];
 
@@ -977,7 +971,7 @@ void execute_move(BOARD * board, MOVE * move) {
     *my ^= (king_flip | rook_flip);
 
     board->en_passant = NO_SQUARE;
-    board->castle &= ~((SHORT_CASTLE + 2 * board->next) | (LONG_CASTLE + 2 * board->next));
+    board->castle &= ~((SHORT_CASTLE | LONG_CASTLE) << (2 * board->next));
 
   } else {
     BITBOARD remove     = ~((BITBOARD) 1 << move->to);
@@ -1001,7 +995,7 @@ void execute_move(BOARD * board, MOVE * move) {
     *(&(board->pawns)+move->promotion - 1) |= promotion;
 
     board->en_passant = move->next_en_passant;
-    board->castle &= ~move->castle;
+    board->castle &= ~(move->castle | castle_update(fromto));
   }
 
   board->next = 1 - board->next;
@@ -1030,7 +1024,7 @@ if ((ba) != (bb)) {                                                             
 }
 
 unsigned long long perft(BOARD * board, int depth, int print) {
-  MOVE moves[60];
+  MOVE moves[100];
   MOVE * moveptr = moves;
   BOARD copy;
   unsigned long long int count = 0;

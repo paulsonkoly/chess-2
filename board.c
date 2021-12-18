@@ -710,8 +710,16 @@ static const BITBOARD pawn_capture_files[2] = {
 BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour) {
   BITBOARD left_captures  = (SINGLE_PAWN_PUSH(colour, pawns) & pawn_capture_files[0]) << 1;
   BITBOARD right_captures = (SINGLE_PAWN_PUSH(colour, pawns) & pawn_capture_files[1]) >> 1;
+  /* because we lose bits in SINGLE_PAWN_PUSH and this method is used to determine
+   * if a white pawn from the seventh rank is attacking a square on the eighth by trying
+   * the opposite (black) pawn move. Generilizing for bit roation in SINGLE_PAWN_PUSH
+   * is also an option, but this is only needed here (in attacks) as a special case.
+   */
+  BITBOARD eights_rank = (0xff00000000000000 & pawns) << (8 * (1 - colour)) >> 8;
+  BITBOARD spec_left_captures  = (eights_rank & pawn_capture_files[0]) << 1;
+  BITBOARD spec_right_captures = (eights_rank & pawn_capture_files[1]) >> 1;
 
-  return (left_captures | right_captures);
+  return (left_captures | right_captures | spec_left_captures | spec_right_captures);
 }
 
 #define PROMOTIONS ((BITBOARD)0xff000000000000ff)
@@ -811,14 +819,7 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
       BITBOARD capture = (BITBOARD)1 << to;
       BITBOARD pawnbb;
 
-      if (to >= 56) {
-        /* TODO we should avoid conditional if we could but assumption is that promotions are very rare so shouldn't 
-         * hurt performance
-         */
-        pawnbb = pawns &
-          ((((capture & pawn_capture_files[0]) << 1) >> 8) | (((capture & pawn_capture_files[1]) >> 1) >> 8));
-      } else
-        pawnbb = pawn_captures(capture, 1 - board->next) & pawns;
+      pawnbb = pawn_captures(capture, 1 - board->next) & pawns;
 
       BITBOARD_SCAN(pawnbb) {
         SQUARE from = BITBOARD_SCAN_ITER(pawnbb);

@@ -209,7 +209,7 @@ COLOUR colour_at_board(const BOARD* board, SQUARE sq) {
   return 0;
 }
 
-void print_board(BOARD* board) {
+void print_board(const BOARD* board) {
 
   const char * s = " pnbrqkPNBRQK";
 
@@ -226,7 +226,7 @@ void print_board(BOARD* board) {
   }
 }
 
-void print_fen(BOARD* board) {
+void print_fen(const BOARD* board) {
 
   const char * s = " PNBRQKpnbrqk";
   int count = 0;
@@ -301,7 +301,7 @@ typedef struct _MOVE_ {
   BITBOARD en_passant;
 } MOVE;
 
-void print_move(BOARD * board, MOVE * move) {
+void print_move(const BOARD * board, MOVE * move) {
   if (IS_CASTLE & move->castle) {
     CASTLE c = ALL_CASTLES & move->castle;
     const char * cs = "e1g1\0e1c1\0e8g8\0e8c8";
@@ -358,16 +358,14 @@ static const BITBOARD knight_attacks[] = {
   0x0044280000000000, 0x0088500000000000, 0x0010a00000000000, 0x0020400000000000,
 };
 
-MOVE * add_knight_moves(BOARD * board, MOVE * move) {
+MOVE * add_knight_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD knights = board->knights & colour;
 
   BITBOARD_SCAN(knights) {
     SQUARE from = BITBOARD_SCAN_ITER(knights);
-    BITBOARD attacks = knight_attacks[from];
+    BITBOARD attacks = knight_attacks[from] & allowed_targets;
     BITBOARD t = attacks & ~ colour;
-
-    board->attacks[board->next] |= attacks;
 
     BITBOARD_SCAN(t) {
       SQUARE to = BITBOARD_SCAN_ITER(t);
@@ -572,7 +570,7 @@ void initialize_magic() {
   }
 }
 
-static inline BITBOARD bishop_bitboard(BOARD * board, SQUARE sq) {
+static inline BITBOARD bishop_bitboard(const BOARD * board, SQUARE sq) {
   BITBOARD mask  = bishop_masks[sq];
   BITBOARD magic = bishop_magics[sq];
   BITBOARD occ   = OCCUPANCY_BB(board) & mask;
@@ -581,7 +579,7 @@ static inline BITBOARD bishop_bitboard(BOARD * board, SQUARE sq) {
   return bishop_attacks[sq][(occ * magic) >> (64 - shift)];
 }
 
-static inline BITBOARD rook_bitboard(BOARD * board, SQUARE sq) {
+static inline BITBOARD rook_bitboard(const BOARD * board, SQUARE sq) {
   BITBOARD mask  = rook_masks[sq];
   BITBOARD magic = rook_magics[sq];
   BITBOARD occ   = OCCUPANCY_BB(board) & mask;
@@ -590,16 +588,14 @@ static inline BITBOARD rook_bitboard(BOARD * board, SQUARE sq) {
   return rook_attacks[sq][(occ * magic) >> (64 - shift)];
 }
 
-MOVE * add_bishop_moves(BOARD * board, MOVE * move) {
+MOVE * add_bishop_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD bishops = board->bishops & colour;
 
   BITBOARD_SCAN(bishops) {
     SQUARE from = BITBOARD_SCAN_ITER(bishops);
-    BITBOARD attacks = bishop_bitboard(board, from);
+    BITBOARD attacks = bishop_bitboard(board, from) & allowed_targets;
     BITBOARD t = attacks & ~ colour;
-
-    board->attacks[board->next] |= attacks;
 
     BITBOARD_SCAN(t) {
       SQUARE to = BITBOARD_SCAN_ITER(t);
@@ -625,16 +621,14 @@ CASTLE castle_update(BITBOARD squares) {
     ((squares & ((BITBOARD)1 << 56)) >> 53) | ((squares & ((BITBOARD)1 << 63)) >> 61);
 }
 
-MOVE * add_rook_moves(BOARD * board, MOVE * move) {
+MOVE * add_rook_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD rooks = board->rooks & colour;
 
   BITBOARD_SCAN(rooks) {
     SQUARE from = BITBOARD_SCAN_ITER(rooks);
-    BITBOARD attacks = rook_bitboard(board, from);
+    BITBOARD attacks = rook_bitboard(board, from) & allowed_targets;
     BITBOARD t = attacks & ~ colour;
-
-    board->attacks[board->next] |= attacks;
 
     BITBOARD_SCAN(t) {
       SQUARE   to = BITBOARD_SCAN_ITER(t);
@@ -654,16 +648,14 @@ MOVE * add_rook_moves(BOARD * board, MOVE * move) {
   return move;
 }
 
-MOVE * add_queen_moves(BOARD * board, MOVE * move) {
+MOVE * add_queen_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD queens = board->queens & colour;
 
   BITBOARD_SCAN(queens) {
     SQUARE from = BITBOARD_SCAN_ITER(queens);
-    BITBOARD attacks = bishop_bitboard(board, from) | rook_bitboard(board, from);
+    BITBOARD attacks = (bishop_bitboard(board, from) | rook_bitboard(board, from)) & allowed_targets;
     BITBOARD t = attacks & ~ colour;
-
-    board->attacks[board->next] |= attacks;
 
     BITBOARD_SCAN(t) {
       SQUARE to = BITBOARD_SCAN_ITER(t);
@@ -720,11 +712,12 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour) {
 
 #define PROMOTIONS ((BITBOARD)0xff000000000000ff)
 
-MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
+/* set allowed targets to either all high or all low. all low for only captures */
+MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD pawns  = board->pawns & colour;
   BITBOARD empty  = ~ OCCUPANCY_BB(board);
-  BITBOARD s      = single_pawn_pushes(pawns, empty, board->next);
+  BITBOARD s      = single_pawn_pushes(pawns, empty, board->next) & allowed_targets;
   BITBOARD t;
 
   t = s & ~PROMOTIONS;
@@ -761,7 +754,7 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
     }
   }
 
-  t = double_pawn_pushes(pawns, empty, board->next);
+  t = double_pawn_pushes(pawns, empty, board->next) & allowed_targets;
 
   BITBOARD_SCAN(t) {
     SQUARE to = BITBOARD_SCAN_ITER(t);
@@ -783,8 +776,6 @@ MOVE * add_pawn_moves(BOARD * board, MOVE * move) {
     BITBOARD attacks = pawn_captures(pawns, board->next) ;
     BITBOARD opp = COLOUR_BB(board, 1 - board->next);
     BITBOARD t;
-
-    board->attacks[board->next] |= attacks;
 
     attacks &= (opp | en_passant);
 
@@ -857,7 +848,7 @@ static const BITBOARD king_attacks[] = {
   0x2838000000000000, 0x5070000000000000, 0xa0e0000000000000, 0x40c0000000000000,
 };
 
-BITBOARD is_attacked(BOARD * board, BITBOARD squares, COLOUR colour) {
+BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour) {
 
   /* if (board->attacks[opp]) { */
   /*   return (squares & board->attacks[opp]); */
@@ -885,20 +876,18 @@ BITBOARD is_attacked(BOARD * board, BITBOARD squares, COLOUR colour) {
   /* } */
 }
 
-BITBOARD in_check(BOARD * board, COLOUR colour) {
+BITBOARD in_check(const BOARD * board, COLOUR colour) {
   BITBOARD king = board->kings & COLOUR_BB(board, colour);
 
   return is_attacked(board, king, 1 - colour);
 }
 
-MOVE * add_king_moves(BOARD * board, MOVE * move) {
+MOVE * add_king_moves(const BOARD * board, MOVE * move, BITBOARD allowed_tergets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD king = board->kings & colour;
   SQUARE from = ffsl(king) - 1;
-  BITBOARD attacks = king_attacks[from];
+  BITBOARD attacks = king_attacks[from] & allowed_tergets;
   BITBOARD t = attacks & ~ colour;
-
-  board->attacks[board->next] |= attacks;
 
   BITBOARD_SCAN(t) {
     SQUARE to = BITBOARD_SCAN_ITER(t);
@@ -925,7 +914,7 @@ static const BITBOARD castle_check_squares[4] = {
   0x0000000000000070, 0x000000000000001c, 0x7000000000000000, 0x1c00000000000000
 };
 
-MOVE * add_castles(BOARD * board, MOVE * move) {
+MOVE * add_castles(const BOARD * board, MOVE * move) {
   BITBOARD occ = OCCUPANCY_BB(board);
 
   for (CASTLE castle = 0; castle <= 1; ++castle) {
@@ -1023,9 +1012,31 @@ if ((ba) != (bb)) {                                                             
 #endif
 }
 
-unsigned long long perft(BOARD * board, int depth, int print) {
+#define ALL_MOVES 0
+#define ONLY_CAPTURES 1
+
+MOVE * add_moves(const BOARD * board, MOVE * moveptr, int only_captures) {
+  BITBOARD allowed_targets = COLOUR_BB(board, 1 - board->next);
+
+  switch (only_captures) {
+  case 0:
+    moveptr = add_pawn_moves(board, moveptr, 0xffffffffffffffff);
+    moveptr = add_castles(board, moveptr);
+    allowed_targets = ~NEXT_COLOUR_BB(board);
+  case 1:
+    moveptr = add_knight_moves(board, moveptr, allowed_targets);
+    moveptr = add_king_moves(board, moveptr, allowed_targets);
+    moveptr = add_bishop_moves(board, moveptr, allowed_targets);
+    moveptr = add_rook_moves(board, moveptr, allowed_targets);
+    moveptr = add_queen_moves(board, moveptr, allowed_targets);
+  }
+
+  return moveptr;
+}
+
+unsigned long long perft(const BOARD * board, int depth, int print) {
   MOVE moves[100];
-  MOVE * moveptr = moves;
+  MOVE * moveptr;
   BOARD copy;
   unsigned long long int count = 0;
 
@@ -1033,14 +1044,7 @@ unsigned long long perft(BOARD * board, int depth, int print) {
     return 1;
   }
 
-  board->attacks[board->next] = 0;
-  moveptr = add_knight_moves(board, moveptr);
-  moveptr = add_king_moves(board, moveptr);
-  moveptr = add_bishop_moves(board, moveptr);
-  moveptr = add_rook_moves(board, moveptr);
-  moveptr = add_queen_moves(board, moveptr);
-  moveptr = add_pawn_moves(board, moveptr);
-  moveptr = add_castles(board, moveptr);
+  moveptr = add_moves(board, moves, ALL_MOVES);
 
   for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
     copy = *board;
@@ -1067,9 +1071,90 @@ unsigned long long perft(BOARD * board, int depth, int print) {
   return count;
 }
 
+static const int count1s_offs[] = {1, 2, 4, 8, 16, 32};
+static const BITBOARD count1s_msks[] = {
+  0x5555555555555555, 0x3333333333333333, 0x0F0F0F0F0F0F0F0F,
+  0x00FF00FF00FF00FF, 0x0000FFFF0000FFFF, 0x00000000FFFFFFFF
+};
+
+int count1s(BITBOARD bitboard) {
+  BITBOARD c;
+
+  c = bitboard - ((bitboard >> 1) & count1s_msks[0]);
+  c = ((c >> count1s_offs[1]) & count1s_msks[1]) + (c & count1s_msks[1]);
+  c = ((c >> count1s_offs[2]) + c) & count1s_msks[2];
+  c = ((c >> count1s_offs[3]) + c) & count1s_msks[3];
+  c = ((c >> count1s_offs[4]) + c) & count1s_msks[4];
+  c = ((c >> count1s_offs[5]) + c) & count1s_msks[5];
+
+  return c;
+}
+
+
+static const int piece_values[] = { 0, 10, 30, 32, 50, 90 };
+
+int evaluate(const BOARD * board) {
+  int value = 0;
+  const BITBOARD * bb = &board->pawns;
+
+  for (PIECE piece = PAWN; piece < KING; ++piece) {
+
+    value += piece_values[piece] *
+      (count1s(*bb & board->by_colour.whitepieces) - count1s(*bb & board->by_colour.blackpieces));
+
+     bb++;
+  }
+
+  return value;
+}
+
+int negascout(BOARD* board, int depth, int alpha, int beta, COLOUR colour) {
+  MOVE moves[60];
+  MOVE * moveptr;
+  BOARD copy;
+  int legal_found = 0;
+
+  moveptr = add_moves(board, moves, depth <= 0);
+
+  for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
+    int score;
+    copy = *board;
+
+    execute_move(&copy, ptr);
+
+    if (in_check(&copy, 1 - copy.next)) {
+      continue;
+    }
+
+    if (! legal_found) {
+      score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * alpha, -1 * colour);
+      legal_found = 1;
+    }
+    else {
+      /* null window */
+      score = -1 * negascout(&copy, depth - 1, -1 * alpha - 1, -1 * alpha, -1 * colour);
+      if (alpha < score && score < beta) {
+        score = -1 * negascout(&copy, depth - 1, -1 * beta - 1, -1 * score, -1 * colour);
+      }
+    }
+    alpha = alpha < score ? score : alpha;
+
+    if (alpha >= beta) {
+      break;
+    }
+  }
+
+  if (!legal_found) {
+    return colour * evaluate(board);
+  }
+
+  return alpha;
+}
+
 int main(int argc, const char * argv[]) {
   BOARD * b;
   int depth;
+  int score;
 
   initialize_magic();
 
@@ -1081,7 +1166,10 @@ int main(int argc, const char * argv[]) {
     b = parse_fen(argv[2]);
   }
 
-  printf("%lld\n", perft(b, depth, 1));
+  /* printf("%lld\n", perft(b, depth, 1)); */
+  score = negascout(b, depth, -1000, 1000, b->next ? 1 : -1);
+
+  printf("%f\n", (float)score / 10.0);
 
   free(b);
 

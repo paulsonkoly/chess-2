@@ -301,7 +301,7 @@ typedef struct _MOVE_ {
   BITBOARD en_passant;
 } MOVE;
 
-void print_move(const BOARD * board, MOVE * move) {
+void print_move(MOVE * move) {
   if (IS_CASTLE & move->castle) {
     CASTLE c = ALL_CASTLES & move->castle;
     const char * cs = "e1g1\0e1c1\0e8g8\0e8c8";
@@ -321,22 +321,6 @@ void print_move(const BOARD * board, MOVE * move) {
       printf("%c", p[move->promotion]);
     }
   }
-  /* else { */
-  /*   const char * ps = "  NBRQK"; */
-  /*   const char * fs = "abcdefgh"; */
-
-  /*   if (OCCUPANCY_BB(board) & ((BITBOARD)1 << move->to)) { */
-  /*     if (move->piece == PAWN) { */
-  /*       printf("%cx%c%d", fs[move->from % 8], fs[move->to % 8], 1 + move->to / 8); */
-  /*     } */
-  /*     else { */
-  /*       printf("%cx%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8); */
-  /*     } */
-  /*   } */
-  /*   else { */
-  /*     printf("%c%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8); */
-  /*   } */
-  /* } */
 }
 
 static const BITBOARD knight_attacks[] = {
@@ -995,7 +979,7 @@ void execute_move(BOARD * board, MOVE * move) {
 if ((ba) != (bb)) {                                                                  \
   printf("BOARD INCONSISTENCY - " #ba " != " #bb " %016lx != %016lx\n", (BITBOARD)ba, (BITBOARD)bb); \
   print_board(board);                                                                \
-  print_move(board, move);                                                           \
+  print_move(move);                                                                  \
   exit(0);                                                                           \
 }
 
@@ -1061,7 +1045,7 @@ unsigned long long perft(const BOARD * board, int depth, int print) {
     current = perft(&copy, depth - 1, 0);
 
     if (print) {
-      print_move(board, ptr);
+      print_move(ptr);
       printf(" %lld\n", current);
     }
 
@@ -1180,45 +1164,199 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
   return alpha;
 }
 
-int iterative_deepening(const BOARD * board, int max_depth, MOVE * pv, int * pvc) {
+int iterative_deepening(const BOARD * board, int max_depth) {
   MOVE pvm[2][80];
   int score = 0;
+  MOVE * bestmove;
 
   for (int depth = 1; depth <= max_depth; ++depth) {
     int pvm_bank = depth & 1;
+
+    printf("info depth %d\n", depth);
+
     score = negascout(board, depth , -1000, 1000, board->next ? -1 : 1, pvm[1 - pvm_bank], pvm[pvm_bank]);
 
-    printf("%.2f ", (float)score / 10.0);
+    printf("info score cp %d depth %d pv ", score, depth);
 
     for (int i = 0; i < depth; ++i) {
-      print_move(board, &pvm[pvm_bank][i]);
+      print_move(&pvm[pvm_bank][i]);
       printf(" ");
     }
     printf("\n");
+
+    bestmove = pvm[pvm_bank];
   }
+
+  printf("bestmove ");
+  print_move(bestmove);
+  printf("\n");
 
   return score;
 }
 
-int main(int argc, const char * argv[]) {
-  BOARD * b;
-  int depth;
-  int score;
+#define STATE_BOOT  0
+#define STATE_READY 1
+#define STATE_IDLE  2
+
+enum UCI_TYPE { INVALID, UCI, IS_READY, GO, POSITION };
+enum UCI_GO_TYPE { INFINITE, DEPTH };
+enum UCI_POSITION_TYPE { FEN };
+
+typedef struct _UCI_CMD_ {
+
+  enum UCI_TYPE type;
+  union DATA {
+
+    struct GO {
+
+      enum UCI_GO_TYPE type;
+      union GO_DATA {
+        int depth;
+      } data;
+    } go;
+
+    struct POSITION {
+
+      enum UCI_POSITION_TYPE type;
+      union POSITION_DATA {
+        const char * fen;
+      } data;
+    } position;
+
+  } data;
+} UCI_CMD;
+
+UCI_CMD * uci_parse(const char * line) {
+  UCI_CMD * cmd;
+
+  if (NULL == (cmd = malloc(sizeof(UCI_CMD)))) {
+    return NULL;
+  }
+
+  if (strncmp(("uci"), line, strlen("uci")) == 0) {
+    cmd->type = UCI;
+
+    return cmd;
+  }
+
+  if (strncmp(("isready"), line, strlen("isready")) == 0) {
+    cmd->type = IS_READY;
+
+    return cmd;
+  }
+
+  if (strncmp(("go"), line, strlen("go")) == 0) {
+    cmd->type = GO;
+    line += strlen("go") + 1;
+
+    if (strncmp(("depth"), line, strlen("depth")) == 0) {
+      line += strlen("depth") + 1;
+      cmd->data.go.type = DEPTH;
+      cmd->data.go.data.depth = atoi(line);
+    }
+    return cmd;
+  }
+
+  if (strncmp(("position"), line, strlen("position")) == 0) {
+    cmd->type = POSITION;
+    line += strlen("position") + 1;
+
+    if (strncmp(("fen"), line, strlen("fen")) == 0) {
+      line += strlen("fen") + 1;
+      cmd->data.position.type = FEN;
+      cmd->data.position.data.fen = line;
+    }
+    return cmd;
+  }
+
+  printf("invalid uci %s\n", line);
+
+  cmd->type = INVALID;
+
+  return cmd;
+}
+
+void uci() {
+  int state = STATE_BOOT;
+  BOARD * board;
+
+  board = initial_board();
+
+  while (1) {
+    int failed = 1;
+    char * line = NULL;
+    size_t count;
+
+    count = getline(&line, &count, stdin);
+    UCI_CMD * cmd;
+
+    if (NULL == (cmd = uci_parse(line))) {
+      abort();
+    }
+
+    switch (state) {
+      case STATE_BOOT:
+        if (cmd->type == UCI) {
+          printf("id name chess2\n");
+          printf("id author Paul Sonkoly\n");
+          printf("uciok\n");
+          state = STATE_READY;
+          failed = 0;
+        }
+        break;
+
+      case STATE_READY:
+        if (cmd->type == IS_READY) {
+          printf("readyok\n");
+          state = STATE_IDLE;
+          failed = 0;
+        }
+        break;
+
+      case STATE_IDLE:
+        switch (cmd->type) {
+
+          case GO:
+          switch (cmd->data.go.type) {
+
+            case DEPTH:
+              iterative_deepening(board, cmd->data.go.data.depth);
+              failed = 0;
+
+              break;
+          }
+
+          case POSITION:
+          switch (cmd->data.position.type) {
+
+            case FEN:
+              free(board);
+              board = parse_fen(cmd->data.position.data.fen);
+              failed = 0;
+
+              break;
+          }
+
+          default:;
+        }
+        break;
+    }
+
+    if (failed) {
+      printf("unexpected UCI cmd (%d) in state (%d)\n", cmd->type, state);
+    }
+
+    free(line);
+    free(cmd);
+
+  }
+}
+
+int main() {
 
   initialize_magic();
 
-  if (argc == 1) {
-    b = initial_board();
-    depth = 3;
-  } else {
-    sscanf(argv[1], "%d", &depth);
-    b = parse_fen(argv[2]);
-  }
-
-  /* printf("%lld\n", perft(b, depth, 1)); */
-  (void) iterative_deepening(b, depth, NULL, NULL);
-
-  free(b);
+  uci();
 
   return 0;
 }

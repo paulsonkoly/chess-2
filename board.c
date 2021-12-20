@@ -321,6 +321,22 @@ void print_move(MOVE * move) {
       printf("%c", p[move->promotion]);
     }
   }
+  /* else { */
+  /*   const char * ps = "  NBRQK"; */
+  /*   const char * fs = "abcdefgh"; */
+
+  /*   if (OCCUPANCY_BB(board) & ((BITBOARD)1 << move->to)) { */
+  /*     if (move->piece == PAWN) { */
+  /*       printf("%cx%c%d", fs[move->from % 8], fs[move->to % 8], 1 + move->to / 8); */
+  /*     } */
+  /*     else { */
+  /*       printf("%cx%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8); */
+  /*     } */
+  /*   } */
+  /*   else { */
+  /*     printf("%c%c%d", ps[move->piece], fs[move->to % 8], 1 + move->to / 8); */
+  /*   } */
+  /* } */
 }
 
 static const BITBOARD knight_attacks[] = {
@@ -1194,10 +1210,6 @@ int iterative_deepening(const BOARD * board, int max_depth) {
   return score;
 }
 
-#define STATE_BOOT  0
-#define STATE_READY 1
-#define STATE_IDLE  2
-
 enum UCI_TYPE { INVALID, UCI, IS_READY, GO, POSITION };
 enum UCI_GO_TYPE { INFINITE, DEPTH };
 enum UCI_POSITION_TYPE { FEN };
@@ -1269,21 +1281,17 @@ UCI_CMD * uci_parse(const char * line) {
     return cmd;
   }
 
-  printf("invalid uci %s\n", line);
-
   cmd->type = INVALID;
 
   return cmd;
 }
 
 void uci() {
-  int state = STATE_BOOT;
   BOARD * board;
 
   board = initial_board();
 
   while (1) {
-    int failed = 1;
     char * line = NULL;
     size_t count;
 
@@ -1294,57 +1302,38 @@ void uci() {
       abort();
     }
 
-    switch (state) {
-      case STATE_BOOT:
-        if (cmd->type == UCI) {
+    switch (cmd->type) {
+
+      case UCI:
           printf("id name chess2\n");
           printf("id author Paul Sonkoly\n");
           printf("uciok\n");
-          state = STATE_READY;
-          failed = 0;
-        }
-        break;
+          break;
 
-      case STATE_READY:
-        if (cmd->type == IS_READY) {
+      case IS_READY:
           printf("readyok\n");
-          state = STATE_IDLE;
-          failed = 0;
-        }
-        break;
+          break;
 
-      case STATE_IDLE:
-        switch (cmd->type) {
 
-          case GO:
-          switch (cmd->data.go.type) {
+      case GO:
+          /* iterative_deepening(board, cmd->data.go.data.depth); */
+          iterative_deepening(board, 6);
+          break;
 
-            case DEPTH:
-              iterative_deepening(board, cmd->data.go.data.depth);
-              failed = 0;
-
-              break;
-          }
-
-          case POSITION:
+      case POSITION:
           switch (cmd->data.position.type) {
 
             case FEN:
               free(board);
               board = parse_fen(cmd->data.position.data.fen);
-              failed = 0;
 
               break;
           }
 
-          default:;
-        }
-        break;
+      default:;
     }
 
-    if (failed) {
-      printf("unexpected UCI cmd (%d) in state (%d)\n", cmd->type, state);
-    }
+    fflush(stdout);
 
     free(line);
     free(cmd);

@@ -1105,19 +1105,42 @@ int evaluate(const BOARD * board) {
      bb++;
   }
 
+   /* value = (count1s(board->pawns & board->by_colour.whitepieces & 0x0000001818000000) - */
+   /*          count1s(board->pawns & board->by_colour.blackpieces & 0x0000001818000000)); */
+
   return value;
 }
 
-int negascout(BOARD* board, int depth, int alpha, int beta, COLOUR colour) {
-  MOVE moves[60];
+int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MOVE * pv, MOVE * npv) {
+  MOVE moves[100];
+  MOVE lpv[30];
   MOVE * moveptr;
   BOARD copy;
   int legal_found = 0;
+  int score;
+
+  if (depth < 1) {
+    return colour * evaluate(board);
+  }
 
   moveptr = add_moves(board, moves, depth <= 0);
 
+  if (depth > 1) {
+    /* find pv move among possible moves and bring forward */
+    for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
+      if (ptr->from == pv->from && ptr->to == pv->to) {
+        MOVE tmp;
+
+        tmp = *ptr;
+        *ptr = *moves;
+        *moves = tmp;
+
+        break;
+      }
+    }
+  }
+
   for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
-    int score;
     copy = *board;
 
     execute_move(&copy, ptr);
@@ -1127,17 +1150,23 @@ int negascout(BOARD* board, int depth, int alpha, int beta, COLOUR colour) {
     }
 
     if (! legal_found) {
-      score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * alpha, -1 * colour);
+      score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * alpha, -1 * colour, pv + 1, lpv + 1);
       legal_found = 1;
     }
     else {
       /* null window */
-      score = -1 * negascout(&copy, depth - 1, -1 * alpha - 1, -1 * alpha, -1 * colour);
+      score = -1 * negascout(&copy, depth - 1, -1 * alpha - 1, -1 * alpha, -1 * colour, pv + 1, lpv + 1);
       if (alpha < score && score < beta) {
-        score = -1 * negascout(&copy, depth - 1, -1 * beta - 1, -1 * score, -1 * colour);
+        score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * score, -1 * colour, pv + 1, lpv + 1);
       }
     }
-    alpha = alpha < score ? score : alpha;
+    if (alpha < score) {
+      if (depth > 1) {
+        memcpy(npv, lpv, sizeof(MOVE) * depth - 1);
+      }
+      *npv = *ptr;
+      alpha = score;
+    }
 
     if (alpha >= beta) {
       break;
@@ -1149,6 +1178,26 @@ int negascout(BOARD* board, int depth, int alpha, int beta, COLOUR colour) {
   }
 
   return alpha;
+}
+
+int iterative_deepening(const BOARD * board, int max_depth, MOVE * pv, int * pvc) {
+  MOVE pvm[2][80];
+  int score = 0;
+
+  for (int depth = 1; depth <= max_depth; ++depth) {
+    int pvm_bank = depth & 1;
+    score = negascout(board, depth , -1000, 1000, board->next ? -1 : 1, pvm[1 - pvm_bank], pvm[pvm_bank]);
+
+    printf("%.2f ", (float)score / 10.0);
+
+    for (int i = 0; i < depth; ++i) {
+      print_move(board, &pvm[pvm_bank][i]);
+      printf(" ");
+    }
+    printf("\n");
+  }
+
+  return score;
 }
 
 int main(int argc, const char * argv[]) {
@@ -1167,9 +1216,7 @@ int main(int argc, const char * argv[]) {
   }
 
   /* printf("%lld\n", perft(b, depth, 1)); */
-  score = negascout(b, depth, -1000, 1000, b->next ? 1 : -1);
-
-  printf("%f\n", (float)score / 10.0);
+  (void) iterative_deepening(b, depth, NULL, NULL);
 
   free(b);
 

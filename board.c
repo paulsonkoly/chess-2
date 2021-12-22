@@ -25,6 +25,9 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+
+#include <sys/select.h>
 
 typedef uint8_t SQUARE;
 #define NO_SQUARE ((SQUARE)(-1))
@@ -301,7 +304,7 @@ typedef struct _MOVE_ {
   BITBOARD en_passant;
 } MOVE;
 
-void print_move(MOVE * move) {
+void print_move(const MOVE * move) {
   if (IS_CASTLE & move->castle) {
     CASTLE c = ALL_CASTLES & move->castle;
     const char * cs = "e1g1\0e1c1\0e8g8\0e8c8";
@@ -1111,6 +1114,53 @@ int evaluate(const BOARD * board) {
   return value;
 }
 
+#define STDIN 0
+int check_for_input() {
+  struct timespec timeout = { 0, 0 };
+  fd_set fds;
+
+  FD_ZERO(&fds);
+  FD_SET(STDIN, &fds);
+
+  pselect(1, &fds, NULL, NULL, & timeout, NULL);
+
+  if (FD_ISSET(STDIN, &fds)) {
+    char * line = NULL;
+    size_t count;
+
+    count = getline(&line, &count, stdin);
+
+    if (strncmp(("stop"), line, strlen("stop")) == 0) {
+
+      free(line);
+
+      return 1;
+    }
+
+    free(line);
+  }
+
+  return 0;
+}
+
+static int stopped = 0;
+
+static struct timespec start;
+unsigned long long int movetime;
+
+unsigned long long int time_delta() {
+  struct timespec end;
+  unsigned long long int delta;
+
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end)) {
+    printf("info clock_gettime failed\n");
+  }
+
+  delta = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+
+  return delta;
+}
+
 int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MOVE * pv, MOVE * npv) {
   MOVE moves[100];
   MOVE lpv[30];
@@ -1118,6 +1168,26 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
   BOARD copy;
   int legal_found = 0;
   int score;
+  unsigned long long delta;
+
+  if (stopped) {
+    return -1;
+  }
+  else {
+    if (check_for_input()) {
+      stopped = 1;
+      return -1;
+    }
+
+    if (movetime) {
+      delta = time_delta();
+      if (movetime < delta) {
+        stopped = 1;
+        return -1;
+      }
+    }
+
+  }
 
   if (depth < 1) {
     return colour * evaluate(board);
@@ -1174,7 +1244,10 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
   }
 
   if (!legal_found) {
-    return colour * evaluate(board);
+    if (in_check(board, board->next))
+      return board->next ? -1000 : 1000;
+    else
+      return 0;
   }
 
   return alpha;
@@ -1183,16 +1256,27 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
 int iterative_deepening(const BOARD * board, int max_depth) {
   MOVE pvm[2][80];
   int score = 0;
-  MOVE * bestmove;
+  MOVE * bestmove = NULL;
+  unsigned long long int delta;
+
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start)) {
+    printf("info clock_gettime failed\n");
+  }
 
   for (int depth = 1; depth <= max_depth; ++depth) {
     int pvm_bank = depth & 1;
+
+    stopped = 0;
 
     printf("info depth %d\n", depth);
 
     score = negascout(board, depth , -1000, 1000, board->next ? -1 : 1, pvm[1 - pvm_bank], pvm[pvm_bank]);
 
-    printf("info score cp %d depth %d pv ", score, depth);
+    if (stopped) break;
+
+    delta = time_delta();
+
+    printf("info score cp %d depth %d time %llu pv ", 10 * score, depth, delta);
 
     for (int i = 0; i < depth; ++i) {
       print_move(&pvm[pvm_bank][i]);
@@ -1200,18 +1284,25 @@ int iterative_deepening(const BOARD * board, int max_depth) {
     }
     printf("\n");
 
+    fflush(stdout);
+
     bestmove = pvm[pvm_bank];
+
+    if (score <= -1000 || score >= 1000) break;
   }
 
-  printf("bestmove ");
-  print_move(bestmove);
-  printf("\n");
+  if (bestmove) {
+    printf("bestmove ");
+    print_move(bestmove);
+    printf("\n");
+  }
+
 
   return score;
 }
 
 enum UCI_TYPE { INVALID, UCI, IS_READY, GO, POSITION };
-enum UCI_GO_TYPE { INFINITE, DEPTH };
+enum UCI_GO_TYPE { INFINITE, DEPTH, MOVETIME };
 enum UCI_POSITION_TYPE { FEN };
 
 typedef struct _UCI_CMD_ {
@@ -1224,6 +1315,7 @@ typedef struct _UCI_CMD_ {
       enum UCI_GO_TYPE type;
       union GO_DATA {
         int depth;
+        unsigned long long movetime;
       } data;
     } go;
 
@@ -1266,6 +1358,13 @@ UCI_CMD * uci_parse(const char * line) {
       cmd->data.go.type = DEPTH;
       cmd->data.go.data.depth = atoi(line);
     }
+
+    if (strncmp(("movetime"), line, strlen("movetime")) == 0) {
+      line += strlen("movetime") + 1;
+      cmd->data.go.type = MOVETIME;
+      cmd->data.go.data.movetime = atoll(line);
+    }
+
     return cmd;
   }
 
@@ -1314,10 +1413,23 @@ void uci() {
           printf("readyok\n");
           break;
 
-
       case GO:
-          /* iterative_deepening(board, cmd->data.go.data.depth); */
-          iterative_deepening(board, 6);
+          movetime = 0;
+
+          switch (cmd->data.go.type) {
+
+            case DEPTH:
+              iterative_deepening(board, cmd->data.go.data.depth);
+              break;
+
+            case MOVETIME:
+              movetime = cmd->data.go.data.movetime;
+
+            case INFINITE:
+              iterative_deepening(board, 1000);
+              break;
+
+          }
           break;
 
       case POSITION:

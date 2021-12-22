@@ -1161,7 +1161,50 @@ unsigned long long int time_delta() {
   return delta;
 }
 
-int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MOVE * pv, MOVE * npv) {
+#define KILLER_MAX_DEPTH 30
+
+typedef struct _KILLER_ {
+  MOVE moves[KILLER_MAX_DEPTH][2];
+  int valid[KILLER_MAX_DEPTH][2];
+} KILLER;
+
+void reset_killer(KILLER * killer) {
+  for (int i = 0; i < KILLER_MAX_DEPTH; ++i) {
+    killer->valid[i][0] = 0;
+    killer->valid[i][1] = 0;
+  }
+}
+
+void save_killer(KILLER * killer, int depth, MOVE * move) {
+  int index = 0;
+
+  if (killer->valid[depth][0]) {
+    index = 1;
+  }
+
+  killer->valid[depth][index] = 1;
+  memcpy(&killer->moves[depth][index], move, sizeof(MOVE));
+}
+
+void apply_killers(const KILLER * killer, MOVE * moves, MOVE * last, int depth) {
+  for (int i = 0; i < 2; ++i) {
+    if (killer->valid[depth][i]) {
+      for (MOVE * ptr = moves; ptr != last; ptr++) {
+        if (ptr->from == killer->moves[depth][i].from && ptr->to == killer->moves[depth][i].to) {
+          MOVE tmp;
+
+          tmp = *ptr;
+          *ptr = *moves;
+          *moves = tmp;
+
+          break;
+        }
+      }
+    }
+  }
+}
+
+int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MOVE * pv, MOVE * npv, KILLER * killer) {
   MOVE moves[100];
   MOVE lpv[30];
   MOVE * moveptr;
@@ -1210,6 +1253,8 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
     }
   }
 
+  apply_killers(killer, moves, moveptr, depth);
+
   for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
     copy = *board;
 
@@ -1220,14 +1265,14 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
     }
 
     if (! legal_found) {
-      score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * alpha, -1 * colour, pv + 1, lpv + 1);
+      score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * alpha, -1 * colour, pv + 1, lpv + 1, killer);
       legal_found = 1;
     }
     else {
       /* null window */
-      score = -1 * negascout(&copy, depth - 1, -1 * alpha - 1, -1 * alpha, -1 * colour, pv + 1, lpv + 1);
+      score = -1 * negascout(&copy, depth - 1, -1 * alpha - 1, -1 * alpha, -1 * colour, pv + 1, lpv + 1, killer);
       if (alpha < score && score < beta) {
-        score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * score, -1 * colour, pv + 1, lpv + 1);
+        score = -1 * negascout(&copy, depth - 1, -1 * beta, -1 * score, -1 * colour, pv + 1, lpv + 1, killer);
       }
     }
     if (alpha < score) {
@@ -1239,6 +1284,7 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
     }
 
     if (alpha >= beta) {
+      save_killer(killer, depth, ptr);
       break;
     }
   }
@@ -1255,6 +1301,7 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, int colour, MO
 
 int iterative_deepening(const BOARD * board, int max_depth) {
   MOVE pvm[2][80];
+  KILLER killer;
   int score = 0;
   MOVE * bestmove = NULL;
   unsigned long long int delta;
@@ -1268,9 +1315,11 @@ int iterative_deepening(const BOARD * board, int max_depth) {
 
     stopped = 0;
 
+    reset_killer(&killer);
+
     printf("info depth %d\n", depth);
 
-    score = negascout(board, depth , -1000, 1000, board->next ? -1 : 1, pvm[1 - pvm_bank], pvm[pvm_bank]);
+    score = negascout(board, depth , -1000, 1000, board->next ? -1 : 1, pvm[1 - pvm_bank], pvm[pvm_bank], &killer);
 
     if (stopped) break;
 

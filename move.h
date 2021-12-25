@@ -1,6 +1,8 @@
 #ifndef _MOVE_H_
 #define _MOVE_H_
 
+#include <stdint.h>
+
 #include "chess.h"
 
 #define IS_CASTLE  ((CASTLE)1 << 4)

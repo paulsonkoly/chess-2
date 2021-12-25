@@ -3,6 +3,7 @@
 
 #include "board.h"
 #include "move.h"
+#include "chess.h"
 
 #define ALL_MOVES 0
 #define ONLY_CAPTURES 1

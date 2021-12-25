@@ -1,7 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "perft.h"
+
+#include <stdio.h>
 
 #include "move.h"
 #include "movegen.h"

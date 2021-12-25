@@ -1,9 +1,11 @@
+#include "search.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <sys/select.h>
 
-#include "search.h"
 #include "movegen.h"
 #include "moveexec.h"
 

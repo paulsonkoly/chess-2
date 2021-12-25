@@ -21,18 +21,10 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <time.h>
-
-#include <sys/select.h>
 
 #include "chess.h"
-#include "move.h"
 #include "movegen.h"
-#include "board.h"
-#include "magic.h"
 #include "uci.h"
 
 void print_bitboard(BITBOARD bb) {

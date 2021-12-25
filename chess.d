@@ -1,0 +1,1 @@
+chess.o: chess.c

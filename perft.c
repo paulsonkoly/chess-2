@@ -19,7 +19,7 @@ unsigned long long perft(const BOARD * board, int depth, int print) {
 
   add_moves(board, ALL_MOVES);
 
-  for (MOVE * ptr = ml_sort(NULL, 0, NULL); ptr != NULL; ptr = ptr->next) {
+  for (MOVE * ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
     copy = *board;
     unsigned long long int current;
 

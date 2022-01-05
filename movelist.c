@@ -90,7 +90,7 @@ static MOVEVAL capture_value(const MOVE * move) {
     return 0;
 
     default:
-      return (piece_values[move->capture] - piece_values[move->piece]) + 80;
+      return (piece_values[move->capture] - piece_values[move->piece]) + 90;
   }
 }
 

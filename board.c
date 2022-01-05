@@ -223,6 +223,6 @@ int evaluate(const BOARD * board) {
    /* value = (count1s(board->pawns & board->by_colour.whitepieces & 0x0000001818000000) - */
    /*          count1s(board->pawns & board->by_colour.blackpieces & 0x0000001818000000)); */
 
-  return value;
+  return (board->next == WHITE ? value : -value);
 }
 

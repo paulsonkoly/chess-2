@@ -22,8 +22,8 @@ typedef struct _MOVE_ {
 
 void print_move(const MOVE * move);
 
-#define MOVE_EQUAL(a, b)                                                          \
-  (((a)->castle & (b) -> castle & IS_CASTLE) && ((a)->castle == (b)->castle) ||   \
+#define MOVE_EQUAL(a, b)                                                            \
+  ((((a)->castle & (b) -> castle & IS_CASTLE) && ((a)->castle == (b)->castle)) ||   \
    ((a)->to == (b)->to && (a)->from == (b)->from && (a)->piece == (b)->piece))
 
 #define SINGLE_PAWN_PUSH(colour, bitboard) (((bitboard) << 8) >> ((colour) << 4))

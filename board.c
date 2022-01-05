@@ -111,7 +111,7 @@ PIECE piece_at_board(const BOARD* board, SQUARE sq) {
   if (board->queens & bb) return QUEEN;
   if (board->kings & bb) return KING;
 
-  return 0;
+  return NO_PIECE;
 }
 
 COLOUR colour_at_board(const BOARD* board, SQUARE sq) {

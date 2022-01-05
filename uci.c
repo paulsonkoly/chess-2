@@ -5,6 +5,7 @@
 #include "uci.h"
 #include "board.h"
 #include "search.h"
+#include "perft.h"
 
 extern unsigned long long movetime;
 
@@ -34,6 +35,12 @@ UCI_CMD * uci_parse(const char * line) {
     if (strncmp(("depth"), line, strlen("depth")) == 0) {
       line += strlen("depth") + 1;
       cmd->data.go.type = DEPTH;
+      cmd->data.go.data.depth = atoi(line);
+    }
+
+    if (strncmp(("perft"), line, strlen("perft")) == 0) {
+      line += strlen("perft") + 1;
+      cmd->data.go.type = PERFT;
       cmd->data.go.data.depth = atoi(line);
     }
 
@@ -99,6 +106,11 @@ void uci() {
             case DEPTH:
               iterative_deepening(board, cmd->data.go.data.depth);
               break;
+
+            case PERFT:
+              perft(board, cmd->data.go.data.depth, 1);
+              break;
+
 
             case MOVETIME:
               movetime = cmd->data.go.data.movetime;

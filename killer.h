@@ -14,6 +14,6 @@ void reset_killer(KILLER * killer);
 
 void save_killer(KILLER * killer, int depth, MOVE * move);
 
-void apply_killers(const KILLER * killer, MOVE * moves, MOVE * last, int depth);
+int is_killer(const KILLER * killer, int depth, int second, const MOVE * move);
 
 #endif /* ifndef _KILLER_H_ */

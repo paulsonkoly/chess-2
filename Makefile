@@ -1,7 +1,7 @@
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d)  # one dependency file for each source
-CFLAGS=-Wall -Werror -pedantic -O2
+CFLAGS=-Wall -Werror -pedantic -O2 -g
 
 chess2: $(obj)
 	$(CC) $(CFLAGS) -o $@ $^

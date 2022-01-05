@@ -8,7 +8,7 @@
 #define ALL_MOVES 0
 #define ONLY_CAPTURES 1
 
-MOVE * add_moves(const BOARD * board, MOVE * moveptr, int only_captures);
+void add_moves(const BOARD * board, int only_captures);
 
 BITBOARD in_check(const BOARD * board, COLOUR colour);
 

@@ -8,6 +8,7 @@
 
 #include "movegen.h"
 #include "moveexec.h"
+#include "movelist.h"
 
 static struct timespec start;
 
@@ -57,15 +58,15 @@ extern int stopped;
 extern unsigned long long movetime;
 
 int quiesce(const BOARD * board, int alpha, int beta) {
-  MOVE moves[100];
-  MOVE * moveptr;
   MOVE * ptr;
   int legal_found = 0;
   int stand_pat;
 
-  moveptr = add_moves(board, moves, ALL_MOVES);
+  ml_open_frame();
 
-  for (ptr = moves; ptr != moveptr; ptr++) {
+  add_moves(board, ALL_MOVES);
+
+  for (ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
     BOARD copy;
 
     copy = *board;
@@ -77,6 +78,8 @@ int quiesce(const BOARD * board, int alpha, int beta) {
       break;
     }
   }
+
+  ml_close_frame();
 
   if (!legal_found) {
     if (in_check(board, board->next))
@@ -93,9 +96,11 @@ int quiesce(const BOARD * board, int alpha, int beta) {
   if (alpha < stand_pat)
     alpha = stand_pat;
 
-  moveptr = add_moves(board, moves, ONLY_CAPTURES);
+  ml_open_frame();
 
-  for (ptr = moves; ptr != moveptr; ptr++) {
+  add_moves(board, ONLY_CAPTURES);
+
+  for (ptr = ml_sort(NULL, 0, NULL); ptr != NULL; ptr = ptr->next) {
     int score;
     BOARD copy;
 
@@ -109,20 +114,21 @@ int quiesce(const BOARD * board, int alpha, int beta) {
 
     score = -quiesce(&copy, -beta, -alpha);
 
-    if (score >= beta)
+    if (score >= beta) {
+      ml_close_frame();
       return beta;
+    }
 
     if (score > alpha)
       alpha = score;
   }
 
+  ml_close_frame();
   return alpha;
 }
 
 int negascout(const BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer) {
-  MOVE moves[100];
   MOVE lpv[30];
-  MOVE * moveptr;
   BOARD copy;
   int legal_found = 0;
   int score;
@@ -152,28 +158,13 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOV
     /* return colour * evaluate(board); */
   }
 
-  moveptr = add_moves(board, moves, ALL_MOVES);
+  ml_open_frame();
 
-  if (depth > 1) {
-    /* find pv move among possible moves and bring forward */
-    for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
-      if (MOVE_EQUAL(ptr, pv)) {
-        MOVE tmp;
-
-        tmp = *ptr;
-        *ptr = *moves;
-        *moves = tmp;
-
-        break;
-      }
-    }
-  }
-
-  apply_killers(killer, moves, moveptr, depth);
+  add_moves(board, ALL_MOVES);
 
   beta2 = beta;
 
-  for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
+  for (MOVE * ptr = ml_sort(depth > 1 ? pv : NULL, depth, killer); ptr != NULL; ptr = ptr->next) {
     copy = *board;
 
     execute_move(&copy, ptr);
@@ -201,11 +192,15 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOV
     if (alpha >= beta) {
       save_killer(killer, depth, ptr);
 
+      ml_close_frame();
+
       return alpha;
     }
 
     beta2 = alpha + 1;
   }
+
+  ml_close_frame();
 
   if (!legal_found) {
     if (in_check(board, board->next))

@@ -21,20 +21,7 @@ void save_killer(KILLER * killer, int depth, MOVE * move) {
   memcpy(&killer->moves[depth][index], move, sizeof(MOVE));
 }
 
-void apply_killers(const KILLER * killer, MOVE * moves, MOVE * last, int depth) {
-  for (int i = 0; i < 2; ++i) {
-    if (killer->valid[depth][i]) {
-      for (MOVE * ptr = moves; ptr != last; ptr++) {
-        if (ptr->from == killer->moves[depth][i].from && ptr->to == killer->moves[depth][i].to) {
-          MOVE tmp;
-
-          tmp = *ptr;
-          *ptr = *moves;
-          *moves = tmp;
-
-          break;
-        }
-      }
-    }
-  }
+int is_killer(const KILLER * killer, int depth, int bank, const MOVE * move) {
+  return killer->valid[depth][bank] && MOVE_EQUAL(& killer->moves[depth][bank], move);
 }
+

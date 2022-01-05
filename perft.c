@@ -5,10 +5,9 @@
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
+#include "movelist.h"
 
 unsigned long long perft(const BOARD * board, int depth, int print) {
-  MOVE moves[100];
-  MOVE * moveptr;
   BOARD copy;
   unsigned long long int count = 0;
 
@@ -16,9 +15,11 @@ unsigned long long perft(const BOARD * board, int depth, int print) {
     return 1;
   }
 
-  moveptr = add_moves(board, moves, ALL_MOVES);
+  ml_open_frame();
 
-  for (MOVE * ptr = moves; ptr != moveptr; ptr++) {
+  add_moves(board, ALL_MOVES);
+
+  for (MOVE * ptr = ml_sort(NULL, 0, NULL); ptr != NULL; ptr = ptr->next) {
     copy = *board;
     unsigned long long int current;
 
@@ -38,6 +39,12 @@ unsigned long long perft(const BOARD * board, int depth, int print) {
     }
 
     count += current;
+  }
+
+  ml_close_frame();
+
+  if (print) {
+    printf(" %lld\n", count);
   }
 
   return count;

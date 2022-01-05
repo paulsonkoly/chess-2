@@ -6,6 +6,7 @@
 #include "chess.h"
 #include "move.h"
 #include "board.h"
+#include "movelist.h"
 
 static const BITBOARD knight_attacks[] = {
   0x0000000000020400, 0x0000000000050800, 0x00000000000a1100, 0x0000000000142200,
@@ -26,7 +27,7 @@ static const BITBOARD knight_attacks[] = {
   0x0044280000000000, 0x0088500000000000, 0x0010a00000000000, 0x0020400000000000,
 };
 
-MOVE * add_knight_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
+void add_knight_moves(const BOARD * board, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD knights = board->knights & colour;
 
@@ -36,6 +37,8 @@ MOVE * add_knight_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targe
     BITBOARD t = attacks & ~ colour;
 
     BITBOARD_SCAN(t) {
+      MOVE * move = ml_allocate();
+
       SQUARE to = BITBOARD_SCAN_ITER(t);
 
       move->from            = from;
@@ -45,12 +48,9 @@ MOVE * add_knight_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targe
       move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
-
-      move++;
+      move->capture         = piece_at_board(board, to);
     }
   }
-
-  return move;
 }
 
 BITBOARD bishop_attacks[64][512];
@@ -256,7 +256,7 @@ static inline BITBOARD rook_bitboard(const BOARD * board, SQUARE sq) {
   return rook_attacks[sq][(occ * magic) >> (64 - shift)];
 }
 
-MOVE * add_bishop_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
+void add_bishop_moves(const BOARD * board, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD bishops = board->bishops & colour;
 
@@ -266,6 +266,7 @@ MOVE * add_bishop_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targe
     BITBOARD t = attacks & ~ colour;
 
     BITBOARD_SCAN(t) {
+      MOVE * move = ml_allocate();
       SQUARE to = BITBOARD_SCAN_ITER(t);
 
       move->from            = from;
@@ -275,15 +276,12 @@ MOVE * add_bishop_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targe
       move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
-
-      move++;
+      move->capture         = piece_at_board(board, to);
     }
   }
-
-  return move;
 }
 
-MOVE * add_rook_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
+void add_rook_moves(const BOARD * board, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD rooks = board->rooks & colour;
 
@@ -293,6 +291,7 @@ MOVE * add_rook_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
     BITBOARD t = attacks & ~ colour;
 
     BITBOARD_SCAN(t) {
+      MOVE * move = ml_allocate();
       SQUARE   to = BITBOARD_SCAN_ITER(t);
 
       move->from            = from;
@@ -302,15 +301,12 @@ MOVE * add_rook_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
       move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
-
-      move++;
+      move->capture         = piece_at_board(board, to);
     }
   }
-
-  return move;
 }
 
-MOVE * add_queen_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
+void add_queen_moves(const BOARD * board, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD queens = board->queens & colour;
 
@@ -320,6 +316,7 @@ MOVE * add_queen_moves(const BOARD * board, MOVE * move, BITBOARD allowed_target
     BITBOARD t = attacks & ~ colour;
 
     BITBOARD_SCAN(t) {
+      MOVE * move = ml_allocate();
       SQUARE to = BITBOARD_SCAN_ITER(t);
 
       move->from            = from;
@@ -329,12 +326,9 @@ MOVE * add_queen_moves(const BOARD * board, MOVE * move, BITBOARD allowed_target
       move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
-
-      move++;
+      move->capture         = piece_at_board(board, to);
     }
   }
-
-  return move;
 }
 
 BITBOARD single_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour) {
@@ -373,7 +367,7 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour) {
 #define PROMOTIONS ((BITBOARD)0xff000000000000ff)
 
 /* set allowed targets to either all high or all low. all low for only captures */
-MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets) {
+void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD pawns  = board->pawns & colour;
   BITBOARD empty  = ~ OCCUPANCY_BB(board);
@@ -382,6 +376,7 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
 
   t = s & ~PROMOTIONS;
   BITBOARD_SCAN(t) {
+    MOVE * move = ml_allocate();
     SQUARE to = BITBOARD_SCAN_ITER(t);
     SQUARE from = to + 8 * (2 * board->next - 1);
 
@@ -392,8 +387,7 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
     move->en_passant      = 0;
     move->next_en_passant = NO_SQUARE;
     move->castle          = NO_CASTLE;
-
-    move++;
+    move->capture         = NO_PIECE;
   }
 
   t = s & PROMOTIONS;
@@ -402,6 +396,8 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
     SQUARE from = to + 8 * (2 * board->next - 1);
 
     for (PIECE piece = QUEEN; piece > PAWN; --piece) {
+      MOVE * move = ml_allocate();
+
       move->from            = from;
       move->to              = to;
       move->piece           = PAWN;
@@ -409,14 +405,14 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
       move->en_passant      = 0;
       move->next_en_passant = NO_SQUARE;
       move->castle          = NO_CASTLE;
-
-      move++;
+      move->capture         = NO_PIECE;
     }
   }
 
   t = double_pawn_pushes(pawns, empty, board->next) & allowed_targets;
 
   BITBOARD_SCAN(t) {
+    MOVE * move = ml_allocate();
     SQUARE to = BITBOARD_SCAN_ITER(t);
     SQUARE from = to + 16 * (2 * board->next - 1);
 
@@ -427,8 +423,7 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
     move->en_passant      = 0;
     move->next_en_passant = (from + to) / 2;
     move->castle          = NO_CASTLE;
-
-    move++;
+    move->capture         = NO_PIECE;
   }
 
   {
@@ -446,6 +441,7 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
       BITBOARD pawnbb = pawn_captures(capture, 1 - board->next) & pawns;
 
       BITBOARD_SCAN(pawnbb) {
+        MOVE * move = ml_allocate();
         SQUARE from = BITBOARD_SCAN_ITER(pawnbb);
 
         move->from            = from;
@@ -455,8 +451,7 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
         move->en_passant      = en_passant & capture;
         move->next_en_passant = NO_SQUARE;
         move->castle          = NO_CASTLE;
-
-        move++;
+        move->capture         = piece_at_board(board, to);
       }
     }
 
@@ -472,6 +467,8 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
         SQUARE from = BITBOARD_SCAN_ITER(pawnbb);
 
         for (PIECE piece = QUEEN; piece > PAWN; --piece) {
+          MOVE * move = ml_allocate();
+
           move->from            = from;
           move->to              = to;
           move->piece           = PAWN;
@@ -479,14 +476,12 @@ MOVE * add_pawn_moves(const BOARD * board, MOVE * move, BITBOARD allowed_targets
           move->en_passant      = 0;
           move->next_en_passant = NO_SQUARE;
           move->castle          = NO_CASTLE;
+          move->capture         = piece_at_board(board, to);
 
-          move++;
         }
       }
     }
   }
-
-  return move;
 }
 
 static const BITBOARD king_attacks[] = {
@@ -542,7 +537,7 @@ BITBOARD in_check(const BOARD * board, COLOUR colour) {
   return is_attacked(board, king, 1 - colour);
 }
 
-MOVE * add_king_moves(const BOARD * board, MOVE * move, BITBOARD allowed_tergets) {
+void add_king_moves(const BOARD * board, BITBOARD allowed_tergets) {
   BITBOARD colour = NEXT_COLOUR_BB(board);
   BITBOARD king = board->kings & colour;
   SQUARE from = ffsl(king) - 1;
@@ -550,6 +545,7 @@ MOVE * add_king_moves(const BOARD * board, MOVE * move, BITBOARD allowed_tergets
   BITBOARD t = attacks & ~ colour;
 
   BITBOARD_SCAN(t) {
+    MOVE * move = ml_allocate();
     SQUARE to = BITBOARD_SCAN_ITER(t);
 
     move->from            = from;
@@ -559,11 +555,7 @@ MOVE * add_king_moves(const BOARD * board, MOVE * move, BITBOARD allowed_tergets
     move->en_passant      = 0;
     move->next_en_passant = NO_SQUARE;
     move->castle          = (SHORT_CASTLE | LONG_CASTLE) << (board->next * 2);
-
-    move++;
   }
-
-  return move;
 }
 
 static const BITBOARD castle_squares[4] = {
@@ -574,7 +566,7 @@ static const BITBOARD castle_check_squares[4] = {
   0x0000000000000070, 0x000000000000001c, 0x7000000000000000, 0x1c00000000000000
 };
 
-MOVE * add_castles(const BOARD * board, MOVE * move) {
+void add_castles(const BOARD * board) {
   BITBOARD occ = OCCUPANCY_BB(board);
 
   for (CASTLE castle = 0; castle <= 1; ++castle) {
@@ -583,32 +575,29 @@ MOVE * add_castles(const BOARD * board, MOVE * move) {
     if (board->castle & ((CASTLE)1 << c)) {
       if (!(castle_squares[c] & occ)) {
         if (is_attacked(board, castle_check_squares[c], 1 - board->next)) continue;
-        move->castle = IS_CASTLE | c;
+        MOVE * move = ml_allocate();
 
-        move++;
+        move->castle  = IS_CASTLE | c;
+        move->capture = NO_PIECE;
       }
     }
   }
-
-  return move;
 }
 
-MOVE * add_moves(const BOARD * board, MOVE * moveptr, int only_captures) {
+void add_moves(const BOARD * board, int only_captures) {
   BITBOARD allowed_targets = COLOUR_BB(board, 1 - board->next);
 
   switch (only_captures) {
   case 0:
-    moveptr = add_pawn_moves(board, moveptr, 0xffffffffffffffff);
-    moveptr = add_castles(board, moveptr);
+    add_pawn_moves(board, 0xffffffffffffffff);
+    add_castles(board);
     allowed_targets = ~NEXT_COLOUR_BB(board);
   case 1:
-    moveptr = add_knight_moves(board, moveptr, allowed_targets);
-    moveptr = add_king_moves(board, moveptr, allowed_targets);
-    moveptr = add_bishop_moves(board, moveptr, allowed_targets);
-    moveptr = add_rook_moves(board, moveptr, allowed_targets);
-    moveptr = add_queen_moves(board, moveptr, allowed_targets);
+    add_knight_moves(board, allowed_targets);
+    add_king_moves(board, allowed_targets);
+    add_bishop_moves(board, allowed_targets);
+    add_rook_moves(board, allowed_targets);
+    add_queen_moves(board, allowed_targets);
   }
-
-  return moveptr;
 }
 

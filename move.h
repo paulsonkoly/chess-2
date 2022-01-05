@@ -7,17 +7,24 @@
 
 #define IS_CASTLE  ((CASTLE)1 << 4)
 
+typedef uint8_t MOVEVAL;
+
 typedef struct _MOVE_ {
   SQUARE from;
   SQUARE to;
   PIECE  piece;
   PIECE  promotion;
   /* 4 byte */
+  PIECE  capture;
   SQUARE next_en_passant;
   CASTLE castle;
-  uint8_t pad[2];
+  MOVEVAL value;
+
   /* 4 byte */
   BITBOARD en_passant;
+
+  /* 16 byte */
+  struct _MOVE_ * next;
 } MOVE;
 
 void print_move(const MOVE * move);

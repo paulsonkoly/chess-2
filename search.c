@@ -79,9 +79,9 @@ int quiesce(const BOARD * board, int alpha, int beta) {
     }
   }
 
-  ml_close_frame();
-
   if (!legal_found) {
+    ml_close_frame();
+
     if (in_check(board, board->next))
       return -1000;
     else
@@ -90,17 +90,16 @@ int quiesce(const BOARD * board, int alpha, int beta) {
 
   stand_pat = evaluate(board);
 
-  if (stand_pat >= beta)
+  if (stand_pat >= beta) {
+    ml_close_frame();
+
     return beta;
+  }
 
   if (alpha < stand_pat)
     alpha = stand_pat;
 
-  ml_open_frame();
-
-  add_moves(board, ONLY_CAPTURES);
-
-  for (ptr = ml_sort(NULL, 0, NULL); ptr != NULL; ptr = ptr->next) {
+  for (ptr = ml_forcing(board); ptr != NULL; ptr = ptr->next) {
     int score;
     BOARD copy;
 
@@ -262,7 +261,6 @@ int iterative_deepening(const BOARD * board, int max_depth) {
     print_move(bestmove);
     printf("\n");
   }
-
 
   return score;
 }

@@ -1,6 +1,8 @@
 #include <stdlib.h>
 
 #include "movelist.h"
+#include "moveexec.h"
+#include "movegen.h"
 
 #define MAX_MOVES 2048
 #define MAX_PLYS  64
@@ -48,6 +50,7 @@ MOVE * ml_allocate() {
 }
 
 static void heuristic_weights(const MOVE * pv, int depth, const KILLER * killer);
+static void forcing_weights(const BOARD * board);
 static MOVEVAL capture_value(const MOVE * ptr);
 static void sort();
 
@@ -58,6 +61,12 @@ MOVE * ml_sort(const MOVE * pv, int depth, const KILLER * killer) {
 }
 
 MOVE * ml_first() {
+  return first[ply];
+}
+
+MOVE * ml_forcing(const BOARD * board) {
+  forcing_weights(board);
+  sort();
   return first[ply];
 }
 
@@ -77,20 +86,39 @@ static void heuristic_weights(const MOVE * pv, int depth, const KILLER * killer)
 
 static const MOVEVAL piece_values[] = { 0, 10, 30, 32, 50, 90 };
 
+static void forcing_weights(const BOARD * board) {
+  for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
+    if (!(ptr->castle & IS_CASTLE) && ptr->capture != NO_PIECE) {
+      ptr->value = piece_values[ptr->capture];
+    } else {
+      BOARD copy = *board;
+
+      execute_move(&copy, ptr);
+
+      if (in_check(&copy, copy.next)) {
+        ptr->value = 100;
+      } else {
+        ptr->value = 0; /* remove the move - not forcing */
+      }
+    }
+  }
+}
+
 static MOVEVAL capture_value(const MOVE * move) {
+  if (move->castle & IS_CASTLE) {
+    return 10;
+  }
   switch (move->capture) {
+
     case NO_PIECE:
-    /* maximum capture is capturing queen with pawn +80 to minimum capture -80 offset by 80 this puts non captures in
-     * the middle, but 160 still being smaller than the killers
-     */
-    return 80;
+    return 10;
 
     case KING:
     /* invalid move, will be ignored by the search, move it to the end */
     return 0;
 
     default:
-      return (piece_values[move->capture] - piece_values[move->piece]) + 90;
+      return piece_values[move->capture] + 10;
   }
 }
 

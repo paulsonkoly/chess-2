@@ -16,8 +16,6 @@ typedef struct _BOARD_ {
      BITBOARD blackpieces;
    } by_colour;
 
-   BITBOARD attacks[2];
-
    COLOUR next;
    SQUARE en_passant;
    CASTLE castle;

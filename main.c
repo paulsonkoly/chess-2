@@ -24,7 +24,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 
 #include "chess.h"
-#include "movegen.h"
+#include "attacks.h"
 #include "uci.h"
 
 void print_bitboard(BITBOARD bb) {

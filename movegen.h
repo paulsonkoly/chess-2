@@ -10,8 +10,4 @@
 
 void add_moves(const BOARD * board, int only_captures);
 
-BITBOARD in_check(const BOARD * board, COLOUR colour);
-
-void initialize_magic();
-
 #endif /* ifndef _MOVEGEN_H_ */

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+#include "attacks.h"
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"

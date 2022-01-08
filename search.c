@@ -6,9 +6,11 @@
 #include <time.h>
 #include <sys/select.h>
 
+#include "attacks.h"
 #include "movegen.h"
 #include "moveexec.h"
 #include "movelist.h"
+#include "chess.h"
 
 static struct timespec start;
 

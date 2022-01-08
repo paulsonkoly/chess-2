@@ -21,9 +21,6 @@ BOARD * initial_board() {
   board->by_colour.whitepieces = 0x000000000000ffff;
   board->by_colour.blackpieces = 0xffff000000000000;
 
-  board->attacks[WHITE] = 0;
-  board->attacks[BLACK] = 0;
-
   board->next = WHITE;
   board->en_passant = NO_SQUARE;
   board->castle = ALL_CASTLES;
@@ -94,9 +91,6 @@ BOARD * parse_fen(const char * fen) {
     r = *ptr - '1';
     board->en_passant = r * 8 + f;
   }
-
-  board->attacks[WHITE] = 0;
-  board->attacks[BLACK] = 0;
 
   return board;
 }

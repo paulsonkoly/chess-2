@@ -1,8 +1,10 @@
+#include "movelist.h"
+
 #include <stdlib.h>
 
-#include "movelist.h"
+#include "attacks.h"
 #include "moveexec.h"
-#include "movegen.h"
+#include "chess.h"
 
 #define MAX_MOVES 2048
 #define MAX_PLYS  64

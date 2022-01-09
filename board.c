@@ -95,9 +95,7 @@ BOARD * parse_fen(const char * fen) {
   return board;
 }
 
-PIECE piece_at_board(const BOARD* board, SQUARE sq) {
-  BITBOARD bb = (BITBOARD)1 << sq;
-
+PIECE piece_at_board(const BOARD* board, BITBOARD bb) {
   if (board->pawns & bb) return PAWN;
   if (board->knights & bb) return KNIGHT;
   if (board->bishops & bb) return BISHOP;
@@ -124,7 +122,7 @@ void print_board(const BOARD* board) {
   for (SQUARE r = 56; r < 64; r -= 8) {
     for (SQUARE f = 0; f != 8; f += 1) {
       SQUARE sq = r | f;
-      PIECE p = piece_at_board(board, sq);
+      PIECE p = piece_at_board(board, 1ULL << sq);
       COLOUR c = colour_at_board(board, sq);
 
       printf("%c", s[6 * c + p]);
@@ -142,7 +140,7 @@ void print_fen(const BOARD* board) {
   for (SQUARE r = 56; r < 64; r -= 8) {
     for (SQUARE f = 0; f != 8; f += 1) {
       SQUARE sq = r | f;
-      PIECE p = piece_at_board(board, sq);
+      PIECE p = piece_at_board(board, 1ULL << sq);
       COLOUR c = colour_at_board(board, sq);
 
       if (p) {
@@ -170,8 +168,9 @@ void print_fen(const BOARD* board) {
   if (board->castle & CALC_CASTLE(BLACK, SHORT_CASTLE)) printf("k");
   if (board->castle & CALC_CASTLE(BLACK, LONG_CASTLE)) printf("q");
 
-  if (board->en_passant != NO_SQUARE) {
-    SQUARE f = (board->en_passant & 7), r = (board->en_passant >> 3);
+  if (board->en_passant) {
+    SQUARE ep = ffsl(board->en_passant) - 1;
+    SQUARE f = (ep & 7), r = (ep >> 3);
 
     printf(" %c%c 0 1 ", 'a' + f, '1' + r);
   }

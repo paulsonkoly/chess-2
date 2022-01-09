@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SELF="./a.out"
+SELF="./chess2"
 STOCKFISH=stockfish
 
 STOCKFISHTMP=`mktemp /tmp/XXXXX`
@@ -10,7 +10,10 @@ STOCKFISHTMP=`mktemp /tmp/XXXXX`
 HEREDOC
 
 MYTEMP=`mktemp /tmp/XXXXX`
-$SELF $1 "$2" | sort -k 7 > $MYTEMP
+($SELF | sort -k 7 > $MYTEMP) << HEREDOC
+position fen $2
+go perft $1
+HEREDOC
 MYTEMPRESULTS=`mktemp /tmp/XXXXX`
 cut -f7-9 -d\  $MYTEMP > $MYTEMPRESULTS
 

@@ -90,7 +90,7 @@ static const MOVEVAL piece_values[] = { 0, 10, 30, 32, 50, 90 };
 
 static void forcing_weights(const BOARD * board) {
   for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
-    if (!(ptr->castle & IS_CASTLE) && ptr->capture != NO_PIECE) {
+    if (ptr->capture != NO_PIECE) {
       ptr->value = piece_values[ptr->capture];
     } else {
       BOARD copy = *board;
@@ -107,9 +107,6 @@ static void forcing_weights(const BOARD * board) {
 }
 
 static MOVEVAL capture_value(const MOVE * move) {
-  if (move->castle & IS_CASTLE) {
-    return 10;
-  }
   switch (move->capture) {
 
     case NO_PIECE:

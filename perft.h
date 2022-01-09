@@ -3,6 +3,6 @@
 
 #include "board.h"
 
-unsigned long long perft(const BOARD * board, int depth, int print);
+unsigned long long perft(BOARD * board, int depth, int print);
 
 #endif /* ifndef _PERFT_H_ */

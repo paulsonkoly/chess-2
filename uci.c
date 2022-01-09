@@ -79,7 +79,10 @@ void uci() {
     char * line = NULL;
     size_t count;
 
-    count = getline(&line, &count, stdin);
+    if (-1 == getline(&line, &count, stdin)) {
+      exit(0);
+    }
+
     UCI_CMD * cmd;
 
     if (NULL == (cmd = uci_parse(line))) {

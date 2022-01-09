@@ -16,8 +16,9 @@ typedef struct _BOARD_ {
      BITBOARD blackpieces;
    } by_colour;
 
+   BITBOARD en_passant;
+
    COLOUR next;
-   SQUARE en_passant;
    CASTLE castle;
 
 } BOARD;
@@ -29,7 +30,7 @@ typedef struct _BOARD_ {
 
 BOARD * initial_board();
 BOARD * parse_fen(const char * fen);
-PIECE piece_at_board(const BOARD* board, SQUARE sq);
+PIECE piece_at_board(const BOARD* board, BITBOARD bb);
 COLOUR colour_at_board(const BOARD* board, SQUARE sq);
 void print_board(const BOARD* board);
 void print_fen(const BOARD* board);

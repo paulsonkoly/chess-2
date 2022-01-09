@@ -8,8 +8,7 @@
 #include "moveexec.h"
 #include "movelist.h"
 
-unsigned long long perft(const BOARD * board, int depth, int print) {
-  BOARD copy;
+unsigned long long perft(BOARD * board, int depth, int print) {
   unsigned long long int count = 0;
 
   if (depth == 0) {
@@ -21,18 +20,21 @@ unsigned long long perft(const BOARD * board, int depth, int print) {
   add_moves(board, ALL_MOVES);
 
   for (MOVE * ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
-    copy = *board;
     unsigned long long int current;
 
-    execute_move(&copy, ptr);
+    execute_move(board, ptr);
 
-    if (in_check(&copy, 1 - copy.next)) {
+    if (in_check(board, 1 - board->next)) {
+      undo_move(board, ptr);
+
       continue;
     }
 
-    if (print) print_fen(&copy);
+    if (print) print_fen(board);
 
-    current = perft(&copy, depth - 1, 0);
+    current = perft(board, depth - 1, 0);
+
+    undo_move(board, ptr);
 
     if (print) {
       print_move(ptr);

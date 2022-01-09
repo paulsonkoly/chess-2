@@ -59,7 +59,7 @@ unsigned long long int time_delta() {
 extern int stopped;
 extern unsigned long long movetime;
 
-int quiesce(const BOARD * board, int alpha, int beta) {
+int quiesce(BOARD * board, int alpha, int beta) {
   MOVE * ptr;
   int legal_found = 0;
   int stand_pat;
@@ -69,16 +69,14 @@ int quiesce(const BOARD * board, int alpha, int beta) {
   add_moves(board, ALL_MOVES);
 
   for (ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
-    BOARD copy;
+    execute_move(board, ptr);
 
-    copy = *board;
-
-    execute_move(&copy, ptr);
-
-    if (! in_check(&copy, 1 - copy.next)) {
+    if (! in_check(board, 1 - board->next)) {
+      undo_move(board, ptr);
       legal_found = 1;
       break;
     }
+    undo_move(board, ptr);
   }
 
   if (!legal_found) {
@@ -103,17 +101,17 @@ int quiesce(const BOARD * board, int alpha, int beta) {
 
   for (ptr = ml_forcing(board); ptr != NULL; ptr = ptr->next) {
     int score;
-    BOARD copy;
 
-    copy = *board;
+    execute_move(board, ptr);
 
-    execute_move(&copy, ptr);
-
-    if (in_check(&copy, 1 - copy.next)) {
+    if (in_check(board, 1 - board->next)) {
+      undo_move(board, ptr);
       continue;
     }
 
-    score = -quiesce(&copy, -beta, -alpha);
+    score = -quiesce(board, -beta, -alpha);
+
+    undo_move(board, ptr);
 
     if (score >= beta) {
       ml_close_frame();
@@ -128,9 +126,8 @@ int quiesce(const BOARD * board, int alpha, int beta) {
   return alpha;
 }
 
-int negascout(const BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer) {
+int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer) {
   MOVE lpv[30];
-  BOARD copy;
   int legal_found = 0;
   int score;
   int beta2;
@@ -166,19 +163,21 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOV
   beta2 = beta;
 
   for (MOVE * ptr = ml_sort(depth > 1 ? pv : NULL, depth, killer); ptr != NULL; ptr = ptr->next) {
-    copy = *board;
 
-    execute_move(&copy, ptr);
+    execute_move(board, ptr);
 
-    if (in_check(&copy, 1 - copy.next)) {
+    if (in_check(board, 1 - board->next)) {
+      undo_move(board, ptr);
       continue;
     }
 
-    score = -negascout(&copy, depth - 1, -beta2, -alpha, pv + 1, lpv, killer);
+    score = -negascout(board, depth - 1, -beta2, -alpha, pv + 1, lpv, killer);
 
     if (alpha < score && score < beta && legal_found) {
-      score = -negascout(&copy, depth - 1, -beta, -alpha, pv + 1, lpv, killer);
+      score = -negascout(board, depth - 1, -beta, -alpha, pv + 1, lpv, killer);
     }
+
+    undo_move(board, ptr);
 
     if (alpha < score || (alpha == score && !legal_found)) {
       if (depth > 1) {
@@ -213,7 +212,7 @@ int negascout(const BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOV
   return alpha;
 }
 
-int iterative_deepening(const BOARD * board, int max_depth) {
+int iterative_deepening(BOARD * board, int max_depth) {
   MOVE pvm[2][80];
   KILLER killer;
   int score = 0;

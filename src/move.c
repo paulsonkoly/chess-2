@@ -28,5 +28,5 @@ void print_move(const MOVE * move) {
 
   print_move_buffer(move, buffer);
 
-  printf("%s\n", buffer);
+  printf("%s", buffer);
 }

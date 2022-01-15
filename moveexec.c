@@ -46,11 +46,12 @@ void execute_move(BOARD * board, MOVE * move) {
     *my_colour ^= fromto;
 
     /* move the rook in castling and update castling rights */
-    if (move->castle) {
+    if (move->castle & IS_CASTLE) {
       board->rooks  ^= move->special;
       *my_colour    ^= move->special;
-      board->castle ^= move->castle;
     }
+
+    board->castle ^= (move->castle & ALL_CASTLES);
 
     /* take down the pawn and put up a promotion piece */
     if (move->promotion) {
@@ -108,11 +109,12 @@ void undo_move(BOARD * board, MOVE * move) {
       *my_promo     ^= move->special;
     }
 
+    board->castle ^= (move->castle & ALL_CASTLES);
+
     /* move the rook in castling and update castling rights */
-    if (move->castle) {
+    if (move->castle & IS_CASTLE) {
       board->rooks  ^= move->special;
       *my_colour    ^= move->special;
-      board->castle ^= move->castle;
     }
 
     /* move self piece back */

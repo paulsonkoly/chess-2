@@ -5,7 +5,7 @@
 
 #include "chess.h"
 
-/* #define IS_CASTLE  ((CASTLE)1 << 4) */
+#define IS_CASTLE  ((CASTLE)1 << 4)
 
 typedef uint8_t MOVEVAL;
 

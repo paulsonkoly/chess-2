@@ -119,6 +119,12 @@ void print_board(const BOARD* board) {
 
   const char * s = " pnbrqkPNBRQK";
 
+  if (board->castle & CALC_CASTLE(WHITE, SHORT_CASTLE)) printf("K");
+  if (board->castle & CALC_CASTLE(WHITE, LONG_CASTLE)) printf("Q");
+  if (board->castle & CALC_CASTLE(BLACK, SHORT_CASTLE)) printf("k");
+  if (board->castle & CALC_CASTLE(BLACK, LONG_CASTLE)) printf("q");
+  printf("\n");
+
   for (SQUARE r = 56; r < 64; r -= 8) {
     for (SQUARE f = 0; f != 8; f += 1) {
       SQUARE sq = r | f;

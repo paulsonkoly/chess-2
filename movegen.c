@@ -241,7 +241,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
         move->piece           = PAWN;
         move->promotion       = piece;
         move->en_passant      = board->en_passant;
-        move->castle          = 0;
+        move->castle          = castle_update(board, PAWN, to);
         move->capture         = piece_at_board(board, to);
       }
 
@@ -293,7 +293,7 @@ void add_castles(const BOARD * board) {
         move->piece      = KING;
         move->promotion  = NO_PIECE;
         move->en_passant = board->en_passant;
-        move->castle     = castle_update(board, KING, castle_king_from_to[c]);
+        move->castle     = IS_CASTLE | castle_update(board, KING, castle_king_from_to[c]);
         move->capture    = NO_PIECE;
       }
     }

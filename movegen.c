@@ -40,7 +40,7 @@ static CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
     castle |= (SHORT_CASTLE | LONG_CASTLE) << (board->next * 2);
   }
 
-  return board->castle & castle;
+  return board->castle ^ (board->castle & ~castle);
 }
 
 /* knight, bishop, rook, queen and king moves excluding specials like castling */

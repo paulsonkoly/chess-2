@@ -28,6 +28,7 @@ typedef struct _MOVE_ {
 } MOVE;
 
 void print_move(const MOVE * move);
+void print_move_buffer(const MOVE * move, char * buffer);
 
 #define MOVE_EQUAL(a, b)                                                            \
   ((a)->to == (b)->to && (a)->from == (b)->from && (a)->piece == (b)->piece)

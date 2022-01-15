@@ -1,3 +1,4 @@
 *.o
 *.d
 chess2
+test/test

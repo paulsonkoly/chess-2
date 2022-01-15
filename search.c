@@ -162,7 +162,7 @@ int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * np
 
   beta2 = beta;
 
-  for (MOVE * ptr = ml_sort(depth > 1 ? pv : NULL, depth, killer); ptr != NULL; ptr = ptr->next) {
+  for (MOVE * ptr = ml_sort(board, depth > 1 ? pv : NULL, depth, killer); ptr != NULL; ptr = ptr->next) {
 
     execute_move(board, ptr);
 

@@ -16,10 +16,9 @@ if ((ba) != (bb)) {                                                             
 }
 #endif
 
-void execute_move(BOARD * board, MOVE * move) {
+void execute_move(BOARD * board, const MOVE * move) {
   BITBOARD * opp_piece  = & board->pawns + (move->capture - PAWN);
   BITBOARD * opp_colour = (BITBOARD *)(& board->by_colour) + (1 - board->next);
-
   BITBOARD * my_piece   = & board->pawns + (move->piece - PAWN);
   BITBOARD * my_colour  = (BITBOARD *)(& board->by_colour) + board->next;
 
@@ -80,7 +79,7 @@ void execute_move(BOARD * board, MOVE * move) {
 #endif
 }
 
-void undo_move(BOARD * board, MOVE * move) {
+void undo_move(BOARD * board, const MOVE * move) {
   board->next = 1- board->next;
 
   BITBOARD * opp_piece  = & board->pawns + (move->capture - PAWN);

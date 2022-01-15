@@ -1,6 +1,7 @@
 #include "movegen.h"
 
 #include <strings.h>
+#include <stdlib.h>
 
 #include "chess.h"
 #include "move.h"
@@ -298,6 +299,48 @@ void add_castles(const BOARD * board) {
       }
     }
   }
+}
+
+MOVE * add_least_valuable_attacker(const BOARD * board, const MOVE * capture) {
+  BITBOARD from;
+  BITBOARD to       = capture->to;
+  BITBOARD mypieces = NEXT_COLOUR_BB(board);
+  PIECE attacker    = NO_PIECE;
+  SQUARE sq         = ffsl(to) - 1;
+
+  if ((from = pawn_captures(to & ~PROMOTIONS, 1 - board->next) & mypieces & board->pawns)) {
+    attacker = PAWN;
+  } else if ((from = knight_attacks[sq] & mypieces & board->knights)) {
+    attacker = KNIGHT;
+  } else if ((from = bishop_bitboard(board, sq) & mypieces & board->bishops)) {
+    attacker = BISHOP;
+  } else if ((from = rook_bitboard(board, sq) & mypieces & board->rooks)) {
+    attacker = ROOK;
+  } else if ((from = (bishop_bitboard(board, sq) | rook_bitboard(board, sq)) & mypieces & board->queens)) {
+    attacker = QUEEN;
+  } else if ((from = king_attacks[sq] & mypieces & board->kings)) {
+    attacker = KING;
+  }
+
+  if (from) {
+    MOVE * move = ml_allocate();
+
+    from &= - from;
+
+    move->value      = 0;
+    move->from       = from;
+    move->special    = 0;
+    move->to         = to;
+    move->piece      = attacker;
+    move->capture    = capture->promotion ? capture->promotion : capture->piece;
+    move->promotion  = NO_PIECE; /* TODO */
+    move->en_passant = board->en_passant;
+    move->castle     = castle_update(board, attacker, to);
+
+    return move;
+  }
+
+  return NULL;
 }
 
 void add_moves(const BOARD * board, int only_captures) {

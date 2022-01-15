@@ -7,7 +7,7 @@
 
 #define IS_CASTLE  ((CASTLE)1 << 4)
 
-typedef uint8_t MOVEVAL;
+typedef int MOVEVAL;
 
 typedef struct _MOVE_ {
 

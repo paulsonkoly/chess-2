@@ -11,10 +11,10 @@ void ml_close_frame();
 
 MOVE * ml_allocate();
 
-MOVE * ml_sort(const MOVE * pv, int depth, const KILLER * killer);
+MOVE * ml_sort(BOARD * board, const MOVE * pv, int depth, const KILLER * killer);
 
 MOVE * ml_first();
 
-MOVE * ml_forcing(const BOARD * board);
+MOVE * ml_forcing(BOARD * board);
 
 #endif /* ifndef _MOVELIST_H_ */

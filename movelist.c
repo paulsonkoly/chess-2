@@ -1,10 +1,12 @@
 #include "movelist.h"
 
 #include <stdlib.h>
+#include <limits.h>
 
 #include "attacks.h"
 #include "moveexec.h"
 #include "chess.h"
+#include "see.h"
 
 #define MAX_MOVES 2048
 #define MAX_PLYS  64
@@ -51,13 +53,12 @@ MOVE * ml_allocate() {
   return ret;
 }
 
-static void heuristic_weights(const MOVE * pv, int depth, const KILLER * killer);
-static void forcing_weights(const BOARD * board);
-static MOVEVAL capture_value(const MOVE * ptr);
+static void heuristic_weights(BOARD * board, const MOVE * pv, int depth, const KILLER * killer);
+static void forcing_weights(BOARD * board);
 static void sort();
 
-MOVE * ml_sort(const MOVE * pv, int depth, const KILLER * killer) {
-  heuristic_weights(pv, depth, killer);
+MOVE * ml_sort(BOARD * board, const MOVE * pv, int depth, const KILLER * killer) {
+  heuristic_weights(board, pv, depth, killer);
   sort();
   return first[ply];
 }
@@ -66,58 +67,53 @@ MOVE * ml_first() {
   return first[ply];
 }
 
-MOVE * ml_forcing(const BOARD * board) {
+MOVE * ml_forcing(BOARD * board) {
   forcing_weights(board);
   sort();
   return first[ply];
 }
 
-static void heuristic_weights(const MOVE * pv, int depth, const KILLER * killer) {
+static void heuristic_weights(BOARD* board, const MOVE * pv, int depth, const KILLER * killer) {
   for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
     if (pv != NULL && MOVE_EQUAL(pv, ptr)) {
-      ptr->value = 200;
+      ptr->value = 10100;
     } else if (killer != NULL && is_killer(killer, depth, 1, ptr)) {
-      ptr->value = 190;
+      ptr->value = 10090;
     } else if (killer != NULL && is_killer(killer, depth, 2, ptr)) {
-      ptr->value = 180;
+      ptr->value = 10080;
     } else {
-      ptr->value = capture_value(ptr);
-    }
-  }
-}
+      switch (ptr->capture) {
 
-static const MOVEVAL piece_values[] = { 0, 10, 30, 32, 50, 90 };
+        case NO_PIECE:
+          ptr->value = 1000;
+          break;
 
-static void forcing_weights(const BOARD * board) {
-  for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
-    if (ptr->capture != NO_PIECE) {
-      ptr->value = piece_values[ptr->capture];
-    } else {
-      BOARD copy = *board;
+        case KING:
+          ptr->value = 0;
+          break;
 
-      execute_move(&copy, ptr);
-
-      if (in_check(&copy, copy.next)) {
-        ptr->value = 100;
-      } else {
-        ptr->value = 0; /* remove the move - not forcing */
+        default:
+          ptr->value = see_capture(board, ptr) + 1000;
       }
     }
   }
 }
 
-static MOVEVAL capture_value(const MOVE * move) {
-  switch (move->capture) {
+static void forcing_weights(BOARD * board) {
+  for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
+    if (ptr->capture != NO_PIECE) {
+      ptr->value = see_capture(board, ptr) + 1000;
+    } else {
+      execute_move(board, ptr);
 
-    case NO_PIECE:
-    return 10;
+      if (in_check(board, board->next)) {
+        ptr->value = 1000;
+      } else {
+        ptr->value = 0; /* remove the move - not forcing */
+      }
 
-    case KING:
-    /* invalid move, will be ignored by the search, move it to the end */
-    return 0;
-
-    default:
-      return piece_values[move->capture] + 10;
+      undo_move(board, ptr);
+    }
   }
 }
 
@@ -126,7 +122,7 @@ void sort() {
   first[ply] = NULL;
 
   while (1) {
-    MOVEVAL max = 255;
+    MOVEVAL max = INT_MAX;
     int any = 0;
 
     for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {

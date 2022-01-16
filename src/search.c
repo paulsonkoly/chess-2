@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/select.h>
+#include <limits.h>
 
 #include "attacks.h"
 #include "evaluate.h"
@@ -127,12 +128,30 @@ int quiesce(BOARD * board, int alpha, int beta) {
   return alpha;
 }
 
-int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer) {
+/* * 100 */
+static const int log[] = {
+  -INT_MAX,
+  0   ,  69  ,  109 ,  138 ,  160 ,  179 ,  194 ,  207 ,  219 ,  230,
+  239 ,  248 ,  256 ,  263 ,  270 ,  277 ,  283 ,  289 ,  294 ,  299,
+  304 ,  309 ,  313 ,  317 ,  321 ,  325 ,  329 ,  333 ,  336 ,  340,
+  343 ,  346 ,  349 ,  352 ,  355 ,  358 ,  361 ,  363 ,  366 ,  368,
+  371 ,  373 ,  376 ,  378 ,  380 ,  382 ,  385 ,  387 ,  389 ,  391,
+  393 ,  395 ,  397 ,  398 ,  400 ,  402 ,  404 ,  406 ,  407 ,  409
+};
+
+static int lmr(int depth, int count) {
+  int value = (log[depth] * log[count] / 19500);
+
+  return value > depth - 1 ? 0 : depth - 1 - value;
+}
+
+int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer) {
   MOVE lpv[30];
   int legal_found = 0;
   int score;
   int beta2;
   unsigned long long delta;
+  int count;
 
   if (stopped) {
     return -1;
@@ -152,7 +171,7 @@ int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * np
     }
   }
 
-  if (depth == 0) {
+  if (reduced_depth == 0) {
     return quiesce(board, alpha, beta);
     /* return colour * evaluate(board); */
   }
@@ -163,6 +182,8 @@ int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * np
 
   beta2 = beta;
 
+  count = 1;
+
   for (MOVE * ptr = ml_sort(board, depth > 1 ? pv : NULL, depth, killer); ptr != NULL; ptr = ptr->next) {
 
     execute_move(board, ptr);
@@ -172,10 +193,10 @@ int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * np
       continue;
     }
 
-    score = -negascout(board, depth - 1, -beta2, -alpha, pv + 1, lpv, killer);
+    score = -negascout(board, depth - 1, lmr(reduced_depth, count), -beta2, -alpha, pv + 1, lpv, killer);
 
     if (alpha < score && score < beta && legal_found) {
-      score = -negascout(board, depth - 1, -beta, -alpha, pv + 1, lpv, killer);
+      score = -negascout(board, depth - 1, lmr(reduced_depth, count), -beta, -alpha, pv + 1, lpv, killer);
     }
 
     undo_move(board, ptr);
@@ -199,6 +220,8 @@ int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * np
     }
 
     beta2 = alpha + 1;
+
+    count++;
   }
 
   ml_close_frame();
@@ -233,7 +256,7 @@ int iterative_deepening(BOARD * board, int max_depth) {
 
     printf("info depth %d\n", depth);
 
-    score = negascout(board, depth , -10000, 10000, pvm[1 - pvm_bank], pvm[pvm_bank], &killer);
+    score = negascout(board, depth, depth , -10000, 10000, pvm[1 - pvm_bank], pvm[pvm_bank], &killer);
 
     /* if (board->next == BLACK) { */
     /*   score *= -1; */

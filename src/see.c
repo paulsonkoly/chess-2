@@ -6,31 +6,6 @@
 
 static const int piece_value[] = {0, 100, 325, 400, 500, 900, 10000};
 
-#include <stdio.h>
-
-int see(BOARD * board, const MOVE * move) {
-  int value = 0;
-
-  MOVE * response;
-
-  execute_move(board, move);
-
-  ml_open_frame();
-
-  if ((response = add_least_valuable_attacker(board, move))) {
-
-    value = piece_value[response->capture] - see(board, response);
-
-    value = value < 0 ? 0 : value;
-  }
-
-  ml_close_frame();
-
-  undo_move(board, move);
-
-  return value;
-}
-
 static int see__(BOARD * board, const MOVE * move) {
   int value = 0;
 
@@ -50,7 +25,7 @@ static int see__(BOARD * board, const MOVE * move) {
   return value;
 }
 
-int see_capture(BOARD * board, const MOVE * move) {
+int see(BOARD * board, const MOVE * move) {
   int value = piece_value[move->capture];
 
   ml_open_frame();

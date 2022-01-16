@@ -119,9 +119,24 @@ static void see_capture_test(void ** state) {
   c2d4.en_passant      = b->en_passant;
   c2d4.castle          = 0;
 
-  assert_int_equal(-225, see_capture(b, &c2d4));
+  assert_int_equal(-225, see(b, &c2d4));
 }
 
+static void see_test(void ** state) {
+  BOARD * b = parse_fen("7k/2b5/8/8/2N5/1R6/8/7K w - - 0 4");
+  MOVE b3b6;
+
+  b3b6.from            = (BITBOARD)1 << 17;
+  b3b6.to              = (BITBOARD)1 << 41;
+  b3b6.special         = 0;
+  b3b6.piece           = ROOK;
+  b3b6.capture         = 0;
+  b3b6.promotion       = NO_PIECE;
+  b3b6.en_passant      = b->en_passant;
+  b3b6.castle          = 0;
+
+  assert_int_equal(-100, see(b, &b3b6));
+}
 
 int main(void) {
   initialize_magic();
@@ -136,7 +151,8 @@ int main(void) {
     cmocka_unit_test(perft_unit_test_talkchess5),
     cmocka_unit_test(forcing_moves_count_test),
     cmocka_unit_test(forcing_moves_test),
-    cmocka_unit_test(see_capture_test)
+    cmocka_unit_test(see_capture_test),
+    cmocka_unit_test(see_test),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

@@ -82,19 +82,7 @@ static void heuristic_weights(BOARD* board, const MOVE * pv, int depth, const KI
     } else if (killer != NULL && is_killer(killer, depth, 2, ptr)) {
       ptr->value = 10080;
     } else {
-      switch (ptr->capture) {
-
-        case NO_PIECE:
-          ptr->value = 1000;
-          break;
-
-        case KING:
-          ptr->value = 0;
-          break;
-
-        default:
-          ptr->value = see_capture(board, ptr) + 1000;
-      }
+      ptr->value = see(board, ptr) + 1000;
     }
   }
 }
@@ -102,7 +90,7 @@ static void heuristic_weights(BOARD* board, const MOVE * pv, int depth, const KI
 static void forcing_weights(BOARD * board) {
   for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
     if (ptr->capture != NO_PIECE) {
-      ptr->value = see_capture(board, ptr) + 1000;
+      ptr->value = see(board, ptr) + 1000;
     } else {
       execute_move(board, ptr);
 

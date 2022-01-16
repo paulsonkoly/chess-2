@@ -7,6 +7,7 @@
 #include <sys/select.h>
 
 #include "attacks.h"
+#include "evaluate.h"
 #include "movegen.h"
 #include "moveexec.h"
 #include "movelist.h"
@@ -83,7 +84,7 @@ int quiesce(BOARD * board, int alpha, int beta) {
     ml_close_frame();
 
     if (in_check(board, board->next))
-      return -1000;
+      return -10000;
     else
       return 0;
   }
@@ -204,7 +205,7 @@ int negascout(BOARD* board, int depth, int alpha, int beta, MOVE * pv, MOVE * np
 
   if (!legal_found) {
     if (in_check(board, board->next))
-      return (board->next == WHITE ? -1000 : 1000);
+      return (board->next == WHITE ? -10000 : 10000);
     else
       return 0;
   }
@@ -232,7 +233,7 @@ int iterative_deepening(BOARD * board, int max_depth) {
 
     printf("info depth %d\n", depth);
 
-    score = negascout(board, depth , -1000, 1000, pvm[1 - pvm_bank], pvm[pvm_bank], &killer);
+    score = negascout(board, depth , -10000, 10000, pvm[1 - pvm_bank], pvm[pvm_bank], &killer);
 
     /* if (board->next == BLACK) { */
     /*   score *= -1; */
@@ -242,7 +243,7 @@ int iterative_deepening(BOARD * board, int max_depth) {
 
     delta = time_delta();
 
-    printf("info score cp %d depth %d time %llu pv ", 10 * score, depth, delta);
+    printf("info score cp %d depth %d time %llu pv ", score, depth, delta);
 
     for (int i = 0; i < depth; ++i) {
       print_move(&pvm[pvm_bank][i]);
@@ -254,7 +255,7 @@ int iterative_deepening(BOARD * board, int max_depth) {
 
     bestmove = pvm[pvm_bank];
 
-    if (score <= -1000 || score >= 1000) break;
+    if (score <= -10000 || score >= 10000) break;
   }
 
   if (bestmove) {

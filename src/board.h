@@ -35,6 +35,4 @@ COLOUR colour_at_board(const BOARD* board, SQUARE sq);
 void print_board(const BOARD* board);
 void print_fen(const BOARD* board);
 
-int evaluate(const BOARD * board);
-
 #endif /* ifndef _BOARD_H_ */

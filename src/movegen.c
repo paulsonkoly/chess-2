@@ -32,7 +32,7 @@ static BITBOARD normal_attacks(const BOARD * board, PIECE piece, SQUARE sq, BITB
   }
 }
 
-static CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
+CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
   CASTLE castle =
     ((fromto & ((BITBOARD)1 << 0)) << 1)   | ((fromto & ((BITBOARD)1 << 7)) >> 7) |
     ((fromto & ((BITBOARD)1 << 56)) >> 53) | ((fromto & ((BITBOARD)1 << 63)) >> 61);
@@ -260,6 +260,10 @@ static const BITBOARD castle_king_from_to[4] = {
 static const BITBOARD castle_rook_from_to[4] = {
   0x00000000000000a0, 0x0000000000000009, 0xa000000000000000, 0x0900000000000000
 };
+
+BITBOARD castling_rook_from_to(CASTLE castle) {
+  return castle_rook_from_to[castle];
+}
 
 /* from 0000...010.....010.... you get
  *      0000000001111111000000

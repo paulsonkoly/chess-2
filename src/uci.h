@@ -1,9 +1,11 @@
 #ifndef _UCI_H_
 #define _UCI_H_
 
+#define MOVE_BUFFER_LEN 1024
+
 enum UCI_TYPE { INVALID, UCI, IS_READY, GO, POSITION };
 enum UCI_GO_TYPE { INFINITE, DEPTH, MOVETIME, PERFT };
-enum UCI_POSITION_TYPE { FEN };
+enum UCI_POSITION_TYPE { FEN, STARTPOS };
 
 typedef struct _UCI_CMD_ {
 
@@ -24,6 +26,7 @@ typedef struct _UCI_CMD_ {
       enum UCI_POSITION_TYPE type;
       union POSITION_DATA {
         const char * fen;
+        const char * moves;
       } data;
     } position;
 

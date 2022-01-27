@@ -3,6 +3,9 @@
 #include <stdio.h>
 
 #include "board.h"
+#include "move.h"
+#include "movegen.h"
+#include "moveexec.h"
 
 BOARD * initial_board() {
   BOARD * board;
@@ -93,6 +96,75 @@ BOARD * parse_fen(const char * fen) {
   }
 
   return board;
+}
+
+void play_uci_moves(BOARD * board, const char * moves) {
+  MOVE move;
+
+  for (; *moves == ' '; ++moves);
+
+  while ((*moves) != '\n') {
+    PIECE promotion = NO_PIECE;
+    SQUARE ff, fr, tf, tr;
+    BITBOARD from;
+    BITBOARD to;
+    BITBOARD special = 0;
+    PIECE piece;
+    PIECE capture;
+    CASTLE castle = NO_CASTLE;
+    BITBOARD en_passant = board->en_passant;
+
+    ff = *moves     - 'a';
+    fr = *(moves+1) - '1';
+    tf = *(moves+2) - 'a';
+    tr = *(moves+3) - '1';
+
+    from = (BITBOARD)1 << (fr * 8 + ff);
+    to   = (BITBOARD)1 << (tr * 8 + tf);
+
+    switch (*(moves + 4)) {
+      case 'q': promotion = QUEEN;  break;
+      case 'r': promotion = ROOK;   break;
+      case 'b': promotion = BISHOP; break;
+      case 'n': promotion = KNIGHT; break;
+    }
+
+    piece = piece_at_board(board, from);
+    capture = piece_at_board(board, to);
+
+    if (piece == PAWN && ((fr - tr) == 2 || (tr - fr) == 2)) {
+      SQUARE epr = (fr + tr) / 2;
+
+      en_passant |= ((BITBOARD)1 << (epr * 8 + ff));
+    }
+
+    if (promotion != NO_PIECE) {
+      special = to;
+    } else if (piece == PAWN && ff != tf && capture == NO_PIECE) {
+      special = ((BITBOARD)1 << (fr * 8 + tf));
+      capture = PAWN;
+    } else if (piece == KING && ((ff - tf) == 2 || (tf - ff) == 2)) {
+      unsigned index = ((fr & BLACK) << 1) | (ff < tf ? 0 : 1);
+
+      special = castling_rook_from_to(index);
+      castle = IS_CASTLE;
+    }
+
+    move.from            = from;
+    move.to              = to;
+    move.special         = special;
+    move.piece           = piece;
+    move.capture         = capture;
+    move.promotion       = promotion;
+    move.en_passant      = en_passant;
+    move.castle          = castle | castle_update(board, piece, from | to);
+
+    execute_move(board, & move);
+
+    moves += (promotion == NO_PIECE ? 4 : 5);
+
+    for (; *moves == ' '; ++moves);
+  }
 }
 
 PIECE piece_at_board(const BOARD* board, BITBOARD bb) {

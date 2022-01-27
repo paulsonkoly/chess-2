@@ -62,6 +62,16 @@ UCI_CMD * uci_parse(const char * line) {
       cmd->data.position.type = FEN;
       cmd->data.position.data.fen = line;
     }
+
+    if (strncmp(("startpos"), line, strlen("startpos")) == 0) {
+      line += strlen("startpos") + 1;
+      cmd->data.position.type = STARTPOS;
+
+      if (strncmp(("moves"), line, strlen("moves")) == 0) {
+        line += strlen("moves") + 1;
+      }
+      cmd->data.position.data.moves = line;
+    }
     return cmd;
   }
 
@@ -133,7 +143,15 @@ void uci() {
               board = parse_fen(cmd->data.position.data.fen);
 
               break;
+
+            case STARTPOS:
+              free(board);
+              board = initial_board();
+              play_uci_moves(board, cmd->data.position.data.moves);
+
+              break;
           }
+          break;
 
       default:;
     }

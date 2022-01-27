@@ -11,4 +11,7 @@
 MOVE * add_least_valuable_attacker(const BOARD * board, const MOVE * capture);
 void add_moves(const BOARD * board, int only_captures);
 
+CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto);
+BITBOARD castling_rook_from_to(CASTLE castle);
+
 #endif /* ifndef _MOVEGEN_H_ */

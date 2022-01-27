@@ -11,4 +11,5 @@ chess2: $(obj)
 
 .PHONY: clean
 clean:
+	@cd src && make clean
 	rm -f $(obj) chess2

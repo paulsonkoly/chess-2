@@ -12,6 +12,7 @@
 #include "movegen.h"
 #include "moveexec.h"
 #include "movelist.h"
+#include "pv.h"
 #include "chess.h"
 
 static struct timespec start;
@@ -145,8 +146,16 @@ static int lmr(int depth, int count) {
   return value > depth - 1 ? 0 : depth - 1 - value;
 }
 
-int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer) {
-  MOVE lpv[30];
+int negascout(BOARD* board,
+    int ply,
+    int depth,
+    int reduced_depth,
+    int alpha,
+    int beta,
+    const PV * opv,
+    PV ** npv,
+    KILLER * killer) {
+  PV * lpv;
   int legal_found = 0;
   int score;
   int beta2;
@@ -176,6 +185,8 @@ int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, M
     /* return colour * evaluate(board); */
   }
 
+  lpv = pv_init();
+
   ml_open_frame();
 
   add_moves(board, ALL_MOVES);
@@ -184,7 +195,7 @@ int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, M
 
   count = 1;
 
-  for (MOVE * ptr = ml_sort(board, depth > 1 ? pv : NULL, depth, killer); ptr != NULL; ptr = ptr->next) {
+  for (MOVE * ptr = ml_sort(board, pv_getmove(opv, ply), depth, killer); ptr != NULL; ptr = ptr->next) {
 
     execute_move(board, ptr);
 
@@ -193,19 +204,19 @@ int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, M
       continue;
     }
 
-    score = -negascout(board, depth - 1, lmr(reduced_depth, count), -beta2, -alpha, pv + 1, lpv, killer);
+    pv_reset(lpv);
+
+    score = -negascout(board, ply + 1, depth - 1, lmr(reduced_depth, count), -beta2, -alpha, opv, &lpv, killer);
 
     if (alpha < score && score < beta && legal_found) {
-      score = -negascout(board, depth - 1, lmr(reduced_depth, count), -beta, -alpha, pv + 1, lpv, killer);
+      score = -negascout(board, ply + 1, depth - 1, lmr(reduced_depth, count), -beta, -alpha, opv, &lpv, killer);
     }
 
     undo_move(board, ptr);
 
     if (alpha < score || (alpha == score && !legal_found)) {
-      if (depth > 1) {
-        memcpy(npv + 1, lpv, sizeof(MOVE) * (depth - 1));
-      }
-      *npv = *ptr;
+      pv_insert(lpv, ptr, ply);
+      pv_swap(&lpv, npv);
       alpha = score;
     }
 
@@ -213,6 +224,8 @@ int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, M
 
     if (alpha >= beta) {
       save_killer(killer, depth, ptr);
+
+      pv_destroy(lpv);
 
       ml_close_frame();
 
@@ -223,6 +236,8 @@ int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, M
 
     count++;
   }
+
+  pv_destroy(lpv);
 
   ml_close_frame();
 
@@ -237,18 +252,24 @@ int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, M
 }
 
 int iterative_deepening(BOARD * board, int max_depth) {
-  MOVE pvm[2][80];
+  PV * opv; /* old PV */
+  PV * npv; /* next PV */
   KILLER killer;
   int score = 0;
-  MOVE * bestmove = NULL;
+  const MOVE * bestmove = NULL;
   unsigned long long int delta;
 
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start)) {
     printf("info clock_gettime failed\n");
   }
 
+  if ((NULL == (opv = pv_init())) || (NULL == (npv = pv_init()))) {
+    return 0;
+  }
+
   for (int depth = 1; depth <= max_depth; ++depth) {
-    int pvm_bank = depth & 1;
+
+    pv_reset(npv);
 
     stopped = 0;
 
@@ -256,7 +277,7 @@ int iterative_deepening(BOARD * board, int max_depth) {
 
     printf("info depth %d\n", depth);
 
-    score = negascout(board, depth, depth , -10000, 10000, pvm[1 - pvm_bank], pvm[pvm_bank], &killer);
+    score = negascout(board, 0, depth, depth , -10000, 10000, opv, &npv, &killer);
 
     /* if (board->next == BLACK) { */
     /*   score *= -1; */
@@ -268,18 +289,26 @@ int iterative_deepening(BOARD * board, int max_depth) {
 
     printf("info score cp %d depth %d time %llu pv ", score, depth, delta);
 
-    for (int i = 0; i < depth; ++i) {
-      print_move(&pvm[pvm_bank][i]);
+    for (int i = 0; i < pv_count(npv); ++i) {
+      const MOVE * ptr = pv_getmove(npv, i);
+
+      if (i == 0) {
+        bestmove = ptr;
+      }
+      print_move(ptr);
       printf(" ");
     }
     printf("\n");
 
     fflush(stdout);
 
-    bestmove = pvm[pvm_bank];
-
     if (score <= -10000 || score >= 10000) break;
+
+    pv_swap(&opv, &npv);
   }
+
+  pv_destroy(opv);
+  pv_destroy(npv);
 
   if (bestmove) {
     printf("bestmove ");

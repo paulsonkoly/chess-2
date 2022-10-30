@@ -43,4 +43,6 @@ typedef uint64_t BITBOARD;
 
 typedef uint8_t CASTLE;
 
+#define MAX_PLYS 64
+
 #endif /* ifndef _CHESS_H_ */

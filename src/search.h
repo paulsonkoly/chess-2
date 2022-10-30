@@ -4,8 +4,17 @@
 #include "board.h"
 #include "move.h"
 #include "killer.h"
+#include "pv.h"
 
-int negascout(BOARD* board, int depth, int reduced_depth, int alpha, int beta, MOVE * pv, MOVE * npv, KILLER * killer);
+int negascout(BOARD* board,
+    int ply,
+    int depth,
+    int reduced_depth,
+    int alpha,
+    int beta,
+    const PV * opv,
+    PV ** npv,
+    KILLER * killer);
 
 int iterative_deepening(BOARD * board, int max_depth);
 

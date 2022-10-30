@@ -9,7 +9,7 @@
 #include "see.h"
 
 #define MAX_MOVES 2048
-#define MAX_PLYS  64
+
 
 /* --------------- ply0 -
  * move0                  <-frame[0]

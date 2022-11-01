@@ -307,14 +307,14 @@ int iterative_deepening(BOARD * board, int max_depth) {
     pv_swap(&opv, &npv);
   }
 
-  pv_destroy(opv);
-  pv_destroy(npv);
-
   if (bestmove) {
     printf("bestmove ");
     print_move(bestmove);
     printf("\n");
   }
+
+  pv_destroy(opv);
+  pv_destroy(npv);
 
   return score;
 }

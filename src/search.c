@@ -243,7 +243,7 @@ int negascout(BOARD* board,
 
   if (!legal_found) {
     if (in_check(board, board->next))
-      return (board->next == WHITE ? -10000 : 10000);
+      return -10000;
     else
       return 0;
   }

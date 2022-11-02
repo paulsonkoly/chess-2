@@ -69,8 +69,11 @@ UCI_CMD * uci_parse(const char * line) {
 
       if (strncmp(("moves"), line, strlen("moves")) == 0) {
         line += strlen("moves") + 1;
+        cmd->data.position.data.moves = line;
       }
-      cmd->data.position.data.moves = line;
+      else {
+        cmd->data.position.data.moves = NULL;
+      }
     }
     return cmd;
   }
@@ -147,7 +150,9 @@ void uci() {
             case STARTPOS:
               free(board);
               board = initial_board();
-              play_uci_moves(board, cmd->data.position.data.moves);
+              if (cmd->data.position.data.moves != NULL) {
+                play_uci_moves(board, cmd->data.position.data.moves);
+              }
 
               break;
           }

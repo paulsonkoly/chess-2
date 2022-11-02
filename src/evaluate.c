@@ -1,6 +1,7 @@
-#include "evaluate.h"
-
 #include <stdlib.h>
+
+#include "evaluate.h"
+#include "pawns.h"
 
 static const int piece_values[] = { 0, 100, 320, 330, 500, 900 };
 
@@ -94,6 +95,7 @@ static const int* bonuses[] = {
 
 int evaluate(const BOARD * board) {
   int value = 0;
+  int dir[] = {1, -1};
 
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
     for (PIECE piece = PAWN; piece <= KING; ++piece) {
@@ -116,6 +118,35 @@ int evaluate(const BOARD * board) {
 
         pieces &= pieces - 1;
       }
+    }
+
+    /* isolated pawns */
+    {
+      int count = isolated_count(board->pawns & COLOUR_BB(board, colour));
+
+      value -= dir[colour] * 33 * count;
+    }
+
+    /* passers */
+    {
+      BITBOARD my_pawns = board->pawns & COLOUR_BB(board, colour);
+      BITBOARD their_pawns = board->pawns & COLOUR_BB(board, 1 - colour);
+      BITBOARD bb = passers(my_pawns, their_pawns, colour);
+      static const int rank_values[] = {0, 30, 35, 45, 65, 105, 185, 345};
+
+      while (bb != 0) {
+        BITBOARD single = bb & - bb;
+        SQUARE rank = (ffsl(single) - 1) >> 3;
+
+        if (colour == BLACK) {
+          rank = 7 - rank;
+        }
+
+        value += dir[colour] * rank_values[rank];
+
+        bb &= bb - 1;
+      }
+
     }
   }
 

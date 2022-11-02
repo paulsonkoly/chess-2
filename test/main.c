@@ -10,6 +10,7 @@
 #include "movelist.h"
 #include "movegen.h"
 #include "see.h"
+#include "pawns.h"
 
 int stopped = 0;
 unsigned long long int movetime;
@@ -138,6 +139,19 @@ static void see_test(void ** state) {
   assert_int_equal(-100, see(b, &b3b6));
 }
 
+static void isolated_count_test() {
+  BITBOARD pawns = 0x00000000488a8900ULL;
+
+  assert_int_equal(3, isolated_count(pawns));
+}
+
+static void passers_test() {
+  BITBOARD our_pawns = 0x00000000000a2a00ULL;
+  BITBOARD their_pawns = 0x00c2000000000000ULL;
+
+  assert_int_equal(0x0000000000080000, passers(our_pawns, their_pawns, WHITE));
+}
+
 int main(void) {
   initialize_magic();
 
@@ -153,6 +167,8 @@ int main(void) {
     cmocka_unit_test(forcing_moves_test),
     cmocka_unit_test(see_capture_test),
     cmocka_unit_test(see_test),
+    cmocka_unit_test(isolated_count_test),
+    cmocka_unit_test(passers_test)
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

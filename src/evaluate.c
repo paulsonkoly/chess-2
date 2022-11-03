@@ -98,17 +98,23 @@ int evaluate(const BOARD * board) {
   int dir[] = {1, -1};
 
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
+    BITBOARD my_pawns    = board->pawns & COLOUR_BB(board, colour);
+    BITBOARD their_pawns = board->pawns & COLOUR_BB(board, 1 - colour);
+
+    BITBOARD iso  = isolated(my_pawns);
+    BITBOARD pass = passers(my_pawns, their_pawns, colour);
+    BITBOARD wk   = weak(my_pawns, colour);
+
     for (PIECE piece = PAWN; piece <= KING; ++piece) {
       BITBOARD pieces = *(&board->pawns + piece - PAWN) & COLOUR_BB(board, colour);
 
       while (pieces) {
         BITBOARD single = pieces & -pieces;
         SQUARE sq   = ffsl(single) - 1;
+        SQUARE rank = sq >> 3;
+        SQUARE file = sq & 7;
 
         if (colour == WHITE) {
-          SQUARE rank = sq >> 3;
-          SQUARE file = sq & 7;
-
           sq = ((7 - rank) << 3) | file;
           value += piece_values[piece] + bonuses[piece][sq];
         }
@@ -116,37 +122,21 @@ int evaluate(const BOARD * board) {
           value -= piece_values[piece] + bonuses[piece][sq];
         }
 
-        pieces &= pieces - 1;
-      }
-    }
+        if (single & iso) { /* isolated pawn */
+          value -= dir[colour] * 33;
+        } else if (single & pass) { /* passer */
+          static const int rank_values[] = {0, 30, 35, 45, 65, 105, 185, 345};
 
-    /* isolated pawns */
-    {
-      int count = isolated_count(board->pawns & COLOUR_BB(board, colour));
+          if (colour == BLACK) {
+            rank = 7 - rank;
+          }
 
-      value -= dir[colour] * 33 * count;
-    }
+          value += dir[colour] * rank_values[rank];
 
-    /* passers */
-    {
-      BITBOARD my_pawns = board->pawns & COLOUR_BB(board, colour);
-      BITBOARD their_pawns = board->pawns & COLOUR_BB(board, 1 - colour);
-      BITBOARD bb = passers(my_pawns, their_pawns, colour);
-      static const int rank_values[] = {0, 30, 35, 45, 65, 105, 185, 345};
-
-      while (bb != 0) {
-        BITBOARD single = bb & - bb;
-        SQUARE rank = (ffsl(single) - 1) >> 3;
-
-        if (colour == BLACK) {
-          rank = 7 - rank;
+        } else if (single & wk) { /* weak pawn */
+          value -= dir[colour] * 10;
         }
-
-        value += dir[colour] * rank_values[rank];
-
-        bb &= bb - 1;
       }
-
     }
   }
 

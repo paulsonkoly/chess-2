@@ -1,5 +1,6 @@
 #include "pawns.h"
 #include "chess.h"
+#include "attacks.h"
 
 #define AFILE 0x0101010101010101ULL
 #define BFILE 0x0202020202020202ULL
@@ -10,27 +11,21 @@
 #define GFILE 0x4040404040404040ULL
 #define HFILE 0x8080808080808080ULL
 
-static BITBOARD neighbouring_files[] = {
-  BFILE, AFILE | CFILE, BFILE | DFILE, CFILE | EFILE,
-  DFILE | FFILE, EFILE | GFILE, FFILE| HFILE, GFILE,
-};
+static BITBOARD fill(BITBOARD board) {
+  board |= board << 8;
+  board |= board << 16;
+  board |= board << 32;
+  board |= board >> 8;
+  board |= board >> 16;
+  board |= board >> 32;
 
-int isolated_count(BITBOARD pawns) {
-  int count = 0;
-  BITBOARD remaining = pawns;
+  return board;
+}
 
-  while (remaining) {
-    BITBOARD single = remaining & - remaining;
-    SQUARE file = (ffsl(single) - 1) & 7;
+BITBOARD isolated(BITBOARD pawns) {
+  BITBOARD filled = fill(pawns);
 
-    if ((neighbouring_files[file] & pawns) == 0) {
-      count += 1;
-    }
-
-    remaining &= remaining - 1;
-  }
-
-  return count;
+  return pawns & ~(((filled & ~ AFILE) >> 1) | ((filled & ~ HFILE) << 1));
 }
 
 static BITBOARD frontfill(BITBOARD board, COLOUR colour) {
@@ -73,4 +68,9 @@ BITBOARD passers(BITBOARD our_pawns, BITBOARD their_pawns, COLOUR colour) {
   enemycover |= ((enemycover & ~AFILE) >> 1) | ((enemycover & ~HFILE << 1));
 
   return frontline & ~ enemycover;
+}
+
+BITBOARD weak(BITBOARD pawns, COLOUR colour) {
+  BITBOARD captures = pawn_captures(pawns, colour);
+  return pawns & ~ captures;
 }

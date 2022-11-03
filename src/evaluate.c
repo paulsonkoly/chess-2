@@ -136,6 +136,8 @@ int evaluate(const BOARD * board) {
         } else if (single & wk) { /* weak pawn */
           value -= dir[colour] * 10;
         }
+
+        pieces &= pieces - 1;
       }
     }
   }

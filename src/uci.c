@@ -16,6 +16,12 @@ UCI_CMD * uci_parse(const char * line) {
     return NULL;
   }
 
+  if (strncmp(("ucinewgame"), line, strlen("ucinewgame")) == 0) {
+    cmd->type = UCINEWGAME;
+
+    return cmd;
+  }
+
   if (strncmp(("uci"), line, strlen("uci")) == 0) {
     cmd->type = UCI;
 

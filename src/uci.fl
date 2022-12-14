@@ -1,0 +1,41 @@
+%{
+#include "uci_tokens.h"
+%}
+
+%option noinput
+%option nounput
+%option noyywrap
+
+file       [a-h]
+rank       [1-8]
+spaces     [ \t]+
+number     [0-9]+
+rankitem   [pnbrqkPNBRQK1-8]{1,8}
+sidetomove [bw]
+castling   "K"?"Q"?"k"?"q"?
+enpassant  ({file}[36]|"-")
+ucimove    {file}{rank}{file}{rank}
+
+%%
+
+"ucinewgame" { return TOK_UCINEWGAME; }
+"uci"        { return TOK_UCI; }
+"isready"    { return TOK_IS_READY; }
+"go"         { return TOK_GO; }
+"depth"      { return TOK_DEPTH; }
+"perft"      { return TOK_PERFT; }
+"movetime"   { return TOK_MOVETIME; }
+"wtime"      { return TOK_WTIME; }
+"winc"       { return TOK_WINC; }
+"btime"      { return TOK_BTIME; }
+"binc"       { return TOK_BINC; }
+"infinite"   { return TOK_INFINITE; }
+"position"   { return TOK_POSITION; }
+"fen"        { return TOK_FEN; }
+({rankitem}"/"?){8}{spaces}{sidetomove}{spaces}{castling}{spaces}{enpassant}{spaces}{number}{spaces}{number} { return TOK_FEN_STRING; }
+"startpos"   { return TOK_STARTPOS; }
+"moves"      { return TOK_MOVES; }
+({ucimove}{spaces}?)+ { return TOK_MOVES_STRING; }
+{number}     { return TOK_NUMBER; }
+"\n"         { return TOK_EOL; }
+{spaces}     { ; }

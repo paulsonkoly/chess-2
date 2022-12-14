@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "uci.h"
+#include "uci_tokens.h"
 #include "board.h"
 #include "search.h"
 #include "perft.h"
@@ -11,82 +12,104 @@ extern unsigned long long movetime;
 
 UCI_CMD * uci_parse(const char * line) {
   UCI_CMD * cmd;
+  enum UCI_TOKEN tok;
 
   if (NULL == (cmd = malloc(sizeof(UCI_CMD)))) {
     return NULL;
   }
 
-  if (strncmp(("ucinewgame"), line, strlen("ucinewgame")) == 0) {
-    cmd->type = UCINEWGAME;
-
-    return cmd;
-  }
-
-  if (strncmp(("uci"), line, strlen("uci")) == 0) {
-    cmd->type = UCI;
-
-    return cmd;
-  }
-
-  if (strncmp(("isready"), line, strlen("isready")) == 0) {
-    cmd->type = IS_READY;
-
-    return cmd;
-  }
-
-  if (strncmp(("go"), line, strlen("go")) == 0) {
-    cmd->type = GO;
-    line += strlen("go") + 1;
-
-    if (strncmp(("depth"), line, strlen("depth")) == 0) {
-      line += strlen("depth") + 1;
-      cmd->data.go.type = DEPTH;
-      cmd->data.go.data.depth = atoi(line);
-    }
-
-    if (strncmp(("perft"), line, strlen("perft")) == 0) {
-      line += strlen("perft") + 1;
-      cmd->data.go.type = PERFT;
-      cmd->data.go.data.depth = atoi(line);
-    }
-
-    if (strncmp(("movetime"), line, strlen("movetime")) == 0) {
-      line += strlen("movetime") + 1;
-      cmd->data.go.type = MOVETIME;
-      cmd->data.go.data.movetime = atoll(line);
-    }
-
-    return cmd;
-  }
-
-  if (strncmp(("position"), line, strlen("position")) == 0) {
-    cmd->type = POSITION;
-    line += strlen("position") + 1;
-
-    if (strncmp(("fen"), line, strlen("fen")) == 0) {
-      line += strlen("fen") + 1;
-      cmd->data.position.type = FEN;
-      cmd->data.position.data.fen = line;
-    }
-
-    if (strncmp(("startpos"), line, strlen("startpos")) == 0) {
-      line += strlen("startpos") + 1;
-      cmd->data.position.type = STARTPOS;
-
-      if (strncmp(("moves"), line, strlen("moves")) == 0) {
-        line += strlen("moves") + 1;
-        cmd->data.position.data.moves = line;
-      }
-      else {
-        cmd->data.position.data.moves = NULL;
-      }
-    }
-    return cmd;
-  }
-
   cmd->type = INVALID;
+  cmd->data.go.data.wb_time.wtime = 0;
+  cmd->data.go.data.wb_time.winc = 0;
+  cmd->data.go.data.wb_time.btime = 0;
+  cmd->data.go.data.wb_time.binc = 0;
+
+  (void)yy_scan_string(line);
+
+  switch (tok = yylex()) {
+    case TOK_UCINEWGAME: case TOK_UCI: case TOK_IS_READY: cmd->type = (enum UCI_TYPE)tok; return cmd;
+
+    case TOK_GO:
+      cmd->type = GO;
+
+      while (tok != TOK_EOL) {
+
+        switch (tok = yylex()) {
+
+          case TOK_DEPTH: case TOK_PERFT:
+            cmd->data.go.type = (enum UCI_GO_TYPE)tok;
+            if (yylex() == TOK_NUMBER) {
+              cmd->data.go.data.depth = atoi(yyget_text());
+            }
+
+            return cmd;
+
+          case TOK_MOVETIME:
+            cmd->data.go.type = (enum UCI_GO_TYPE)tok;
+            if (yylex() == TOK_NUMBER) {
+              cmd->data.go.data.movetime = atoll(yyget_text());
+            }
+
+            return cmd;
+
+          case TOK_INFINITE: cmd->data.go.type = INFINITE; return cmd;
+
+          case TOK_WTIME: case TOK_WINC: case TOK_BTIME: case TOK_BINC:
+            cmd->data.go.type = WBTIME;
+            if (yylex() == TOK_NUMBER) {
+              unsigned long long * ptr = (& cmd->data.go.data.wb_time.wtime) + tok - TOK_WTIME;
+              *ptr = atoll(yyget_text());
+            }
+            break;
+
+          default: ;
+        }
+      }
+
+      break;
+
+    case TOK_POSITION:
+      cmd->type = POSITION;
+
+        switch (yylex()) {
+          case TOK_FEN:
+            cmd->data.position.type = FEN;
+            if (TOK_FEN_STRING == yylex()) {
+              cmd->data.position.data.fen = strdup(yyget_text());
+            }
+
+            return cmd;
+
+          case TOK_STARTPOS:
+            cmd->data.position.type = STARTPOS;
+            cmd->data.position.data.moves = NULL;
+
+            if (yylex() == TOK_MOVES && yylex() == TOK_MOVES_STRING) {
+              cmd->data.position.data.moves = strdup(yyget_text());
+            }
+
+          default: ;
+        }
+
+        break;
+
+    default: ;
+    }
 
   return cmd;
+}
+
+void uci_free(UCI_CMD * cmd) {
+  if (cmd->type == POSITION) {
+    if (cmd->data.position.type == FEN) {
+      free(cmd->data.position.data.fen);
+    }
+    if (cmd->data.position.type == STARTPOS && cmd->data.position.data.moves) {
+      free(cmd->data.position.data.moves);
+    }
+  }
+
+  free(cmd);
 }
 
 void uci() {
@@ -141,6 +164,9 @@ void uci() {
               iterative_deepening(board, 1000);
               break;
 
+            case WBTIME:
+              break;
+
           }
           break;
 
@@ -170,7 +196,7 @@ void uci() {
     fflush(stdout);
 
     free(line);
-    free(cmd);
+    uci_free(cmd);
 
   }
 }

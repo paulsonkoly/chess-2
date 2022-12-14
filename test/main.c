@@ -12,6 +12,8 @@
 #include "see.h"
 #include "pawns.h"
 
+#include "uci_tests.h"
+
 int stopped = 0;
 unsigned long long int movetime;
 
@@ -176,6 +178,19 @@ int main(void) {
     cmocka_unit_test(isolated_test),
     cmocka_unit_test(passers_test),
     cmocka_unit_test(weak_test),
+
+    cmocka_unit_test(uci_parser_test1),
+    cmocka_unit_test(uci_parser_test2),
+    cmocka_unit_test(uci_parser_test3),
+    cmocka_unit_test(uci_parser_test4),
+    cmocka_unit_test(uci_parser_test5),
+    cmocka_unit_test(uci_parser_test6),
+    cmocka_unit_test(uci_parser_test7),
+    cmocka_unit_test(uci_parser_test8),
+    cmocka_unit_test(uci_parser_test9),
+    cmocka_unit_test(uci_parser_test10),
+    cmocka_unit_test(uci_parser_test11),
+    cmocka_unit_test(uci_parser_test12),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

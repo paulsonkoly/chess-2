@@ -1,4 +1,6 @@
 *.o
 *.d
+*.yy.c
+.*
 chess2
 test/test

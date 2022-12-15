@@ -60,7 +60,7 @@ unsigned long long int time_delta() {
 }
 
 extern int stopped;
-extern unsigned long long movetime;
+unsigned long long movetime;
 
 int quiesce(BOARD * board, int alpha, int beta) {
   MOVE * ptr;
@@ -251,16 +251,47 @@ int negascout(BOARD* board,
   return alpha;
 }
 
-int iterative_deepening(BOARD * board, int max_depth) {
+#define MOVES_TO_GO 25
+
+int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
   PV * opv; /* old PV */
   PV * npv; /* next PV */
   KILLER killer;
+  int max_depth = 0;
   int score = 0;
   const MOVE * bestmove = NULL;
   unsigned long long int delta;
 
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start)) {
     printf("info clock_gettime failed\n");
+  }
+
+  switch (search_limit->type) {
+    case SL_INFINITE: max_depth = 1000; movetime = 0; break;
+    case SL_DEPTH: max_depth = search_limit->data.depth; movetime = 0; break;
+    case SL_MOVETIME: max_depth = 1000; movetime = search_limit->data.movetime; break;
+    case SL_WBTIME: {
+      unsigned long long time = 0;
+      unsigned long long inc = 0;
+
+      switch (board->next) {
+
+        case WHITE:
+          time = search_limit->data.wb_time.wtime;
+          inc = search_limit->data.wb_time.winc;
+          break;
+
+        case BLACK:
+          time = search_limit->data.wb_time.btime;
+          inc = search_limit->data.wb_time.binc;
+          break;
+      }
+
+      max_depth = 1000;
+      movetime = (time + MOVES_TO_GO * inc) / MOVES_TO_GO;
+
+      break;
+    }
   }
 
   if ((NULL == (opv = pv_init())) || (NULL == (npv = pv_init()))) {

@@ -17,12 +17,12 @@ typedef struct _UCI_CMD_ {
     struct GO {
 
       enum UCI_GO_TYPE type;
-      union GO_DATA {
+      union {
         int depth;
 
         unsigned long long movetime;
 
-        struct WB_TIME {
+        struct {
           unsigned long long wtime;
           unsigned long long winc;
           unsigned long long btime;

@@ -15,7 +15,6 @@
 #include "uci_tests.h"
 
 int stopped = 0;
-unsigned long long int movetime;
 
 static void perft_unit_test1(void **state) {
   BOARD * b = initial_board();

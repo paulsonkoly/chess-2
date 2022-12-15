@@ -41,7 +41,6 @@ void print_bitboard(BITBOARD bb) {
 }
 
 int stopped = 0;
-unsigned long long int movetime;
 
 int main() {
 

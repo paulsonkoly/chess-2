@@ -8,8 +8,6 @@
 #include "search.h"
 #include "perft.h"
 
-extern unsigned long long movetime;
-
 UCI_CMD * uci_parse(const char * line) {
   UCI_CMD * cmd;
   enum UCI_TOKEN tok;
@@ -143,32 +141,44 @@ void uci() {
           printf("readyok\n");
           break;
 
-      case GO:
-          movetime = 0;
+      case GO: {
+          SEARCH_LIMIT limit;
 
           switch (cmd->data.go.type) {
 
             case DEPTH:
-              iterative_deepening(board, cmd->data.go.data.depth);
+              limit.type = SL_DEPTH;
+              limit.data.depth = cmd->data.go.data.depth;
+              iterative_deepening(board, &limit);
               break;
 
             case PERFT:
               perft(board, cmd->data.go.data.depth, 1);
               break;
 
-
             case MOVETIME:
-              movetime = cmd->data.go.data.movetime;
+              limit.type = SL_MOVETIME;
+              limit.data.movetime = cmd->data.go.data.movetime;
+              iterative_deepening(board, &limit);
+              break;
 
             case INFINITE:
-              iterative_deepening(board, 1000);
+              limit.type = SL_INFINITE;
+              iterative_deepening(board, &limit);
               break;
 
             case WBTIME:
+              limit.type = SL_WBTIME;
+              limit.data.wb_time.wtime = cmd->data.go.data.wb_time.wtime;
+              limit.data.wb_time.winc = cmd->data.go.data.wb_time.winc;
+              limit.data.wb_time.btime = cmd->data.go.data.wb_time.btime;
+              limit.data.wb_time.binc = cmd->data.go.data.wb_time.binc;
+              iterative_deepening(board, &limit);
               break;
 
           }
           break;
+        }
 
       case POSITION:
           switch (cmd->data.position.type) {

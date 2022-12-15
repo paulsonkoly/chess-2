@@ -16,6 +16,22 @@ int negascout(BOARD* board,
     PV ** npv,
     KILLER * killer);
 
-int iterative_deepening(BOARD * board, int max_depth);
+enum SEARCH_LIMIT_TYPE { SL_INFINITE, SL_DEPTH, SL_MOVETIME, SL_WBTIME };
+typedef struct __SEARCH_LIMIT__ {
+  enum SEARCH_LIMIT_TYPE type;
+
+  union {
+    int depth;
+    unsigned long long movetime;
+    struct WB_TIME {
+      unsigned long long wtime;
+      unsigned long long winc;
+      unsigned long long btime;
+      unsigned long long binc;
+    } wb_time;
+  } data;
+} SEARCH_LIMIT;
+
+int iterative_deepening(BOARD * board, const SEARCH_LIMIT* search_limit);
 
 #endif /* ifndef _SEARCH_H_ */

@@ -103,7 +103,7 @@ void play_uci_moves(BOARD * board, const char * moves) {
 
   for (; *moves == ' '; ++moves);
 
-  while ((*moves) != '\n') {
+  while ((*moves) != '\0') {
     PIECE promotion = NO_PIECE;
     SQUARE ff, fr, tf, tr;
     BITBOARD from;

@@ -35,7 +35,7 @@ typedef struct _UCI_CMD_ {
     struct POSITION {
 
       enum UCI_POSITION_TYPE type;
-      union POSITION_DATA {
+      struct POSITION_DATA {
         char * fen;
         char * moves;
       } data;

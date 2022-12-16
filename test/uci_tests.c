@@ -129,3 +129,15 @@ void uci_parser_test12(void **state) {
 
   uci_free(cmd);
 }
+
+void uci_parser_test13(void **state) {
+  const char * line = "position fen rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2 moves e2e4 e7e5\n";
+  UCI_CMD * cmd = uci_parse(line);
+
+  assert_int_equal(POSITION, cmd->type);
+  assert_int_equal(FEN, cmd->data.position.type);
+  assert_string_equal("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", cmd->data.position.data.fen);
+  assert_string_equal("e2e4 e7e5", cmd->data.position.data.moves);
+
+  uci_free(cmd);
+}

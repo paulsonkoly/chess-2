@@ -68,6 +68,7 @@ UCI_CMD * uci_parse(const char * line) {
 
     case TOK_POSITION:
       cmd->type = POSITION;
+      cmd->data.position.data.moves = NULL;
 
         switch (yylex()) {
           case TOK_FEN:
@@ -75,18 +76,17 @@ UCI_CMD * uci_parse(const char * line) {
             if (TOK_FEN_STRING == yylex()) {
               cmd->data.position.data.fen = strdup(yyget_text());
             }
-
-            return cmd;
+            break;
 
           case TOK_STARTPOS:
             cmd->data.position.type = STARTPOS;
-            cmd->data.position.data.moves = NULL;
-
-            if (yylex() == TOK_MOVES && yylex() == TOK_MOVES_STRING) {
-              cmd->data.position.data.moves = strdup(yyget_text());
-            }
+            break;
 
           default: ;
+        }
+
+        if (yylex() == TOK_MOVES && yylex() == TOK_MOVES_STRING) {
+          cmd->data.position.data.moves = strdup(yyget_text());
         }
 
         break;
@@ -192,11 +192,12 @@ void uci() {
             case STARTPOS:
               free(board);
               board = initial_board();
-              if (cmd->data.position.data.moves != NULL) {
-                play_uci_moves(board, cmd->data.position.data.moves);
-              }
 
               break;
+          }
+
+          if (cmd->data.position.data.moves != NULL) {
+            play_uci_moves(board, cmd->data.position.data.moves);
           }
           break;
 

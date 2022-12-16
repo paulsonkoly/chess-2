@@ -310,10 +310,6 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
     score = negascout(board, 0, depth, depth , -10000, 10000, opv, &npv, &killer);
 
-    if (board->next == BLACK) {
-      score *= -1;
-    }
-
     if (stopped) break;
 
     delta = time_delta();

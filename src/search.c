@@ -50,7 +50,7 @@ unsigned long long int time_delta() {
   struct timespec end;
   unsigned long long int delta;
 
-  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end)) {
+  if (clock_gettime(CLOCK_REALTIME, &end)) {
     printf("info clock_gettime failed\n");
   }
 
@@ -262,7 +262,7 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
   const MOVE * bestmove = NULL;
   unsigned long long int delta;
 
-  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start)) {
+  if (clock_gettime(CLOCK_REALTIME, &start)) {
     printf("info clock_gettime failed\n");
   }
 

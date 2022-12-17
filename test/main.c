@@ -191,6 +191,7 @@ int main(void) {
     cmocka_unit_test(uci_parser_test11),
     cmocka_unit_test(uci_parser_test12),
     cmocka_unit_test(uci_parser_test13),
+    cmocka_unit_test(uci_parser_test14),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

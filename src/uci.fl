@@ -13,7 +13,7 @@ number     [0-9]+
 rankitem   [pnbrqkPNBRQK1-8]{1,8}
 sidetomove [bw]
 promotion  [nbrq]
-castling   "K"?"Q"?"k"?"q"?
+castling   ("K"?"Q"?"k"?"q"?|"-")
 enpassant  ({file}[36]|"-")
 ucimove    {file}{rank}{file}{rank}{promotion}?
 

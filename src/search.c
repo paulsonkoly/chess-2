@@ -6,6 +6,7 @@
 #include <time.h>
 #include <sys/select.h>
 #include <limits.h>
+#include <assert.h>
 
 #include "attacks.h"
 #include "evaluate.h"
@@ -132,16 +133,26 @@ int quiesce(BOARD * board, int alpha, int beta) {
 /* * 100 */
 static const int log[] = {
   -INT_MAX,
-  0   ,  69  ,  109 ,  138 ,  160 ,  179 ,  194 ,  207 ,  219 ,  230,
-  239 ,  248 ,  256 ,  263 ,  270 ,  277 ,  283 ,  289 ,  294 ,  299,
-  304 ,  309 ,  313 ,  317 ,  321 ,  325 ,  329 ,  333 ,  336 ,  340,
-  343 ,  346 ,  349 ,  352 ,  355 ,  358 ,  361 ,  363 ,  366 ,  368,
-  371 ,  373 ,  376 ,  378 ,  380 ,  382 ,  385 ,  387 ,  389 ,  391,
-  393 ,  395 ,  397 ,  398 ,  400 ,  402 ,  404 ,  406 ,  407 ,  409
+  0,   69,  109, 138, 160, 179, 194, 207, 219, 230,
+  239, 248, 256, 263, 270, 277, 283, 289, 294, 299,
+  304, 309, 313, 317, 321, 325, 329, 333, 336, 340,
+  343, 346, 349, 352, 355, 358, 361, 363, 366, 368,
+  371, 373, 376, 378, 380, 382, 385, 387, 389, 391,
+  393, 395, 397, 398, 400, 402, 404, 406, 407, 409,
+  411, 412, 414, 415, 417, 418, 420, 421, 423, 424,
+  426, 427, 429, 430, 431, 433, 434, 435, 436, 438,
+  439, 440, 441, 443, 444, 445, 446, 447, 448, 449,
+  451, 452, 453, 454, 455, 456, 457, 458, 459, 460
 };
 
 static int lmr(int depth, int count) {
   int value = (log[depth] * log[count] / 19500);
+
+#ifndef NDEBUG
+  int s = sizeof(log) / sizeof(log[1]);
+
+  assert(0 <= depth && depth < s && 0 <= count && count < s);
+#endif
 
   return value > depth - 1 ? 0 : depth - 1 - value;
 }
@@ -161,6 +172,8 @@ int negascout(BOARD* board,
   int beta2;
   unsigned long long delta;
   int count;
+
+  assert(0 <= reduced_depth && reduced_depth <= depth);
 
   if (stopped) {
     return -1;

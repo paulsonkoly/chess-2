@@ -5,8 +5,7 @@
 #include "board.h"
 #include "move.h"
 
-#define DEBUG_MOVES
-#ifdef DEBUG_MOVES
+#ifndef NDEBUG
 #define EXPECT_EQL(ba, bb)                                                           \
 if ((ba) != (bb)) {                                                                  \
   printf("BOARD INCONSISTENCY - " #ba " != " #bb " %016lx != %016lx\n", (BITBOARD)ba, (BITBOARD)bb); \
@@ -14,6 +13,8 @@ if ((ba) != (bb)) {                                                             
   print_move(move);                                                                  \
   exit(0);                                                                           \
 }
+#else
+#define EXPECT_EQL(ba, bb)
 #endif
 
 void execute_move(BOARD * board, const MOVE * move) {
@@ -66,7 +67,6 @@ void execute_move(BOARD * board, const MOVE * move) {
 
   board->next = 1 - board->next;
 
-#ifdef DEBUG_MOVES
   EXPECT_EQL(board->by_colour.whitepieces & board->by_colour.blackpieces, 0);
   EXPECT_EQL(OCCUPANCY_BB(board),
       board->pawns | board->knights | board->bishops | board->rooks | board->queens | board->kings);
@@ -76,7 +76,6 @@ void execute_move(BOARD * board, const MOVE * move) {
   EXPECT_EQL(board->rooks   & (board->pawns   | board->knights | board->bishops | board->queens | board->kings), 0);
   EXPECT_EQL(board->queens  & (board->pawns   | board->knights | board->bishops | board->rooks  | board->kings), 0);
   EXPECT_EQL(board->kings   & (board->pawns   | board->knights | board->bishops | board->rooks  | board->queens), 0);
-#endif
 }
 
 void undo_move(BOARD * board, const MOVE * move) {
@@ -130,7 +129,6 @@ void undo_move(BOARD * board, const MOVE * move) {
   /* update en-passant state */
   board->en_passant ^= move->en_passant;
 
-#ifdef DEBUG_MOVES
   EXPECT_EQL(board->by_colour.whitepieces & board->by_colour.blackpieces, 0);
   EXPECT_EQL(OCCUPANCY_BB(board),
       board->pawns | board->knights | board->bishops | board->rooks | board->queens | board->kings);
@@ -140,5 +138,4 @@ void undo_move(BOARD * board, const MOVE * move) {
   EXPECT_EQL(board->rooks   & (board->pawns   | board->knights | board->bishops | board->queens | board->kings), 0);
   EXPECT_EQL(board->queens  & (board->pawns   | board->knights | board->bishops | board->rooks  | board->kings), 0);
   EXPECT_EQL(board->kings   & (board->pawns   | board->knights | board->bishops | board->rooks  | board->queens), 0);
-#endif
 }

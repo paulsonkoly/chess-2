@@ -13,10 +13,10 @@ void print_move_buffer(const MOVE * move, char * buffer) {
   buffer[2] = 'a' + tf;
   buffer[3] = '1' + tr;
 
-  if (move->promotion) {
+  if (move->special & PROMOTION_MOVE_MASK) {
     const char * p = "  nbrq";
 
-    buffer[4] = p[move->promotion];
+    buffer[4] = p[(move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT];
     buffer[5] = 0;
   } else {
     buffer[4] = 0;

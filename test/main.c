@@ -114,12 +114,9 @@ static void see_capture_test(void ** state) {
 
   c2d4.from            = (BITBOARD)1 << 10;
   c2d4.to              = (BITBOARD)1 << 27;
-  c2d4.special         = 0;
-  c2d4.piece           = KNIGHT;
-  c2d4.capture         = PAWN;
-  c2d4.promotion       = NO_PIECE;
-  c2d4.en_passant      = b->en_passant;
-  c2d4.castle          = 0;
+  c2d4.special         = ((BITBOARD)KNIGHT << PIECE_MOVE_SHIFT)
+                       | ((BITBOARD)PAWN << CAPTURED_MOVE_SHIFT)
+                       | b->en_passant;
 
   assert_int_equal(-225, see(b, &c2d4));
 }
@@ -130,12 +127,7 @@ static void see_test(void ** state) {
 
   b3b6.from            = (BITBOARD)1 << 17;
   b3b6.to              = (BITBOARD)1 << 41;
-  b3b6.special         = 0;
-  b3b6.piece           = ROOK;
-  b3b6.capture         = 0;
-  b3b6.promotion       = NO_PIECE;
-  b3b6.en_passant      = b->en_passant;
-  b3b6.castle          = 0;
+  b3b6.special         = ((BITBOARD)ROOK << PIECE_MOVE_SHIFT) | b->en_passant;
 
   assert_int_equal(-100, see(b, &b3b6));
 }

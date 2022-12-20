@@ -25,7 +25,7 @@ BOARD * initial_board() {
   board->by_colour.blackpieces = 0xffff000000000000;
 
   board->next = WHITE;
-  board->en_passant = NO_SQUARE;
+  board->en_passant = 0;
   board->castle = ALL_CASTLES;
 
   return board;
@@ -108,10 +108,9 @@ void play_uci_moves(BOARD * board, const char * moves) {
     SQUARE ff, fr, tf, tr;
     BITBOARD from;
     BITBOARD to;
-    BITBOARD special = 0;
     PIECE piece;
     PIECE capture;
-    CASTLE castle = NO_CASTLE;
+    BITBOARD castle = 0;
     BITBOARD en_passant = board->en_passant;
 
     ff = *moves     - 'a';
@@ -138,26 +137,22 @@ void play_uci_moves(BOARD * board, const char * moves) {
       en_passant |= ((BITBOARD)1 << (epr * 8 + ff));
     }
 
-    if (promotion != NO_PIECE) {
-      special = to;
-    } else if (piece == PAWN && ff != tf && capture == NO_PIECE) {
-      special = ((BITBOARD)1 << (fr * 8 + tf));
-      capture = PAWN;
+    if (piece == PAWN && ff != tf && capture == NO_PIECE) {
+      en_passant = ((BITBOARD)1 << (fr * 8 + tf));
     } else if (piece == KING && ((ff - tf) == 2 || (tf - ff) == 2)) {
       unsigned index = ((fr & BLACK) << 1) | (ff < tf ? 0 : 1);
 
-      special = castling_rook_from_to(index);
-      castle = IS_CASTLE;
+      castle = castling_rook_from_to(index);
     }
 
     move.from            = from;
     move.to              = to;
-    move.special         = special;
-    move.piece           = piece;
-    move.capture         = capture;
-    move.promotion       = promotion;
-    move.en_passant      = en_passant;
-    move.castle          = castle | castle_update(board, piece, from | to);
+    move.special         = ((BITBOARD) piece) << PIECE_MOVE_SHIFT
+                         | ((BITBOARD) capture) << CAPTURED_MOVE_SHIFT
+                         | ((BITBOARD) promotion) << PROMOTION_MOVE_SHIFT
+                         | en_passant
+                         | castle
+                         | ((BITBOARD)castle_update(board, piece, from | to) << CASTLE_RIGHT_CHANGE_SHIFT);
 
     execute_move(board, & move);
 

@@ -12,10 +12,11 @@ static int see__(BOARD * board, const MOVE * move) {
   MOVE * response;
 
   if ((response = add_least_valuable_attacker(board, move))) {
+    PIECE capture = (response->special & CAPTURED_MOVE_MASK) >> CAPTURED_MOVE_SHIFT;
 
     execute_move(board, response);
 
-    value = piece_value[response->capture] - see__(board, response);
+    value = piece_value[capture] - see__(board, response);
 
     undo_move(board, response);
 
@@ -26,13 +27,15 @@ static int see__(BOARD * board, const MOVE * move) {
 }
 
 int see(BOARD * board, const MOVE * move) {
-  int value = piece_value[move->capture];
+  PIECE capture = (move->special & CAPTURED_MOVE_MASK) >> CAPTURED_MOVE_SHIFT;
+
+  int value = piece_value[capture];
 
   ml_open_frame();
 
   execute_move(board, move);
 
-  value = piece_value[move->capture] - see__(board, move);
+  value = piece_value[capture] - see__(board, move);
 
   undo_move(board, move);
 

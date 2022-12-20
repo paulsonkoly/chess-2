@@ -2,7 +2,6 @@
 
 #include <strings.h>
 #include <stdlib.h>
-
 #include "chess.h"
 #include "move.h"
 #include "board.h"
@@ -63,13 +62,10 @@ static void add_normal_moves(const BOARD * board, PIECE piece, BITBOARD allowed_
 
       move->from            = from;
       move->to              = to;
-      move->special         = 0;
-
-      move->piece           = piece;
-      move->promotion       = NO_PIECE;
-      move->en_passant      = board->en_passant;
-      move->castle          = castle_update(board, piece, from | to);
-      move->capture         = piece_at_board(board, to);
+      move->special         = ((BITBOARD)piece << PIECE_MOVE_SHIFT)
+                            | board->en_passant
+                            | (((BITBOARD)castle_update(board, piece, from | to) << CASTLE_RIGHT_CHANGE_SHIFT))
+                            | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT);
 
       attacked &= attacked - 1;
     }
@@ -113,13 +109,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
 
     move->from            = SINGLE_PAWN_PUSH(1 - board->next, to);
     move->to              = to;
-    move->special         = 0;
-
-    move->piece           = PAWN;
-    move->promotion       = NO_PIECE;
-    move->en_passant      = board->en_passant;
-    move->castle          = 0;
-    move->capture         = NO_PIECE;
+    move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT) | board->en_passant;
 
     targets &= targets - 1;
   }
@@ -135,13 +125,9 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
 
       move->from            = from;
       move->to              = to;
-      move->special         = to;
-
-      move->piece           = PAWN;
-      move->promotion       = piece;
-      move->en_passant      = board->en_passant;
-      move->castle          = 0;
-      move->capture         = NO_PIECE;
+      move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
+                            | ((BITBOARD)piece << PROMOTION_MOVE_SHIFT)
+                            | board->en_passant;
     }
 
     targets &= targets - 1;
@@ -158,13 +144,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
 
     move->from            = from;
     move->to              = to;
-    move->special         = 0;
-
-    move->piece           = PAWN;
-    move->promotion       = NO_PIECE;
-    move->en_passant      = board->en_passant ^ en_passant;
-    move->castle          = 0;
-    move->capture         = NO_PIECE;
+    move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT) | (board->en_passant ^ en_passant);
 
     targets &= targets - 1;
   }
@@ -182,13 +162,9 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
 
       move->from            = from;
       move->to              = targets;
-      move->special         = s;
-
-      move->piece           = PAWN;
-      move->promotion       = NO_PIECE;
-      move->en_passant      = board->en_passant;
-      move->castle          = 0;
-      move->capture         = PAWN;
+      move->special         = (((BITBOARD)PAWN) << PIECE_MOVE_SHIFT)
+                            | board->en_passant
+                            | s;
 
       f &= f - 1;
     }
@@ -208,13 +184,9 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
 
       move->from            = from;
       move->to              = to;
-      move->special         = 0;
-
-      move->piece           = PAWN;
-      move->promotion       = NO_PIECE;
-      move->en_passant      = board->en_passant;
-      move->castle          = 0;
-      move->capture         = piece_at_board(board, to);
+      move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
+                            | board->en_passant
+                            | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT);
 
       f &= f - 1;
     }
@@ -239,11 +211,11 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
         move->to              = to;
         move->special         = to;
 
-        move->piece           = PAWN;
-        move->promotion       = piece;
-        move->en_passant      = board->en_passant;
-        move->castle          = castle_update(board, PAWN, to);
-        move->capture         = piece_at_board(board, to);
+        move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
+                              | board->en_passant
+                              | ((BITBOARD)piece << PROMOTION_MOVE_SHIFT)
+                              | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT)
+                              | (((BITBOARD)castle_update(board, piece, from | to) << CASTLE_RIGHT_CHANGE_SHIFT));
       }
 
       f &= f - 1;
@@ -291,15 +263,12 @@ void add_castles(const BOARD * board) {
 
         MOVE * move = ml_allocate();
 
-        move->from       = castle_king_from_to[c] & board->kings;
-        move->to         = castle_king_from_to[c] & ~board->kings;
-        move->special    = castle_rook_from_to[c];
-
-        move->piece      = KING;
-        move->promotion  = NO_PIECE;
-        move->en_passant = board->en_passant;
-        move->castle     = IS_CASTLE | castle_update(board, KING, castle_king_from_to[c]);
-        move->capture    = NO_PIECE;
+        move->from    = castle_king_from_to[c] & board->kings;
+        move->to      = castle_king_from_to[c] & ~board->kings;
+        move->special = ((BITBOARD)KING << PIECE_MOVE_SHIFT)
+                      | castle_rook_from_to[c]
+                      | board->en_passant
+                      | (((BITBOARD)castle_update(board, KING, castle_king_from_to[c]) << CASTLE_RIGHT_CHANGE_SHIFT));
       }
     }
   }
@@ -333,13 +302,17 @@ MOVE * add_least_valuable_attacker(const BOARD * board, const MOVE * capture) {
 
     move->value      = 0;
     move->from       = from;
-    move->special    = 0;
     move->to         = to;
-    move->piece      = attacker;
-    move->capture    = capture->promotion ? capture->promotion : capture->piece;
-    move->promotion  = NO_PIECE; /* TODO */
-    move->en_passant = board->en_passant;
-    move->castle     = castle_update(board, attacker, to);
+
+    PIECE captured   = (PIECE)((capture->special & PROMOTION_MOVE_MASK) ?
+      ((capture->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT) :
+      ((capture->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT));
+
+    /* TODO promotion capture */
+    move->special    = ((BITBOARD)attacker << PIECE_MOVE_SHIFT)
+                     | ((BITBOARD)captured << CAPTURED_MOVE_SHIFT)
+                     | board->en_passant
+                     | (((BITBOARD)castle_update(board, attacker, to) << CASTLE_RIGHT_CHANGE_SHIFT));
 
     return move;
   }

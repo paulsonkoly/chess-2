@@ -89,7 +89,7 @@ static void heuristic_weights(BOARD* board, const MOVE * pv, int depth, const KI
 
 static void forcing_weights(BOARD * board) {
   for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
-    if (ptr->capture != NO_PIECE) {
+    if (ptr->special & CAPTURED_MOVE_MASK) {
       ptr->value = see(board, ptr) + 1000;
     } else {
       execute_move(board, ptr);

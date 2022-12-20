@@ -313,6 +313,13 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
   for (int depth = 1; depth <= max_depth; ++depth) {
 
+    delta = time_delta();
+
+    /* assuming an exponential growth - if we used up 80% of the time, don't bother with the next ply */
+    if (movetime && bestmove && delta * 10 > movetime * 8) {
+      break;
+    }
+
     pv_reset(npv);
 
     stopped = 0;

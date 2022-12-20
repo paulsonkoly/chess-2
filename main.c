@@ -27,8 +27,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "attacks.h"
 #include "uci.h"
 
-#include "search.h"
-
 void print_bitboard(BITBOARD bb) {
   printf("--------\n");
   for (SQUARE r = 56; r < 64; r -= 8) {
@@ -47,17 +45,8 @@ int stopped = 0;
 int main() {
 
   initialize_magic();
-  BOARD * b;
-  SEARCH_LIMIT lm;
 
-  b = parse_fen("2rqkb1r/3n2pp/4R3/1N6/3Q1BP1/P4b2/1PP4P/2KR4 b k - 0 20");
-
-  lm.type = SL_DEPTH;
-  lm.data.depth = 12;
-
-  iterative_deepening(b, &lm);
-
-//  uci();
+  uci();
 
   return 0;
 }

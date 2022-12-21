@@ -63,10 +63,28 @@ unsigned long long int time_delta() {
 extern int stopped;
 unsigned long long movetime;
 
+int repetition(const BOARD * board) {
+  int ply;
+
+  if (board->halfmovecnt > 2) {
+    for (ply = board->halfmovecnt - 2; ply > 0; ply -= 2) {
+      if (board->history[ply] == board->history[board->halfmovecnt]) {
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
 int quiesce(BOARD * board, int alpha, int beta) {
   MOVE * ptr;
   int legal_found = 0;
   int stand_pat;
+
+  if (repetition(board)) {
+    return 0;
+  }
 
   ml_open_frame();
 
@@ -195,7 +213,10 @@ int negascout(BOARD* board,
 
   if (reduced_depth == 0) {
     return quiesce(board, alpha, beta);
-    /* return colour * evaluate(board); */
+  }
+
+  if (repetition(board)) {
+    return 0;
   }
 
   lpv = pv_init();

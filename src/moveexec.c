@@ -20,7 +20,27 @@ if ((ba) != (bb)) {                                                             
 static void flip_board_bits(BOARD * board, const MOVE * move);
 
 void execute_move(BOARD * board, const MOVE * move) {
+  HASH hash       = board->history[board->halfmovecnt++];
+  PIECE piece     = (PIECE)((move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT);
+  PIECE captured  = (PIECE)((move->special & CAPTURED_MOVE_MASK) >> CAPTURED_MOVE_SHIFT);
+  PIECE promotion = (PIECE)((move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT);
+
+  hash ^= rand_hash_colour_flip;
+  hash ^= hash_castle((move->special & CASTLE_RIGHT_CHANGE_MASK) >> CASTLE_RIGHT_CHANGE_SHIFT);
+  hash ^= hash_en_passant(move->special & EN_PASSANT_CHANGE_MASK);
+  hash ^= hash_piece(move->special & CASTLE_ROOK_MOVE_MASK, ROOK, board->next);
+  hash ^= hash_piece(move->to, captured, 1 - board->next);
+  hash ^= hash_piece(move->special & EN_PASSANT_CAPTURE_MOVE_MASK, PAWN, 1 - board->next);
+  if (promotion) {
+    hash ^= hash_piece(move->from, piece, board->next);
+    hash ^= hash_piece(move->to, promotion, board->next);
+  } else {
+    hash ^= hash_piece(move->from | move->to, piece, board->next);
+  }
+
   flip_board_bits(board, move);
+
+  board->history[board->halfmovecnt] = hash;
 
   board->next = 1 - board->next;
 }
@@ -29,6 +49,7 @@ void undo_move(BOARD * board, const MOVE * move) {
   board->next = 1 - board->next;
 
   flip_board_bits(board, move);
+  board->halfmovecnt--;
 }
 
 static void flip_board_bits(BOARD * board, const MOVE * move) {

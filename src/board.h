@@ -2,6 +2,7 @@
 #define _BOARD_H_
 
 #include "chess.h"
+#include "zobrist.h"
 
 typedef struct _BOARD_ {
    BITBOARD pawns;
@@ -21,6 +22,9 @@ typedef struct _BOARD_ {
    COLOUR next;
    CASTLE castle;
 
+   int halfmovecnt;
+   HASH history[MAX_GAME_PLYS];
+
 } BOARD;
 
 #define COLOUR_BB(board, colour) (((BITBOARD*)(&(board->by_colour)))[colour])
@@ -35,5 +39,6 @@ PIECE piece_at_board(const BOARD* board, BITBOARD bb);
 COLOUR colour_at_board(const BOARD* board, SQUARE sq);
 void print_board(const BOARD* board);
 void print_fen(const BOARD* board);
+HASH calculate_hash(const BOARD* board);
 
 #endif /* ifndef _BOARD_H_ */

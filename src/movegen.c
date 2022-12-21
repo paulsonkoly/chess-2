@@ -209,7 +209,6 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
 
         move->from            = from;
         move->to              = to;
-        move->special         = to;
 
         move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
                               | board->en_passant

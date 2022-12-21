@@ -43,6 +43,9 @@ typedef uint64_t BITBOARD;
 
 typedef uint8_t CASTLE;
 
-#define MAX_PLYS 64
+/* max search depth supported */
+#define MAX_PLYS        64
+/* max half moves in a game */
+#define MAX_GAME_PLYS 2048
 
 #endif /* ifndef _CHESS_H_ */

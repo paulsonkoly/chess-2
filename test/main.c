@@ -13,6 +13,7 @@
 #include "pawns.h"
 
 #include "uci_tests.h"
+#include "zobrist_tests.h"
 
 int stopped = 0;
 
@@ -184,6 +185,8 @@ int main(void) {
     cmocka_unit_test(uci_parser_test12),
     cmocka_unit_test(uci_parser_test13),
     cmocka_unit_test(uci_parser_test14),
+
+    cmocka_unit_test(zobrist_test),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

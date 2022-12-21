@@ -6,6 +6,7 @@
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
+#include "zobrist.h"
 
 BOARD * initial_board() {
   BOARD * board;
@@ -27,6 +28,9 @@ BOARD * initial_board() {
   board->next = WHITE;
   board->en_passant = 0;
   board->castle = ALL_CASTLES;
+
+  board->halfmovecnt = 0;
+  board->history[0] = calculate_hash(board);
 
   return board;
 }
@@ -94,6 +98,10 @@ BOARD * parse_fen(const char * fen) {
     r = *ptr - '1';
     board->en_passant = r * 8 + f;
   }
+
+  /* TODO: move counter */
+  board->halfmovecnt = 0;
+  board->history[0] = calculate_hash(board);
 
   return board;
 }
@@ -250,5 +258,24 @@ void print_fen(const BOARD* board) {
   else {
     printf(" - 0 1 ");
   }
+}
+
+HASH calculate_hash(const BOARD * board) {
+  HASH result;
+  SQUARE square;
+
+  result =  hash_colour(board->next);
+  result ^= hash_castle(board->castle);
+  result ^= hash_en_passant(board->en_passant);
+
+  for (square = 0; square < 64; ++square) {
+    BITBOARD bb   = (BITBOARD)(1) << square;
+    COLOUR colour = colour_at_board(board, square);
+    PIECE piece   = piece_at_board(board, bb);
+
+    result ^= hash_piece(bb, piece, colour);
+  }
+
+  return result;
 }
 

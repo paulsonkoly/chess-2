@@ -26,6 +26,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "chess.h"
 #include "attacks.h"
 #include "uci.h"
+#include "zobrist.h"
 
 void print_bitboard(BITBOARD bb) {
   printf("--------\n");
@@ -45,6 +46,7 @@ int stopped = 0;
 int main() {
 
   initialize_magic();
+  initialize_hash();
 
   uci();
 

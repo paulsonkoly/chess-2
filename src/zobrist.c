@@ -23,7 +23,7 @@ void initialize_hash() {
     for (k = 0; k < 64; ++k) {
       rand_hash_pieces[i][NO_PIECE][k] = 0;
     }
-    for (j = 1; j < 6; ++j) {
+    for (j = PAWN; j <= KING; ++j) {
       for (k = 0; k < 64; ++k) {
         rand_hash_pieces[i][j][k] = HASH_RAND_VAL;
       }

@@ -6,7 +6,7 @@ static HASH rand_hash_colour[2];
 HASH rand_hash_colour_flip;
 static HASH rand_hash_castle[16];
 static HASH rand_hash_en_passant[16];   /* a3-h3 a6-h6 */
-static HASH rand_hash_pieces[2][6][64]; /* colour / piece type / square */
+static HASH rand_hash_pieces[2][7][64]; /* colour / piece type / square */
 
 #define HASH_RAND_VAL                                                  \
   (((HASH)(rand() & 0xffff) << 48) | ((HASH)(rand() & 0xffff) << 32) | \
@@ -20,7 +20,10 @@ void initialize_hash() {
   for (i = 0; i < 4; ++i) rand_hash_castle[i] = HASH_RAND_VAL;
   for (i = 0; i < 16; ++i) rand_hash_en_passant[i] = HASH_RAND_VAL;
   for (i = 0; i < 2;  ++i) {
-    for (j = 0; j < 6; ++j) {
+    for (k = 0; k < 64; ++k) {
+      rand_hash_pieces[i][NO_PIECE][k] = 0;
+    }
+    for (j = 1; j < 6; ++j) {
       for (k = 0; k < 64; ++k) {
         rand_hash_pieces[i][j][k] = HASH_RAND_VAL;
       }
@@ -67,7 +70,7 @@ HASH hash_en_passant(BITBOARD bitboard) {
 HASH hash_piece(BITBOARD bitboard, PIECE piece, COLOUR colour) {
   HASH result = 0;
 
-  while (bitboard && piece) {
+  while (bitboard) {
     BITBOARD isolated = bitboard & - bitboard;
     SQUARE   square = ffsl(isolated) - 1;
 

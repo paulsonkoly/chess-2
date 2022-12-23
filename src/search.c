@@ -65,11 +65,14 @@ unsigned long long movetime;
 
 int repetition(const BOARD * board) {
   int ply;
+  int cnt = 0;
 
   if (board->halfmovecnt > 2) {
     for (ply = board->halfmovecnt - 2; ply > 0; ply -= 2) {
       if (board->history[ply] == board->history[board->halfmovecnt]) {
-        return 1;
+        if (++cnt == 2) {
+          return 1;
+        }
       }
     }
   }

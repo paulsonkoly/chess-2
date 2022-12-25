@@ -30,7 +30,9 @@ BOARD * initial_board() {
   board->castle = ALL_CASTLES;
 
   board->halfmovecnt = 0;
-  board->history[0] = calculate_hash(board);
+  board->history[0].hash = calculate_hash(board);
+  board->history[0].flags = 0;
+
 
   return board;
 }
@@ -101,7 +103,8 @@ BOARD * parse_fen(const char * fen) {
 
   /* TODO: move counter */
   board->halfmovecnt = 0;
-  board->history[0] = calculate_hash(board);
+  board->history[0].hash = calculate_hash(board);
+  board->history[0].flags = 0;
 
   return board;
 }

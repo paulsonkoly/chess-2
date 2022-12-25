@@ -23,7 +23,11 @@ typedef struct _BOARD_ {
    CASTLE castle;
 
    int halfmovecnt;
-   HASH history[MAX_GAME_PLYS];
+   struct {
+     HASH hash;
+#define HIST_CANT_REPEAT 0x00000001
+     unsigned int flags;
+   } history[MAX_GAME_PLYS];
 
 } BOARD;
 

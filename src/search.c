@@ -69,7 +69,10 @@ int repetition(const BOARD * board) {
 
   if (board->halfmovecnt > 2) {
     for (ply = board->halfmovecnt - 2; ply > 0; ply -= 2) {
-      if (board->history[ply] == board->history[board->halfmovecnt]) {
+      if ((board->history[ply].flags | board->history[ply+1].flags) & HIST_CANT_REPEAT) {
+        return 0;
+      }
+      if (board->history[ply].hash == board->history[board->halfmovecnt].hash) {
         if (++cnt == 2) {
           return 1;
         }

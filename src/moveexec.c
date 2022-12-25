@@ -20,7 +20,7 @@ if ((ba) != (bb)) {                                                             
 static void flip_board_bits(BOARD * board, const MOVE * move);
 
 void execute_move(BOARD * board, const MOVE * move) {
-  HASH hash       = board->history[board->halfmovecnt++];
+  HASH hash       = board->history[board->halfmovecnt++].hash;
   PIECE piece     = (PIECE)((move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT);
   PIECE captured  = (PIECE)((move->special & CAPTURED_MOVE_MASK) >> CAPTURED_MOVE_SHIFT);
   PIECE promotion = (PIECE)((move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT);
@@ -40,7 +40,8 @@ void execute_move(BOARD * board, const MOVE * move) {
 
   flip_board_bits(board, move);
 
-  board->history[board->halfmovecnt] = hash;
+  board->history[board->halfmovecnt].flags = (captured || piece == PAWN ? HIST_CANT_REPEAT : 0);
+  board->history[board->halfmovecnt].hash = hash;
 
   board->next = 1 - board->next;
 }

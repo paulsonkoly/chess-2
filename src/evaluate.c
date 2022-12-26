@@ -3,7 +3,7 @@
 #include "evaluate.h"
 #include "pawns.h"
 
-static const int piece_values[] = { 0, 100, 320, 330, 500, 900 };
+static const int piece_values[] = { 0, 100, 310, 330, 500, 900 };
 
 static const int pawn_bonus[] = {
    0,  0,  0,  0,  0,  0,  0,  0,
@@ -123,9 +123,9 @@ int evaluate(const BOARD * board) {
         }
 
         if (single & iso) { /* isolated pawn */
-          value -= dir[colour] * 33;
+          value -= dir[colour] * 20;
         } else if (single & pass) { /* passer */
-          static const int rank_values[] = {0, 30, 35, 45, 65, 105, 185, 345};
+          static const int rank_values[] = {0, 30, 35, 45, 65, 105, 185, 270};
 
           if (colour == BLACK) {
             rank = 7 - rank;

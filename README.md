@@ -6,7 +6,7 @@ Hi, I am a UCI chess engine. I'm the second chess engine my author has written, 
 
 Normally a UCI chess engines requires a GUI. Arena and Banksia are tested with chess-2, but all UCI compatible UIs should work.
 
-You can run the engine in the console, issuing [UCI](http://wbec-ridderkerk.nl/html/UCIProtocol.html) commands.
+You can also run the engine in the console, issuing [UCI](http://wbec-ridderkerk.nl/html/UCIProtocol.html) commands.
 
 # Build
 
@@ -63,3 +63,11 @@ To build the CI tests install the [cmocka](https://cmocka.org/) testing framewor
       [       OK ] zobrist_test2
       [==========] 30 test(s) run.
       [  PASSED  ] 30 test(s).
+      
+# Contributing
+
+New features are created on feature branches. Before a merge to main can happen the feature branch has to run against main using [cutechess-cli](https://github.com/cutechess/cutechess).
+
+     cutechess-cli -each tc=5+3 proto=uci -engine cmd=./chess2_old -engine cmd=./chess2_new -games 128 -concurrency 8 -openings file=../OpenBench/Books/Pohl.epd -sprt alpha=0.05 beta=0.05 elo0=1700 elo1=1900
+
+The branch should not be merged if there is a significant ELO drop.

@@ -7,6 +7,7 @@
 #include "board.h"
 #include "search.h"
 #include "perft.h"
+#include "version.h"
 
 UCI_CMD * uci_parse(const char * line) {
   UCI_CMD * cmd;
@@ -132,74 +133,74 @@ void uci() {
     switch (cmd->type) {
 
       case UCI:
-          printf("id name chess2\n");
-          printf("id author Paul Sonkoly\n");
-          printf("uciok\n");
-          break;
+        printf("id name chess2 (%s)\n", version);
+        printf("id author Paul Sonkoly\n");
+        printf("uciok\n");
+        break;
 
       case IS_READY:
-          printf("readyok\n");
-          break;
+        printf("readyok\n");
+        break;
 
       case GO: {
-          SEARCH_LIMIT limit;
+        SEARCH_LIMIT limit;
 
-          switch (cmd->data.go.type) {
+        switch (cmd->data.go.type) {
 
-            case DEPTH:
-              limit.type = SL_DEPTH;
-              limit.data.depth = cmd->data.go.data.depth;
-              iterative_deepening(board, &limit);
-              break;
+          case DEPTH:
+            limit.type = SL_DEPTH;
+            limit.data.depth = cmd->data.go.data.depth;
+            iterative_deepening(board, &limit);
+            break;
 
-            case PERFT:
-              perft(board, cmd->data.go.data.depth, 1);
-              break;
+          case PERFT:
+            perft(board, cmd->data.go.data.depth, 1);
+            break;
 
-            case MOVETIME:
-              limit.type = SL_MOVETIME;
-              limit.data.movetime = cmd->data.go.data.movetime;
-              iterative_deepening(board, &limit);
-              break;
+          case MOVETIME:
+            limit.type = SL_MOVETIME;
+            limit.data.movetime = cmd->data.go.data.movetime;
+            iterative_deepening(board, &limit);
+            break;
 
-            case INFINITE:
-              limit.type = SL_INFINITE;
-              iterative_deepening(board, &limit);
-              break;
+          case INFINITE:
+            limit.type = SL_INFINITE;
+            iterative_deepening(board, &limit);
+            break;
 
-            case WBTIME:
-              limit.type = SL_WBTIME;
-              limit.data.wb_time.wtime = cmd->data.go.data.wb_time.wtime;
-              limit.data.wb_time.winc = cmd->data.go.data.wb_time.winc;
-              limit.data.wb_time.btime = cmd->data.go.data.wb_time.btime;
-              limit.data.wb_time.binc = cmd->data.go.data.wb_time.binc;
-              iterative_deepening(board, &limit);
-              break;
+          case WBTIME:
+            limit.type = SL_WBTIME;
+            limit.data.wb_time.wtime = cmd->data.go.data.wb_time.wtime;
+            limit.data.wb_time.winc = cmd->data.go.data.wb_time.winc;
+            limit.data.wb_time.btime = cmd->data.go.data.wb_time.btime;
+            limit.data.wb_time.binc = cmd->data.go.data.wb_time.binc;
+            iterative_deepening(board, &limit);
+            break;
 
-          }
-          break;
         }
+        break;
+      }
 
       case POSITION:
-          switch (cmd->data.position.type) {
+        switch (cmd->data.position.type) {
 
-            case FEN:
-              free(board);
-              board = parse_fen(cmd->data.position.data.fen);
+          case FEN:
+            free(board);
+            board = parse_fen(cmd->data.position.data.fen);
 
-              break;
+            break;
 
-            case STARTPOS:
-              free(board);
-              board = initial_board();
+          case STARTPOS:
+            free(board);
+            board = initial_board();
 
-              break;
-          }
+            break;
+        }
 
-          if (cmd->data.position.data.moves != NULL) {
-            play_uci_moves(board, cmd->data.position.data.moves);
-          }
-          break;
+        if (cmd->data.position.data.moves != NULL) {
+          play_uci_moves(board, cmd->data.position.data.moves);
+        }
+        break;
 
       default:;
     }

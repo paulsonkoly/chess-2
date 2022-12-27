@@ -1,6 +1,7 @@
 *.o
 *.d
 *.yy.c
+src/version.h
 .*
 chess2
 test/test

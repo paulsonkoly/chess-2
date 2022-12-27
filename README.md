@@ -68,6 +68,6 @@ To build the CI tests install the [cmocka](https://cmocka.org/) testing framewor
 
 New features are created on feature branches. Before a merge to main can happen the feature branch has to run against main using [cutechess-cli](https://github.com/cutechess/cutechess).
 
-     cutechess-cli -each tc=5+3 proto=uci -engine cmd=./chess2_old -engine cmd=./chess2_new -games 128 -concurrency 8 -openings file=../OpenBench/Books/Pohl.epd -sprt alpha=0.05 beta=0.05 elo0=1700 elo1=1900
+     cutechess-cli -each tc=5+3 proto=uci -engine cmd=./chess2_new -engine cmd=./chess2_old -games 128 -concurrency 8 -openings file=../OpenBench/Books/Pohl.epd -sprt alpha=0.05 beta=0.05 elo0=100 elo1=200
 
 The branch should not be merged if there is a significant ELO drop.

@@ -27,6 +27,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "attacks.h"
 #include "uci.h"
 #include "zobrist.h"
+#include "transposition.h"
 
 void print_bitboard(BITBOARD bb) {
   printf("--------\n");
@@ -47,8 +48,11 @@ int main() {
 
   initialize_magic();
   initialize_hash();
+  initialize_tt();
 
   uci();
+
+  tt_free();
 
   return 0;
 }

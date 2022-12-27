@@ -15,6 +15,7 @@
 #include "movelist.h"
 #include "pv.h"
 #include "chess.h"
+#include "transposition.h"
 
 static struct timespec start;
 
@@ -191,6 +192,7 @@ int negascout(BOARD* board,
     PV ** npv,
     KILLER * killer) {
   PV * lpv;
+  const TT_RESULT * tt;
   int legal_found = 0;
   int score;
   int beta2;
@@ -223,6 +225,10 @@ int negascout(BOARD* board,
 
   if (repetition(board)) {
     return 0;
+  }
+
+  if (NULL != (tt = tt_probe(board->history[board->halfmovecnt].hash, reduced_depth))) {
+    return tt->score;
   }
 
   lpv = pv_init();
@@ -283,10 +289,12 @@ int negascout(BOARD* board,
 
   if (!legal_found) {
     if (in_check(board, board->next))
-      return -10000;
+      alpha = -10000;
     else
-      return 0;
+      alpha = 0;
   }
+
+  tt_insert_or_replace(board->history[board->halfmovecnt].hash, reduced_depth, alpha);
 
   return alpha;
 }
@@ -305,6 +313,8 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
   if (clock_gettime(CLOCK_REALTIME, &start)) {
     printf("info clock_gettime failed\n");
   }
+
+  tt_reset();
 
   switch (search_limit->type) {
     case SL_INFINITE: max_depth = 1000; movetime = 0; break;
@@ -362,6 +372,7 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
     delta = time_delta();
 
+    tt_info();
     printf("info score cp %d depth %d time %llu pv ", score, depth, delta);
 
     for (int i = 0; i < pv_count(npv); ++i) {

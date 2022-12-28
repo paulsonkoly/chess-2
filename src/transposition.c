@@ -14,7 +14,7 @@ typedef struct __ENTRY__ {
   TT_RESULT lane[2];
 } ENTRY;
 
-#define TT_SIZE 4096
+#define TT_SIZE 262144
 ENTRY * table;
 
 void initialize_tt() {
@@ -60,17 +60,19 @@ void tt_info() {
   printf("info tt hits %ld misses %ld\n", tt_hitcnt, tt_misscnt);
 }
 
-void tt_insert_or_replace(HASH hash, int depth, int score) {
+void tt_insert_or_replace(HASH hash, int depth, int score, TT_TYPE type) {
   unsigned int index = hash % TT_SIZE;
 
   if ((! (table[index].flags & TT_LANE1_VALID)) || table[index].lane[0].depth < depth) {
     table[index].flags |= TT_LANE1_VALID;
     table[index].lane[0].hash  = hash;
+    table[index].lane[0].type  = type;
     table[index].lane[0].score = score;
     table[index].lane[0].depth = depth;
   } else {
     table[index].flags |= TT_LANE2_VALID;
     table[index].lane[1].hash  = hash;
+    table[index].lane[1].type  = type;
     table[index].lane[1].score = score;
     table[index].lane[1].depth = depth;
   }

@@ -198,6 +198,8 @@ int negascout(BOARD* board,
   int beta2;
   unsigned long long delta;
   int count;
+  int alpha_improved = 0;
+  int tt_depth = 0;
 
   assert(0 <= reduced_depth && reduced_depth <= depth);
 
@@ -261,6 +263,8 @@ int negascout(BOARD* board,
     undo_move(board, ptr);
 
     if (alpha < score || (alpha == score && !legal_found)) {
+      alpha_improved = 1;
+      tt_depth =  lmr(reduced_depth, count);
       pv_insert(lpv, ptr, ply);
       pv_swap(&lpv, npv);
       alpha = score;
@@ -294,7 +298,9 @@ int negascout(BOARD* board,
       alpha = 0;
   }
 
-  tt_insert_or_replace(board->history[board->halfmovecnt].hash, reduced_depth, alpha);
+  if (alpha_improved) {
+    tt_insert_or_replace(board->history[board->halfmovecnt].hash, tt_depth, alpha);
+  }
 
   return alpha;
 }

@@ -45,7 +45,7 @@ const TT_RESULT * tt_probe(HASH hash, int depth) {
   int i;
 
   for (i = 0; i < 2; ++i) {
-    if ((table[index].flags & (1 << i)) && table[index].lane[i].hash == hash && table[index].lane[i].depth == depth) {
+    if ((table[index].flags & (1 << i)) && table[index].lane[i].hash == hash && table[index].lane[i].depth >= depth) {
       tt_hitcnt++;
       return & table[index].lane[i];
     }

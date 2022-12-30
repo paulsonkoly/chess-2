@@ -114,7 +114,7 @@ int evaluate(const BOARD * board) {
     for (rank = 1; rank < 7; ++rank) {
       SQUARE erank = colour == WHITE ? rank : 7 - rank;
 
-      pawn_value += rank_values[erank] * __builtin_popcountll(rankbb[erank] & pass);
+      pawn_value += rank_values[rank] * __builtin_popcountll(rankbb[erank] & pass);
     }
     pawn_value -= 10 * __builtin_popcountll(wk);
 

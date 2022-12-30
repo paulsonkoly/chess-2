@@ -120,6 +120,7 @@ int evaluate(const BOARD * board) {
     BITBOARD pass = passers(my_pawns, their_pawns, colour);
     BITBOARD wk   = weak(my_pawns, colour);
 
+    pawn_value += piece_values[PAWN] * __builtin_popcountll(my_pawns);
     pawn_value -= 20 * __builtin_popcountll(iso);
     for (rank = 1; rank < 7; ++rank) {
       SQUARE erank = colour == WHITE ? rank : 7 - rank;

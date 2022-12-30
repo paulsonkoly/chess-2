@@ -5,17 +5,6 @@
 
 static const int piece_values[] = { 0, 100, 310, 330, 500, 900 };
 
-static const int pawn_bonus[] = {
-   0,  0,  0,  0,  0,  0,  0,  0,
-  50, 50, 50, 50, 50, 50, 50, 50,
-  10, 10, 20, 30, 30, 20, 10, 10,
-   5,  5, 10, 25, 25, 10,  5,  5,
-   0,  0,  0, 20, 20,  0,  0,  0,
-   5, -5,-10,  0,  0,-10, -5,  5,
-   5, 10, 10,-20,-20, 10, 10,  5,
-   0,  0,  0,  0,  0,  0,  0,  0
-};
-
 static const int knight_bonus[] = {
   -50,-40,-30,-30,-30,-30,-40,-50,
   -40,-20,  0,  0,  0,  0,-20,-40,
@@ -84,7 +73,7 @@ static const int king_endgame_bonus[] = {
 
 static const int* bonuses[] = {
   NULL,
-  pawn_bonus,
+  NULL,
   knight_bonus,
   bishop_bonus,
   rook_bonus,

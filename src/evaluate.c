@@ -3,7 +3,7 @@
 #include "evaluate.h"
 #include "pawns.h"
 
-static const int piece_values[] = { 0, 100, 310, 330, 500, 900 };
+static const int piece_values[] = { 0, 100, 350, 370, 500, 900 };
 
 static const int knight_bonus[] = {
   -50,-40,-30,-30,-30,-30,-40,-50,

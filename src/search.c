@@ -15,6 +15,7 @@
 #include "movelist.h"
 #include "pv.h"
 #include "chess.h"
+#include "transposition.h"
 
 static struct timespec start;
 
@@ -191,11 +192,14 @@ int negascout(BOARD* board,
     PV ** npv,
     KILLER * killer) {
   PV * lpv;
+  const TT_RESULT * tt;
   int legal_found = 0;
-  int score;
+  int score = -10001;
   int beta2;
   unsigned long long delta;
   int count;
+  int alpha_orig = alpha;
+  int save_depth = 0;
 
   assert(0 <= reduced_depth && reduced_depth <= depth);
 
@@ -217,12 +221,31 @@ int negascout(BOARD* board,
     }
   }
 
-  if (reduced_depth == 0) {
-    return quiesce(board, alpha, beta);
-  }
-
   if (repetition(board)) {
     return 0;
+  }
+
+  if (NULL != (tt = tt_probe(board->history[board->halfmovecnt].hash, reduced_depth))) {
+    switch (tt->type) {
+      case TT_TYPE_EXACT:
+        return tt->score;
+      case TT_TYPE_LOWER:
+        alpha = MAX(alpha, tt->score);
+        break;
+      case TT_TYPE_UPPER:
+        beta = MIN(beta, tt->score);
+        break;
+    }
+
+    if (alpha >= beta) {
+      return tt->score;
+    }
+  }
+
+  if (reduced_depth == 0) {
+    score = quiesce(board, alpha, beta);
+    /* tt_insert_or_replace(board->history[board->halfmovecnt].hash, 0, score, TT_TYPE_EXACT); */
+    return score;
   }
 
   lpv = pv_init();
@@ -236,40 +259,42 @@ int negascout(BOARD* board,
   count = 1;
 
   for (MOVE * ptr = ml_sort(board, pv_getmove(opv, ply), depth, killer); ptr != NULL; ptr = ptr->next) {
+    int this;
+    int depth_for_count = lmr(reduced_depth, count);
 
     execute_move(board, ptr);
 
     if (in_check(board, 1 - board->next)) {
+      /* illegal move */
       undo_move(board, ptr);
       continue;
     }
 
     pv_reset(lpv);
 
-    score = -negascout(board, ply + 1, depth - 1, lmr(reduced_depth, count), -beta2, -alpha, opv, &lpv, killer);
+    this = -negascout(board, ply + 1, depth - 1, depth_for_count, -beta2, -alpha, opv, &lpv, killer);
 
-    if (alpha < score && score < beta && legal_found) {
-      score = -negascout(board, ply + 1, depth - 1, lmr(reduced_depth, count), -beta, -alpha, opv, &lpv, killer);
+    if (alpha < this && this < beta && legal_found) {
+      this = -negascout(board, ply + 1, depth - 1, depth_for_count, -beta, -alpha, opv, &lpv, killer);
     }
 
     undo_move(board, ptr);
 
-    if (alpha < score || (alpha == score && !legal_found)) {
+    legal_found = 1;
+
+    if (score < this) {
       pv_insert(lpv, ptr, ply);
       pv_swap(&lpv, npv);
-      alpha = score;
+      save_depth = depth_for_count;
+      score = this;
     }
 
-    legal_found = 1;
+    alpha = MAX(alpha, this);
 
     if (alpha >= beta) {
       save_killer(killer, depth, ptr);
 
-      pv_destroy(lpv);
-
-      ml_close_frame();
-
-      return alpha;
+      break;
     }
 
     beta2 = alpha + 1;
@@ -283,12 +308,26 @@ int negascout(BOARD* board,
 
   if (!legal_found) {
     if (in_check(board, board->next))
-      return -10000;
+      score = -10000;
     else
-      return 0;
+      score = 0;
+    /* insert at max depth because either checkmate or stalemate node */
+    /* tt_insert_or_replace(board->history[board->halfmovecnt].hash, MAX_PLYS, score, TT_TYPE_EXACT); */
+  } else {
+    TT_TYPE type;
+
+    if (score <= alpha_orig) {
+      type = TT_TYPE_LOWER;
+    } else if (score >= beta) {
+      type = TT_TYPE_UPPER;
+    } else {
+      type = TT_TYPE_EXACT;
+    }
+
+    tt_insert_or_replace(board->history[board->halfmovecnt].hash, save_depth, score, type);
   }
 
-  return alpha;
+  return score;
 }
 
 #define MOVES_TO_GO 25
@@ -305,6 +344,8 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
   if (clock_gettime(CLOCK_REALTIME, &start)) {
     printf("info clock_gettime failed\n");
   }
+
+  tt_reset();
 
   switch (search_limit->type) {
     case SL_INFINITE: max_depth = 1000; movetime = 0; break;
@@ -362,6 +403,7 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
     delta = time_delta();
 
+    tt_info();
     printf("info score cp %d depth %d time %llu pv ", score, depth, delta);
 
     for (int i = 0; i < pv_count(npv); ++i) {

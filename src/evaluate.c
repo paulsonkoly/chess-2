@@ -82,23 +82,11 @@ static const int* bonuses[] = {
   king_endgame_bonus
 };
 
-static BITBOARD rankbb[] = {
-  0x00000000000000ffULL,
-  0x000000000000ff00ULL,
-  0x0000000000ff0000ULL,
-  0x00000000ff000000ULL,
-  0x000000ff00000000ULL,
-  0x0000ff0000000000ULL,
-  0x00ff000000000000ULL,
-  0xff00000000000000ULL,
-};
-
 int evaluate(const BOARD * board) {
   int value = 0;
   int dir[] = {1, -1};
 
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
-    SQUARE rank;
     int pawn_value = 0;
     static const int rank_values[] = {0, 30, 35, 45, 65, 105, 185, 270};
 
@@ -111,10 +99,15 @@ int evaluate(const BOARD * board) {
 
     pawn_value += piece_values[PAWN] * __builtin_popcountll(my_pawns);
     pawn_value -= 20 * __builtin_popcountll(iso);
-    for (rank = 1; rank < 7; ++rank) {
-      SQUARE erank = colour == WHITE ? rank : 7 - rank;
+    while (pass) {
+      BITBOARD isolated = pass & -pass;
+      SQUARE sq         = ffsl(isolated) - 1;
+      SQUARE rank       = sq >> 3;
+      SQUARE erank      = colour == WHITE ? rank : 7 - rank;
 
-      pawn_value += rank_values[rank] * __builtin_popcountll(rankbb[erank] & pass);
+      pawn_value += rank_values[erank];
+
+      pass &= pass - 1;
     }
     pawn_value -= 10 * __builtin_popcountll(wk);
 

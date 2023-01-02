@@ -22,11 +22,14 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <stdio.h>
+#include <string.h>
+
 
 #include "chess.h"
 #include "attacks.h"
 #include "uci.h"
 #include "zobrist.h"
+#include "bench.h"
 
 void print_bitboard(BITBOARD bb) {
   printf("--------\n");
@@ -43,12 +46,17 @@ void print_bitboard(BITBOARD bb) {
 
 int stopped = 0;
 
-int main() {
-
+int main(int argc, char *argv[])
+{
   initialize_magic();
   initialize_hash();
 
-  uci();
+  if (argc == 2 && 0 == strncmp(argv[1], "bench", strlen("bench"))) {
+    bench();
+  }
+  else {
+    uci();
+  }
 
   return 0;
 }

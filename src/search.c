@@ -17,6 +17,7 @@
 #include "chess.h"
 
 static struct timespec start;
+unsigned long long nodes;
 
 #define STDIN 0
 int check_for_input() {
@@ -87,6 +88,8 @@ int quiesce(BOARD * board, int alpha, int beta) {
   MOVE * ptr;
   int legal_found = 0;
   int stand_pat;
+
+  nodes++;
 
   if (repetition(board)) {
     return 0;
@@ -198,6 +201,8 @@ int negascout(BOARD* board,
   int count;
 
   assert(0 <= reduced_depth && reduced_depth <= depth);
+
+  nodes++;
 
   if (stopped) {
     return -1;
@@ -349,10 +354,10 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
     }
 
     pv_reset(npv);
+    reset_killer(&killer);
 
     stopped = 0;
-
-    reset_killer(&killer);
+    nodes = 0;
 
     printf("info depth %d\n", depth);
 
@@ -362,6 +367,9 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
     delta = time_delta();
 
+    if (delta >= 1000) {
+      printf("info nodes %llu nps %llu\n", nodes, nodes / (delta / 1000));
+    }
     printf("info score cp %d depth %d time %llu pv ", score, depth, delta);
 
     for (int i = 0; i < pv_count(npv); ++i) {

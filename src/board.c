@@ -98,7 +98,7 @@ BOARD * parse_fen(const char * fen) {
   if (*ptr != '-') {
     f = *ptr++ - 'a';
     r = *ptr - '1';
-    board->en_passant = r * 8 + f;
+    board->en_passant = 1ULL << (r * 8 + f);
   }
 
   /* TODO: move counter */

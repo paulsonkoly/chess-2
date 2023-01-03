@@ -17,8 +17,7 @@ static const char * fens [] = {
   "r1bqk2r/pppnnpbp/3p2p1/3Pp3/2P1P3/2N1BN2/PP3PPP/R2QKB1R w KQkq - 1 9",
   "rnbqk2r/pp2ppbp/5np1/8/3N4/2N3P1/PP2PPBP/R1BQK2R w KQkq - 2 9",
   "r1bq1rk1/pppn1pbp/3p2p1/3Pp2n/2P1P3/2N1BN2/PP2BPPP/R2QK2R w KQ - 1 9",
-  "r1bq1rk1/pppn1pbp/3p2p1/3Pp2n/2P1P3/2N1BN2/PP2BPPP/R2QK2R w KQ - 1 9",
-  /* "r3k1nr/pp1b1pp1/1qn1p3/2bpP2p/8/2PB1N2/PPQ2PPP/RNB1K2R w KQkq h6 0 9", */
+  "r3k1nr/pp1b1pp1/1qn1p3/2bpP2p/8/2PB1N2/PPQ2PPP/RNB1K2R w KQkq h6 0 9",
   "r1bqkb1r/pp1n1p1p/2n1p1p1/2ppP3/3P4/2P2N1P/PP2NPP1/R1BQKB1R w KQkq - 1 9",
 
   /* middle game (sampled from http://www.talkchess.com/forum3/viewtopic.php?f=2&t=70438) */

@@ -74,4 +74,4 @@ The branch should not be merged if there is a significant ELO drop.
 
 ## Performance
 
-The `scripts/bench.sh` can be run against a feature branch which runs the engine with the `bench` argument. The script provides statistical analysis of of performance improvements.
+The `scripts/bench.sh` can be run against a feature branch which runs the engine with the `bench` argument. The script provides statistical analysis of performance improvements.

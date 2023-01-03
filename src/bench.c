@@ -98,9 +98,13 @@ void bench() {
     free(boards[i]);
   }
 
+<<<<<<< HEAD
   printf("%llu time\n", milisecs_overall);
   /* openbench compatible */
   printf("%llu nodes %llu nps \n", nodes_overall, nodes_overall * 1000 / milisecs_overall);
+=======
+  printf("nodes %llu nps %llu\n", nodes_overall, nodes_overall * 1000 / milisecs_overall);
+>>>>>>> 1227219 (nps + bench)
 }
 
 /* version of iterative deepening with a lot of functionality removed, and not resetting node */

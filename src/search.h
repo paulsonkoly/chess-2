@@ -6,6 +6,8 @@
 #include "killer.h"
 #include "pv.h"
 
+extern unsigned long long nodes;
+
 int negascout(BOARD* board,
     int ply,
     int depth,

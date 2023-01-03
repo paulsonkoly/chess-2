@@ -71,3 +71,7 @@ New features are created on feature branches. Before a merge to main can happen 
      cutechess-cli -each tc=5+3 proto=uci -engine cmd=./chess2_new -engine cmd=./chess2_old -games 128 -concurrency 8 -openings file=../OpenBench/Books/Pohl.epd -sprt alpha=0.05 beta=0.05 elo0=100 elo1=200
 
 The branch should not be merged if there is a significant ELO drop.
+
+## Performance
+
+The `scripts/bench.sh` can be run against a feature branch which runs the engine with the `bench` argument. The script provides statistical analysis of of performance improvements.

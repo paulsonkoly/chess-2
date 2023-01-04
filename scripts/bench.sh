@@ -15,30 +15,30 @@ printf "\rProgress : [${_fill// /#}${_empty// /-}] ${_progress}%%"
 }
 
 BRANCH=`git rev-parse --abbrev-ref HEAD`
-# make
+make
 
-# echo Running chess2 bench 30x
-# rm -f "${BRANCH}_bench_results.txt"
+echo Running chess2 bench 30x
+rm -f "${BRANCH}_bench_results.txt"
 
-# for (( i = 0; i < 30; i++ )); do
-#   ProgressBar $i 30
-#   echo `./chess2 bench | tail -n 2 | tr '\n' ' '` >> "${BRANCH}_bench_results.txt"
-# done
-# echo
+for (( i = 0; i < 30; i++ )); do
+  ProgressBar $i 30
+  echo `./chess2 bench | tail -n 2 | tr '\n' ' '` >> "${BRANCH}_bench_results.txt"
+done
+echo
 
-# echo Checking out main
-# git checkout main
-# make
+echo Checking out main
+git checkout main
+make
 
-# rm -f "main_bench_results.txt"
-# for (( i = 0; i < 30; i++ )); do
-#   ProgressBar $i 30
-#   echo `./chess2 bench | tail -n 2 | tr '\n' ' '` >> "main_bench_results.txt"
-# done
-# echo
+rm -f "main_bench_results.txt"
+for (( i = 0; i < 30; i++ )); do
+  ProgressBar $i 30
+  echo `./chess2 bench | tail -n 2 | tr '\n' ' '` >> "main_bench_results.txt"
+done
+echo
 
-# echo Checking out $BRANCH
-# git checkout "$BRANCH"
+echo Checking out $BRANCH
+git checkout "$BRANCH"
 
 echo Comparing times
 ministat -C 1 -w 50 "main_bench_results.txt" "${BRANCH}_bench_results.txt"

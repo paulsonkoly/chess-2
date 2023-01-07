@@ -266,6 +266,40 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour) {
   return (left_captures | right_captures | spec_left_captures | spec_right_captures);
 }
 
+/* does the move attack the square - either stepping out of an x-ray attack or directly */
+int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq) {
+  PIECE piece = (move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
+  BITBOARD mypieces[] = {
+    0ULL,
+    board->pawns & COLOUR_BB(board, board->next),
+    board->knights & COLOUR_BB(board, board->next),
+    board->bishops & COLOUR_BB(board, board->next),
+    board->rooks & COLOUR_BB(board, board->next),
+    board->queens & COLOUR_BB(board, board->next),
+    board->kings & COLOUR_BB(board, board->next),
+  };
+  BITBOARD occ = OCCUPANCY_BB(board);
+  BITBOARD sub = 0;
+
+  /* dummy mkmove */
+  occ ^= move->from | move->to;
+  occ &= ~(move->special & EN_PASSANT_CAPTURE_MOVE_MASK);
+  mypieces[piece] ^= move->from | move->to;
+
+  if (move->special & PROMOTION_MOVE_MASK) {
+    mypieces[(move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT] |= move->to;
+  }
+
+  sub = pawn_captures(sq, board->next ^ 1) & mypieces[PAWN];
+  sub |= king_attacks[sq] & mypieces[KING];
+  sub |= knight_attacks[sq] & mypieces[KNIGHT];
+  sub |= bishop_bitboard(sq, occ) & mypieces[BISHOP];
+  sub |= rook_bitboard(sq, occ) & mypieces[ROOK];
+  sub |= (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & mypieces[QUEEN];
+
+  return sub != 0ULL;
+}
+
 BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour) {
   /* if (board->attacks[opp]) { */
   /*   return (squares & board->attacks[opp]); */

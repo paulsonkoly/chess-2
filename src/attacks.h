@@ -3,6 +3,7 @@
 
 #include "chess.h"
 #include "board.h"
+#include "move.h"
 
 extern const BITBOARD king_attacks[];
 extern const BITBOARD knight_attacks[];
@@ -19,5 +20,7 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour);
 
 BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour);
 BITBOARD in_check(const BOARD * board, COLOUR colour);
+/* does the move attack the square - either stepping out of an x-ray attack or directly */
+int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq);
 
 #endif /* ifndef _ATTACKS_H_ */

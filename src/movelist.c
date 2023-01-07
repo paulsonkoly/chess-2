@@ -88,19 +88,18 @@ static void heuristic_weights(BOARD* board, const MOVE * pv, int depth, const KI
 }
 
 static void forcing_weights(BOARD * board) {
+  SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
+
   for (MOVE * ptr = frame[ply]; ptr < alloc; ++ptr) {
     if (ptr->special & CAPTURED_MOVE_MASK) {
       ptr->value = see(board, ptr) + 1000;
     } else {
-      execute_move(board, ptr);
-
-      if (in_check(board, board->next)) {
+      if (move_attacks_sq(board, ptr, king)) {
         ptr->value = 1000;
-      } else {
+      }
+      else {
         ptr->value = 0; /* remove the move - not forcing */
       }
-
-      undo_move(board, ptr);
     }
   }
 }

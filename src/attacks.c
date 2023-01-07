@@ -256,7 +256,7 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour) {
   BITBOARD right_captures = (SINGLE_PAWN_PUSH(colour, pawns) & pawn_capture_files[1]) >> 1;
   /* because we lose bits in SINGLE_PAWN_PUSH and this method is used to determine
    * if a white pawn from the seventh rank is attacking a square on the eighth by trying
-   * the opposite (black) pawn move. Generilizing for bit roation in SINGLE_PAWN_PUSH
+   * the opposite (black) pawn move. Generalizing for bit rotation in SINGLE_PAWN_PUSH
    * is also an option, but this is only needed here (in attacks) as a special case.
    */
   BITBOARD eights_rank = (0xff00000000000000 & pawns) << (8 * (1 - colour)) >> 8;
@@ -285,12 +285,13 @@ int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq) {
   occ ^= move->from | move->to;
   occ &= ~(move->special & EN_PASSANT_CAPTURE_MOVE_MASK);
   mypieces[piece] ^= move->from | move->to;
+  mypieces[ROOK]  ^= move->special & CASTLE_ROOK_MOVE_MASK;
 
   if (move->special & PROMOTION_MOVE_MASK) {
     mypieces[(move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT] |= move->to;
   }
 
-  sub = pawn_captures(sq, board->next ^ 1) & mypieces[PAWN];
+  sub = pawn_captures(1ULL << sq, board->next ^ 1) & mypieces[PAWN];
   sub |= king_attacks[sq] & mypieces[KING];
   sub |= knight_attacks[sq] & mypieces[KNIGHT];
   sub |= bishop_bitboard(sq, occ) & mypieces[BISHOP];
@@ -301,31 +302,26 @@ int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq) {
 }
 
 BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour) {
-  /* if (board->attacks[opp]) { */
-  /*   return (squares & board->attacks[opp]); */
-  /* } */
-  /* else { */
-    BITBOARD oppbb = COLOUR_BB(board, colour);
-    BITBOARD res = 0;
+  BITBOARD oppbb = COLOUR_BB(board, colour);
+  BITBOARD res = 0;
 
-    BITBOARD_SCAN(squares) {
-      SQUARE sq = BITBOARD_SCAN_ITER(squares);
-      BITBOARD occ = OCCUPANCY_BB(board);
-      BITBOARD sub = 0;
+  BITBOARD_SCAN(squares) {
+    SQUARE sq = BITBOARD_SCAN_ITER(squares);
+    BITBOARD occ = OCCUPANCY_BB(board);
+    BITBOARD sub = 0;
 
-      sub |= king_attacks[sq] & board->kings;
-      sub |= knight_attacks[sq] & board->knights;
-      sub |= bishop_bitboard(sq, occ) & board->bishops;
-      sub |= rook_bitboard(sq, occ) & board->rooks;
-      sub |= (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & board->queens;
+    sub |= king_attacks[sq] & board->kings;
+    sub |= knight_attacks[sq] & board->knights;
+    sub |= bishop_bitboard(sq, occ) & board->bishops;
+    sub |= rook_bitboard(sq, occ) & board->rooks;
+    sub |= (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & board->queens;
 
-      res |= sub & oppbb;
-    }
+    res |= sub & oppbb;
+  }
 
-    res |= pawn_captures(squares, 1 - colour) & oppbb & board->pawns;
+  res |= pawn_captures(squares, 1 - colour) & oppbb & board->pawns;
 
-    return res;
-  /* } */
+  return res;
 }
 
 BITBOARD in_check(const BOARD * board, COLOUR colour) {

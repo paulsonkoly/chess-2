@@ -119,7 +119,7 @@ static void see_capture_test(void ** state) {
                        | ((BITBOARD)PAWN << CAPTURED_MOVE_SHIFT)
                        | b->en_passant;
 
-  assert_int_equal(-225, see2(b, &c2d4));
+  assert_int_equal(-225, see(b, &c2d4));
 }
 
 static void see_test(void ** state) {

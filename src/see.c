@@ -3,54 +3,9 @@
 #include <assert.h>
 
 #include "see.h"
-
-#include "movelist.h"
-#include "moveexec.h"
-#include "movegen.h"
+#include "attacks.h"
 
 static const int piece_value[] = {0, 100, 325, 400, 500, 900, 10000};
-
-/* static int see__(BOARD * board, const MOVE * move) { */
-/*   int value = 0; */
-
-/*   MOVE * response; */
-
-/*   if ((response = add_least_valuable_attacker(board, move))) { */
-/*     PIECE capture = (response->special & CAPTURED_MOVE_MASK) >> CAPTURED_MOVE_SHIFT; */
-
-/*     execute_move(board, response); */
-/*     int x = see__(board, response); */
-
-/*     printf("%d = %d - %d\n",piece_value[capture] - x, piece_value[capture] , x ); */
-/*     value = piece_value[capture] - x; */
-
-/*     undo_move(board, response); */
-
-/*     value = value < 0 ? 0 : value; */
-/*   } */
-
-/*   return value; */
-/* } */
-
-/* int see(BOARD * board, const MOVE * move) { */
-/*   PIECE capture = (move->special & CAPTURED_MOVE_MASK) >> CAPTURED_MOVE_SHIFT; */
-
-/*   int value = piece_value[capture]; */
-
-/*   ml_open_frame(); */
-
-/*   execute_move(board, move); */
-
-/*   value = piece_value[capture] - see__(board, move); */
-
-/*   undo_move(board, move); */
-
-/*   ml_close_frame(); */
-
-/*   return value; */
-/* } */
-
-#include "attacks.h"
 
 int see(BOARD * board, const MOVE * move) {
   BITBOARD from = move->from;
@@ -161,9 +116,7 @@ int see(BOARD * board, const MOVE * move) {
         ply--;
         for (ply--; ply >= 0; ply--) {
           value = MAX(value, 0);
-          /* printf("%d = %d - %d\n",piece_value[captures[ply]] - value, piece_value[captures[ply]] , value ); */
           value = piece_value[captures[ply]] - value;
-
         }
 
         /* THE END */
@@ -172,15 +125,6 @@ int see(BOARD * board, const MOVE * move) {
     }
 
     assert(from);
-
-    /* { */
-    /*   const char * x = " PNBRQK"; */
-    /*   SQUARE f = __builtin_ctzll(from); */
-    /*   SQUARE rank = f / 8; */
-    /*   SQUARE file = f & 7; */
-
-    /*   printf("%c %c%d\n", x[piece], 'a' + file, rank + 1); */
-    /* } */
 
     /* dummy mkmove*/
     captures[ply++] = piece;

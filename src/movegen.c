@@ -275,53 +275,6 @@ void add_castles(const BOARD * board) {
   }
 }
 
-MOVE * add_least_valuable_attacker(const BOARD * board, const MOVE * capture) {
-  BITBOARD from;
-  BITBOARD to       = capture->to;
-  BITBOARD mypieces = NEXT_COLOUR_BB(board);
-  BITBOARD occ      = OCCUPANCY_BB(board);
-  PIECE attacker    = NO_PIECE;
-  SQUARE sq         = ffsl(to) - 1;
-
-  if ((from = pawn_captures(to & ~PROMOTIONS, 1 - board->next) & mypieces & board->pawns)) {
-    attacker = PAWN;
-  } else if ((from = knight_attacks[sq] & mypieces & board->knights)) {
-    attacker = KNIGHT;
-  } else if ((from = bishop_bitboard(sq, occ) & mypieces & board->bishops)) {
-    attacker = BISHOP;
-  } else if ((from = rook_bitboard(sq, occ) & mypieces & board->rooks)) {
-    attacker = ROOK;
-  } else if ((from = (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & mypieces & board->queens)) {
-    attacker = QUEEN;
-  } else if ((from = king_attacks[sq] & mypieces & board->kings)) {
-    attacker = KING;
-  }
-
-  if (from) {
-    MOVE * move = ml_allocate();
-
-    from &= - from;
-
-    move->value      = 0;
-    move->from       = from;
-    move->to         = to;
-
-    PIECE captured   = (PIECE)((capture->special & PROMOTION_MOVE_MASK) ?
-      ((capture->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT) :
-      ((capture->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT));
-
-    /* TODO promotion capture */
-    move->special    = ((BITBOARD)attacker << PIECE_MOVE_SHIFT)
-                     | ((BITBOARD)captured << CAPTURED_MOVE_SHIFT)
-                     | board->en_passant
-                     | (((BITBOARD)castle_update(board, attacker, to) << CASTLE_RIGHT_CHANGE_SHIFT));
-
-    return move;
-  }
-
-  return NULL;
-}
-
 void add_moves(const BOARD * board, int only_captures) {
   BITBOARD allowed_targets = COLOUR_BB(board, 1 - board->next);
 

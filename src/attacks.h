@@ -12,8 +12,8 @@ extern BITBOARD rook_attacks[64][4096];
 
 void initialize_magic();
 
-BITBOARD bishop_bitboard(const BOARD * board, SQUARE sq);
-BITBOARD rook_bitboard(const BOARD * board, SQUARE sq);
+BITBOARD bishop_bitboard(SQUARE sq, BITBOARD occ);
+BITBOARD rook_bitboard(SQUARE sq, BITBOARD occ);
 
 BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour);
 

@@ -227,20 +227,22 @@ void initialize_magic() {
   }
 }
 
-BITBOARD bishop_bitboard(const BOARD * board, SQUARE sq) {
+BITBOARD bishop_bitboard(SQUARE sq, BITBOARD occ) {
   BITBOARD mask  = bishop_masks[sq];
   BITBOARD magic = bishop_magics[sq];
-  BITBOARD occ   = OCCUPANCY_BB(board) & mask;
   SQUARE shift   = bishop_shifts[sq];
+
+  occ &= mask;
 
   return bishop_attacks[sq][(occ * magic) >> (64 - shift)];
 }
 
-BITBOARD rook_bitboard(const BOARD * board, SQUARE sq) {
+BITBOARD rook_bitboard(SQUARE sq, BITBOARD occ) {
   BITBOARD mask  = rook_masks[sq];
   BITBOARD magic = rook_magics[sq];
-  BITBOARD occ   = OCCUPANCY_BB(board) & mask;
   SQUARE shift   = rook_shifts[sq];
+
+  occ &= mask;
 
   return rook_attacks[sq][(occ * magic) >> (64 - shift)];
 }
@@ -274,13 +276,14 @@ BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour) {
 
     BITBOARD_SCAN(squares) {
       SQUARE sq = BITBOARD_SCAN_ITER(squares);
+      BITBOARD occ = OCCUPANCY_BB(board);
       BITBOARD sub = 0;
 
       sub |= king_attacks[sq] & board->kings;
       sub |= knight_attacks[sq] & board->knights;
-      sub |= bishop_bitboard(board, sq) & board->bishops;
-      sub |= rook_bitboard(board, sq) & board->rooks;
-      sub |= (bishop_bitboard(board, sq) | rook_bitboard(board, sq)) & board->queens;
+      sub |= bishop_bitboard(sq, occ) & board->bishops;
+      sub |= rook_bitboard(sq, occ) & board->rooks;
+      sub |= (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & board->queens;
 
       res |= sub & oppbb;
     }

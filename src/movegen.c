@@ -9,19 +9,21 @@
 #include "attacks.h"
 
 static BITBOARD normal_attacks(const BOARD * board, PIECE piece, SQUARE sq, BITBOARD allowed_targets) {
+  BITBOARD occ = OCCUPANCY_BB(board);
+
   switch (piece) {
 
     case KNIGHT:
       return knight_attacks[sq] & allowed_targets;
 
     case BISHOP:
-      return bishop_bitboard(board, sq) & allowed_targets;
+      return bishop_bitboard(sq, occ) & allowed_targets;
 
     case ROOK:
-      return rook_bitboard(board, sq) & allowed_targets;
+      return rook_bitboard(sq, occ) & allowed_targets;
 
     case QUEEN:
-      return (bishop_bitboard(board, sq) | rook_bitboard(board, sq)) & allowed_targets;
+      return (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & allowed_targets;
 
     case KING:
       return king_attacks[sq] & allowed_targets;
@@ -277,6 +279,7 @@ MOVE * add_least_valuable_attacker(const BOARD * board, const MOVE * capture) {
   BITBOARD from;
   BITBOARD to       = capture->to;
   BITBOARD mypieces = NEXT_COLOUR_BB(board);
+  BITBOARD occ      = OCCUPANCY_BB(board);
   PIECE attacker    = NO_PIECE;
   SQUARE sq         = ffsl(to) - 1;
 
@@ -284,11 +287,11 @@ MOVE * add_least_valuable_attacker(const BOARD * board, const MOVE * capture) {
     attacker = PAWN;
   } else if ((from = knight_attacks[sq] & mypieces & board->knights)) {
     attacker = KNIGHT;
-  } else if ((from = bishop_bitboard(board, sq) & mypieces & board->bishops)) {
+  } else if ((from = bishop_bitboard(sq, occ) & mypieces & board->bishops)) {
     attacker = BISHOP;
-  } else if ((from = rook_bitboard(board, sq) & mypieces & board->rooks)) {
+  } else if ((from = rook_bitboard(sq, occ) & mypieces & board->rooks)) {
     attacker = ROOK;
-  } else if ((from = (bishop_bitboard(board, sq) | rook_bitboard(board, sq)) & mypieces & board->queens)) {
+  } else if ((from = (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & mypieces & board->queens)) {
     attacker = QUEEN;
   } else if ((from = king_attacks[sq] & mypieces & board->kings)) {
     attacker = KING;

@@ -22,6 +22,7 @@ ucimove    {file}{rank}{file}{rank}{promotion}?
 "ucinewgame" { return TOK_UCINEWGAME; }
 "uci"        { return TOK_UCI; }
 "isready"    { return TOK_IS_READY; }
+"stop"       { return TOK_STOP; }
 "go"         { return TOK_GO; }
 "depth"      { return TOK_DEPTH; }
 "perft"      { return TOK_PERFT; }

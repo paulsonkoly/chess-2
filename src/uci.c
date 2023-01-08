@@ -26,7 +26,11 @@ UCI_CMD * uci_parse(const char * line) {
   (void)yy_scan_string(line);
 
   switch (tok = yylex()) {
-    case TOK_UCINEWGAME: case TOK_UCI: case TOK_IS_READY: cmd->type = (enum UCI_TYPE)tok; return cmd;
+    case TOK_UCINEWGAME:
+    case TOK_UCI:
+    case TOK_IS_READY:
+    case TOK_STOP:
+      cmd->type = (enum UCI_TYPE)tok; return cmd;
 
     case TOK_GO:
       cmd->type = GO;
@@ -140,6 +144,9 @@ void uci() {
 
       case IS_READY:
         printf("readyok\n");
+        break;
+
+      case STOP:
         break;
 
       case GO: {

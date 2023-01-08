@@ -22,5 +22,7 @@ void uci_parser_test11(void **state);
 void uci_parser_test12(void **state);
 void uci_parser_test13(void **state);
 void uci_parser_test14(void **state);
+void uci_parser_test15(void **state);
+void uci_parser_test16(void **state);
 
 #endif /* ifndef __UCI_TESTS__ */

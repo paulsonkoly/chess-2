@@ -185,6 +185,8 @@ int main(void) {
     cmocka_unit_test(uci_parser_test12),
     cmocka_unit_test(uci_parser_test13),
     cmocka_unit_test(uci_parser_test14),
+    cmocka_unit_test(uci_parser_test15),
+    cmocka_unit_test(uci_parser_test16),
 
     cmocka_unit_test(zobrist_test1),
     cmocka_unit_test(zobrist_test2),

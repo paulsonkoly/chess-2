@@ -30,6 +30,7 @@ UCI_CMD * uci_parse(const char * line) {
     case TOK_UCI:
     case TOK_IS_READY:
     case TOK_STOP:
+    case TOK_QUIT:
       cmd->type = (enum UCI_TYPE)tok; return cmd;
 
     case TOK_GO:
@@ -208,6 +209,15 @@ void uci() {
           play_uci_moves(board, cmd->data.position.data.moves);
         }
         break;
+
+      case QUIT:
+        fflush(stdout);
+
+        free(board);
+        free(line);
+        uci_free(cmd);
+
+        return;
 
       default:;
     }

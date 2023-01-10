@@ -51,34 +51,24 @@ static const RULE rules[] = {
   { "0  0  0      *      0  0  0  0  *      0      0  0", {     0,   DRAWN} },
   { "0  0  0      *      0  0  0  0  0      *      0  0", {     0,   DRAWN} },
 
-  { "*  *  *      *      >0 *  0  0  0      0      0  0", {  8000,   0} },     /* Q/R vs - */
-  { "*  *  *      *      * >0  0  0  0      0      0  0", {  8000,   0} },
-  { "0  0  0      0      0  0  *  *  *      *      >0 *", { -8000,   0} },
-  { "0  0  0      0      0  0  *  *  *      *      * >0", { -8000,   0} },
-
-  { "*  *  >0     >0     *  *  0  0  0      0      0  0", {  5000,   0} },     /* B+B vs - */
-  { "0  0  0      0      0  0  *  *  >0     >0     *  *", { -5000,   0} },
-
-  { "*  >0 >0     *      *  *  0  0  0      0      0  0", {  2000,   0} },     /* B+N vs - */
-  { "0  0  0      0      0  0  *  >0 >0     *      *  *", { -2000,   0} },
-  { "*  >0 *      >0     *  *  0  0  0      0      0  0", {  2000,   0} },
-  { "0  0  0      0      0  0  *  >0 *      >0     *  *", { -2000,   0} },
+  { "0  1  1      0      0  0  0  1  0      0      0  0", {     0,   DRAWN} }, /* B+N vs B/N/R */
+  { "0  1  0      1      0  0  0  1  0      0      0  0", {     0,   DRAWN} },
+  { "0  1  1      0      0  0  0  0  1      0      0  0", {     0,   DRAWN} },
+  { "0  1  0      1      0  0  0  0  1      0      0  0", {     0,   DRAWN} },
+  { "0  1  1      0      0  0  0  0  0      1      0  0", {     0,   DRAWN} },
+  { "0  1  0      1      0  0  0  0  0      1      0  0", {     0,   DRAWN} },
+  { "0  1  1      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
+  { "0  1  0      1      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
+  { "0  1  0      0      0  0  0  1  1      0      0  0", {     0,   DRAWN} },
+  { "0  1  0      0      0  0  0  1  0      1      0  0", {     0,   DRAWN} },
+  { "0  0  1      0      0  0  0  1  1      0      0  0", {     0,   DRAWN} },
+  { "0  0  1      0      0  0  0  1  0      1      0  0", {     0,   DRAWN} },
+  { "0  0  0      1      0  0  0  1  1      0      0  0", {     0,   DRAWN} },
+  { "0  0  0      1      0  0  0  1  0      1      0  0", {     0,   DRAWN} },
+  { "0  0  0      0      1  0  0  1  1      0      0  0", {     0,   DRAWN} },
+  { "0  0  0      0      1  0  0  1  0      1      0  0", {     0,   DRAWN} },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { "*  *  *      *      *  >0 0  0  0      0      1  0", {  2000,   0} },     /* Q vs R/B/N */
-  { "*  *  *      *      *  >0 0  0  0      1      0  0", {  3000,   0} },
-  { "*  *  *      *      *  >0 0  0  1      0      0  0", {  3000,   0} },
-  { "*  *  *      *      *  >0 0  1  0      0      0  0", {  3000,   0} },
-  { "0  0  0      0      1  0  *  *  *      *      * >0", { -2000,   0} },
-  { "0  0  0      1      0  0  *  *  *      *      * >0", { -3000,   0} },
-  { "0  0  1      0      0  0  *  *  *      *      * >0", { -3000,   0} },
-  { "0  1  0      0      0  0  *  *  *      *      * >0", { -3000,   0} },
-
-  { "*  *  *      *      *  1  0  1  1      0      0  0", {  1000,   0} },     /* Q vs B+N */
-  { "*  *  *      *      *  1  0  1  0      1      0  0", {  1000,   0} },
-  { "0  1  1      0      0  0  *  *  *      *      *  1", {  1000,   0} },
-  { "0  1  0      1      0  0  *  *  *      *      *  1", {  1000,   0} },
-
   { "0  0  0      0      1  0  0  0  1      0      0  0", {     0,   DRAWN} }, /* R vs B */
   { "0  0  0      0      1  0  0  0  0      1      0  0", {     0,   DRAWN} },
   { "0  0  1      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
@@ -110,8 +100,22 @@ static const RULE rules[] = {
   { "0  0  0      0      0  1  0  0  1      0      0  1", {     0,   DRAWN} },
   { "0  0  0      0      0  1  0  0  0      1      0  1", {     0,   DRAWN} },
 
-  { ">0 *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* CATCH ALL */
-  { "*  *  *      *      *  *  >0 *  *      *      *  *", {     0,   0} },    /* CATCH ALL */
+  /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
+  { "* >=a >=b  >=c      >0 *  0  a  b      c      0  0", {     0,   0} },     /* Q/R vs at least matching minor pcs */
+  { "* >=a >=b  >=c      * >0  0  a  b      c      0  0", {     0,   0} },
+  { "0  a  b      c      0  0  * >=a >=b  >=c      >0 *", {     0,   0} },
+  { "0  a  b      c      0  0  * >=a >=b  >=c      * >0", {     0,   0} },
+
+  { "*  *   >0    >0     *  *  0 <2  0      0      0  0", {     0,   0} },     /* B+B vs -/N */
+  { "0  <2  0     0      0  0  *  *  >0     >0     *  *", {     0,   0} },
+
+  { "*  >a >0     *      *  *  0  a  0      0      0  0", {     0,   0} },     /* B+(a<N) vs aN */
+  { "0  a  0      0      0  0  *  >a >0     *      *  *", {     0,   0} },
+  { "*  >a *      >0     *  *  0  a  0      0      0  0", {     0,   0} },
+  { "0  a  0      0      0  0  *  >a *      >0     *  *", {     0,   0} },
+
+  /* { ">0 *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /1* CATCH ALL *1/ */
+  /* { "*  *  *      *      *  *  >0 *  *      *      *  *", {     0,   0} },    /1* CATCH ALL *1/ */
 
   { NULL,                                                 {     0,   0} }
 };
@@ -151,6 +155,10 @@ void initialize_mat_tables() {
           counts[0], counts[1], counts[2], counts[3], counts[4],  counts[5],
           counts[6], counts[7], counts[8], counts[9], counts[10], counts[11]);
 
+
+      rule -= 2;
+      (volatile int)match(rule->str, counts);
+
       abort();
     }
 
@@ -172,10 +180,36 @@ void initialize_mat_tables() {
   }
 }
 
-int match(const char * token, int counts[]) {
+int match(const char * str, int counts[]) {
   int i;
+  int vars[12] = { 0 };
+  const char * token = str;
 
+  /* first pass, fill variables */
   for (i = 0; i < MAX_PT; ++i) {
+    while (*token == ' ') token++;
+
+    switch (*token) {
+      case 'a': case 'b': case 'c':
+        vars[*token - 'a'] = counts[i];
+        token++;
+        break;
+
+      case '<': case '>':
+        token++;
+        if (*token == '=') {
+          token++;
+        }
+
+      default:
+        token++; /* operand */
+    }
+  }
+
+  token = str;
+  for (i = 0; i < MAX_PT; ++i) {
+    int value;
+    int op;
 
     while (*token == ' ') token++;
 
@@ -189,17 +223,49 @@ int match(const char * token, int counts[]) {
         }
         break;
 
-      case '*':
-        token++;
-        break;
-
-      case '>':
-        token++;
-        if (*token - '0' < counts[i]) {
+      case 'a': case 'b': case 'c':
+        if (vars[*token - 'a'] == counts[i]) {
           token++;
         } else {
           return 0;
         }
+        break;
+
+      case '*':
+        token++;
+        break;
+
+      case '>': case '<':
+        op = *token++ == '>' ? 0 : 2;
+
+        if (*token++ == '=') {
+          op++;
+        }
+        value = (*token < 'a' ? *token - '0' : vars[*token - 'a']);
+        switch (op) {
+          case 0:
+            if (value >= counts[i]) {
+              return 0;
+            }
+            break;
+          case 1:
+            if (value > counts[i]) {
+              return 0;
+            }
+            break;
+          case 2:
+            if (value <= counts[i]) {
+              return 0;
+            }
+            break;
+          case 3:
+            if (value < counts[i]) {
+              return 0;
+            }
+            break;
+        }
+        token++;
+        break;
 
       default:;
     }

@@ -101,6 +101,13 @@ static const RULE rules[] = {
   { "0  0  0      0      0  1  0  0  1      0      0  1", {     0,   DRAWN} },
   { "0  0  0      0      0  1  0  0  0      1      0  1", {     0,   DRAWN} },
 
+  { ">0 0  0      0      0  0  0  1  0      0      0  0", {   350,   0} },    /* piece can't win, against pawn, */
+  { "0  1  0      0      0  0  >0 0  0      0      0  0", {  -350,   0} },    /* take away its value */
+  { ">0 0  0      0      0  0  0  0  1      0      0  0", {   370,   0} },    /* TODO central definition for these values */
+  { "0  0  1      0      0  0  >0 0  0      0      0  0", {  -370,   0} },
+  { ">0 0  0      0      0  0  0  0  0      1      0  0", {   370,   0} },
+  { "0  0  0      1      0  0  >0 0  0      0      0  0", {  -370,   0} },
+
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
   { ">a 0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },    /* opposite colour bishop endgames */
   { "a  0  1      0      0  0  >a 0  0      1      0  0", {    80,   0} },    /* penalty 80 for winning side */

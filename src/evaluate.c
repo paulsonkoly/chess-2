@@ -158,7 +158,7 @@ int evaluate(const BOARD * board) {
     }
   }
 
-  for (COLOUR colour = WHITE; colour < BLACK; ++colour) {
+  for (COLOUR colour = WHITE; colour <= BLACK; ++colour) {
     BITBOARD king = board->kings & COLOUR_BB(board, colour);
     SQUARE sq = __builtin_ctzll(king);
     SQUARE rank = sq >> 3;

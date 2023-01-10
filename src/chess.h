@@ -51,4 +51,7 @@ typedef uint8_t CASTLE;
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
+#define LIGHT_SQUARES 0x55aa55aa55aa55aa
+#define DARK_SQUARES 0xaa55aa55aa55aa55
+
 #endif /* ifndef _CHESS_H_ */

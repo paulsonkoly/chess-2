@@ -1,13 +1,7 @@
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
 
-typedef struct __MAT_TABLE_ENTRY__ {
-/* #define ENDGAME_FACTOR_MASK 0x00000003 */
-#define DRAWN               0x00000004 /* insufficient material */
-  int value;
-  uint32_t flags;
-} MAT_TABLE_ENTRY;
+#include "mat_tables.h"
 
 MAT_TABLE_ENTRY * mat_table = NULL;
 
@@ -28,6 +22,12 @@ typedef enum {
   BR = 10,    /* black rooks */
   BQ = 11     /* black queens */
 } PT_TYPES;
+
+static const int max_counts[MAX_PT] = {
+  /* 2 * (pawns, knights, lsq bishops, dsq bishops, rooks, queens) */
+   8, 2, 1, 1, 2, 1,
+   8, 2, 1, 1, 2, 1,
+};
 
 typedef struct {
   const char * str;
@@ -114,8 +114,10 @@ static const RULE rules[] = {
   { "*  >a *      >0     *  *  0  a  0      0      0  0", {     0,   0} },
   { "0  a  0      0      0  0  *  >a *      >0     *  *", {     0,   0} },
 
-  /* { ">0 *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /1* CATCH ALL *1/ */
-  /* { "*  *  *      *      *  *  >0 *  *      *      *  *", {     0,   0} },    /1* CATCH ALL *1/ */
+
+
+  { ">0 *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },   /* CATCH ALL */
+  { "*  *  *      *      *  *  >0 *  *      *      *  *", {     0,   0} },   /* CATCH ALL */
 
   { NULL,                                                 {     0,   0} }
 };
@@ -127,11 +129,11 @@ void initialize_mat_tables() {
     0, 0, 0, 0, 0, 0,  /* white piece counts */
     0, 0, 0, 0, 0, 0 };/* black piece counts */
 
-  static const int max_counts[MAX_PT] = {
-    /* 2 * (pawns, knights, lsq bishops, dsq bishops, rooks, queens) */
-     8, 2, 1, 1, 2, 1,
-     8, 2, 1, 1, 2, 1,
-  };
+  MAT_TABLE_ENTRY * entry;
+
+  if (NULL == (mat_table = calloc(9 * 9 * 3 * 3 * 2 * 2 * 2 * 2 * 3 * 3 * 2 *2, sizeof(MAT_TABLE_ENTRY)))) {
+    abort();
+  }
 
   while (1) {
     int i, j;
@@ -162,6 +164,22 @@ void initialize_mat_tables() {
       abort();
     }
 
+    entry = & mat_table[
+              counts[WP]                              +
+              counts[WN]                          * 8 +
+              counts[WB_LSQ]                  * 8 * 3 +
+              counts[WB_DSQ]              * 8 * 3 * 2 +
+              counts[WR]              * 8 * 3 * 2 * 2 +
+              counts[WQ]          * 8 * 3 * 2 * 2 * 3 +
+              counts[BP]      * 8 * 3 * 2 * 2 * 3 * 2 +
+              counts[BN]      * 8 * 3 * 2 * 2 * 3 * 2                 * 8 +
+              counts[BB_LSQ]  * 8 * 3 * 2 * 2 * 3 * 2             * 8 * 3 +
+              counts[BB_DSQ]  * 8 * 3 * 2 * 2 * 3 * 2         * 8 * 3 * 2 +
+              counts[BR]      * 8 * 3 * 2 * 2 * 3 * 2     * 8 * 3 * 2 * 2 +
+              counts[BQ]      * 8 * 3 * 2 * 2 * 3 * 2 * 8 * 3 * 2 * 2 * 3];
+
+    *entry = rule->entry;
+
     /* next entry */
     fin = 1;
     for (i = 0; i < MAX_PT; ++i) {
@@ -190,7 +208,7 @@ int match(const char * str, int counts[]) {
     while (*token == ' ') token++;
 
     switch (*token) {
-      case 'a': case 'b': case 'c':
+      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
         vars[*token - 'a'] = counts[i];
         token++;
         break;
@@ -223,7 +241,7 @@ int match(const char * str, int counts[]) {
         }
         break;
 
-      case 'a': case 'b': case 'c':
+      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
         if (vars[*token - 'a'] == counts[i]) {
           token++;
         } else {
@@ -272,5 +290,37 @@ int match(const char * str, int counts[]) {
   }
 
   return 1;
+}
+
+const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {
+  int counts[MAX_PT];
+
+  counts[WP] = MIN(__builtin_popcountll(board->pawns & COLOUR_BB(board, WHITE)), max_counts[WP]);
+  counts[WN] = MIN(__builtin_popcountll(board->knights & COLOUR_BB(board, WHITE)), max_counts[WN]);
+  counts[WB_LSQ] = MIN(__builtin_popcountll(board->bishops & COLOUR_BB(board, WHITE) & LIGHT_SQUARES), max_counts[WB_LSQ]);
+  counts[WB_DSQ] = MIN(__builtin_popcountll(board->bishops & COLOUR_BB(board, WHITE) & DARK_SQUARES), max_counts[WB_DSQ]);
+  counts[WR] = MIN(__builtin_popcountll(board->rooks & COLOUR_BB(board, WHITE)), max_counts[WR]);
+  counts[WQ] = MIN(__builtin_popcountll(board->queens & COLOUR_BB(board, WHITE)), max_counts[WQ]);
+
+  counts[BP] = MIN(__builtin_popcountll(board->pawns & COLOUR_BB(board, BLACK)), max_counts[BP]);
+  counts[BN] = MIN(__builtin_popcountll(board->knights & COLOUR_BB(board, BLACK)), max_counts[BN]);
+  counts[BB_LSQ] = MIN(__builtin_popcountll(board->bishops & COLOUR_BB(board, BLACK) & LIGHT_SQUARES), max_counts[BB_LSQ]);
+  counts[BB_DSQ] = MIN(__builtin_popcountll(board->bishops & COLOUR_BB(board, BLACK) & DARK_SQUARES), max_counts[BB_DSQ]);
+  counts[BR] = MIN(__builtin_popcountll(board->rooks & COLOUR_BB(board, BLACK)), max_counts[BR]);
+  counts[BQ] = MIN(__builtin_popcountll(board->queens & COLOUR_BB(board, BLACK)), max_counts[BQ]);
+
+  return & mat_table[
+      counts[WP]                              +
+      counts[WN]                          * 8 +
+      counts[WB_LSQ]                  * 8 * 3 +
+      counts[WB_DSQ]              * 8 * 3 * 2 +
+      counts[WR]              * 8 * 3 * 2 * 2 +
+      counts[WQ]          * 8 * 3 * 2 * 2 * 3 +
+      counts[BP]      * 8 * 3 * 2 * 2 * 3 * 2 +
+      counts[BN]      * 8 * 3 * 2 * 2 * 3 * 2                 * 8 +
+      counts[BB_LSQ]  * 8 * 3 * 2 * 2 * 3 * 2             * 8 * 3 +
+      counts[BB_DSQ]  * 8 * 3 * 2 * 2 * 3 * 2         * 8 * 3 * 2 +
+      counts[BR]      * 8 * 3 * 2 * 2 * 3 * 2     * 8 * 3 * 2 * 2 +
+      counts[BQ]      * 8 * 3 * 2 * 2 * 3 * 2 * 8 * 3 * 2 * 2 * 3];
 }
 

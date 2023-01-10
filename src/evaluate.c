@@ -2,6 +2,7 @@
 
 #include "evaluate.h"
 #include "pawns.h"
+#include "mat_tables.h"
 
 static const int piece_values[] = { 0, 100, 350, 370, 500, 900 };
 
@@ -98,6 +99,13 @@ int psqt_value(PIECE piece, COLOUR colour, SQUARE from, SQUARE to) {
 int evaluate(const BOARD * board) {
   int value = 0;
   int dir[] = {1, -1};
+  const MAT_TABLE_ENTRY * mt = get_mat_table_entry(board);
+
+  if (mt->flags & DRAWN) {
+    return 0;
+  }
+
+  value += mt->value;
 
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
     int pawn_value = 0;

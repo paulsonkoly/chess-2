@@ -59,6 +59,8 @@ int main(int argc, char *argv[])
     uci();
   }
 
+  free(mat_table);
+
   return 0;
 }
 

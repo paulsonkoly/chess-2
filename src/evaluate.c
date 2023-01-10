@@ -136,8 +136,7 @@ int evaluate(const BOARD * board) {
   }
 
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
-
-    for (PIECE piece = PAWN + 1; piece <= KING; ++piece) {
+    for (PIECE piece = PAWN + 1; piece < KING; ++piece) {
       BITBOARD pieces = *(&board->pawns + piece - PAWN) & COLOUR_BB(board, colour);
 
       while (pieces) {
@@ -157,6 +156,28 @@ int evaluate(const BOARD * board) {
         pieces &= pieces - 1;
       }
     }
+  }
+
+  for (COLOUR colour = WHITE; colour < BLACK; ++colour) {
+    BITBOARD king = board->kings & COLOUR_BB(board, colour);
+    SQUARE sq = __builtin_ctzll(king);
+    SQUARE rank = sq >> 3;
+    SQUARE file = sq & 7;
+    int kv;
+
+    if (colour == WHITE) {
+      sq = ((7 - rank) << 3) | file;
+    }
+
+    switch (mt->flags & ENDGAME_MASK) {
+      case ENDGAME_0: kv = king_middlegame_bonus[sq];                                    break;
+      case ENDGAME_1: kv = (2 * king_middlegame_bonus[sq] + king_endgame_bonus[sq]) / 3; break;
+      case ENDGAME_2: kv = (king_middlegame_bonus[sq] + 2 * king_endgame_bonus[sq]) / 3; break;
+      case ENDGAME_3: kv = king_endgame_bonus[sq];                                       break;
+      default:;
+    }
+
+    value += dir[colour] * kv;
   }
 
   return (board->next == WHITE ? value : -value);

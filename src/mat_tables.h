@@ -6,7 +6,11 @@
 #include "board.h"
 
 typedef struct __MAT_TABLE_ENTRY__ {
-/* #define ENDGAME_FACTOR_MASK 0x00000003 */
+#define ENDGAME_MASK        0x00000003
+#define ENDGAME_0           0x00000000 /* opening */
+#define ENDGAME_1           0x00000001 /* early middle game */
+#define ENDGAME_2           0x00000002 /* late middle game */
+#define ENDGAME_3           0x00000003 /* endgame */
 #define DRAWN               0x00000004 /* insufficient material */
   int value;
   uint32_t flags;

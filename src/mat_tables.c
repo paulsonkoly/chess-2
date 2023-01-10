@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "mat_tables.h"
 
@@ -101,23 +102,26 @@ static const RULE rules[] = {
   { "0  0  0      0      0  1  0  0  0      1      0  1", {     0,   DRAWN} },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { "* >=a >=b  >=c      >0 *  0  a  b      c      0  0", {     0,   0} },     /* Q/R vs at least matching minor pcs */
-  { "* >=a >=b  >=c      * >0  0  a  b      c      0  0", {     0,   0} },
-  { "0  a  b      c      0  0  * >=a >=b  >=c      >0 *", {     0,   0} },
-  { "0  a  b      c      0  0  * >=a >=b  >=c      * >0", {     0,   0} },
+  { ">a 0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },    /* opposite colour bishop endgames */
+  { "a  0  1      0      0  0  >a 0  0      1      0  0", {    80,   0} },    /* penalty 80 for winning side */
+  { ">a 0  0      1      0  0  a  0  1      0      0  0", {   -80,   0} },
+  { "a  0  0      1      0  0  >a 0  1      0      0  0", {    80,   0} },
 
-  { "*  *   >0    >0     *  *  0 <2  0      0      0  0", {     0,   0} },     /* B+B vs -/N */
-  { "0  <2  0     0      0  0  *  *  >0     >0     *  *", {     0,   0} },
+  { "a  0  1      1      b  c  a  1  1      0      b  c", {    30,   0} },    /* bishop pair vs knight and bishop */
+  { "a  0  1      1      b  c  a  1  0      1      b  c", {    30,   0} },    /* bonus: 40 */
+  { "a  1  1      0      b  c  a  0  1      1      b  c", {   -30,   0} },
+  { "a  1  0      1      b  c  a  0  1      1      b  c", {   -30,   0} },
+  { "a  0  1      1      b  c  a  2  0      0      b  c", {    40,   0} },    /* bishop pair vs 2 knights */
+  { "a  2  0      0      b  c  a  0  1      1      b  c", {   -40,   0} },
 
-  { "*  >a >0     *      *  *  0  a  0      0      0  0", {     0,   0} },     /* B+(a<N) vs aN */
-  { "0  a  0      0      0  0  *  >a >0     *      *  *", {     0,   0} },
-  { "*  >a *      >0     *  *  0  a  0      0      0  0", {     0,   0} },
-  { "0  a  0      0      0  0  *  >a *      >0     *  *", {     0,   0} },
+  { "a >b  c      d      e  f >a  b  c      d      e  f", {    30,   0} },    /* discourage trading a minor piece for pawns */
+  { "a  b >c      d      e  f >a  b  c      d      e  f", {    30,   0} },
+  { "a  b  c      >d     e  f >a  b  c      d      e  f", {    30,   0} },
+  { ">a b  c      d      e  f a   >b c      d      e  f", {   -30,   0} },
+  { ">a b  c      d      e  f a   b  >c     d      e  f", {   -30,   0} },
+  { ">a b  c      d      e  f a   b  c      >d     e  f", {   -30,   0} },
 
-
-
-  { ">0 *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },   /* CATCH ALL */
-  { "*  *  *      *      *  *  >0 *  *      *      *  *", {     0,   0} },   /* CATCH ALL */
+  { "*  *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* catch all */
 
   { NULL,                                                 {     0,   0} }
 };
@@ -138,18 +142,26 @@ void initialize_mat_tables() {
   while (1) {
     int i, j;
     int fin;
-    /* int value = 0; */
-    /* unsigned flags = 0; */
+    int matched = 0;
+    int value = 0;
+    unsigned flags = 0;
     const RULE * rule = rules;
 
     while (rule->str) {
       if (match(rule->str, counts)) {
+        matched = 1;
 
-        break;
+        value += rule->entry.value;
+        flags |= rule->entry.flags;
+
+        if (rule->entry.flags & DRAWN) {
+          break;
+        }
       }
       rule++;
     }
-    if (NULL == rule->str) {
+
+    if (! matched) {
       printf("The following material combination didn't match any rule:\n");
 
       printf("WP\t| WN\t| WBLSQ\t| WBDSQ\t| WR\t| WQ\t| BP\t| BN\t| BBLSQ\t| BBDSQ\t| BR\t| BQ\n");
@@ -157,8 +169,7 @@ void initialize_mat_tables() {
           counts[0], counts[1], counts[2], counts[3], counts[4],  counts[5],
           counts[6], counts[7], counts[8], counts[9], counts[10], counts[11]);
 
-
-      rule -= 2;
+      rule -= 2; /* debug, point it to the rule that;s supposed to match and run in debugger */
       (volatile int)match(rule->str, counts);
 
       abort();
@@ -178,7 +189,18 @@ void initialize_mat_tables() {
               counts[BR]      * 8 * 3 * 2 * 2 * 3 * 2     * 8 * 3 * 2 * 2 +
               counts[BQ]      * 8 * 3 * 2 * 2 * 3 * 2 * 8 * 3 * 2 * 2 * 3];
 
-    *entry = rule->entry;
+    /* calculate endgame factor */
+    /* total start material : 39 for each side - linear interpolate for each side and then average */
+    int wmat = counts[WP] + 3 * counts[WN] + 3 * counts[WB_LSQ] + 3 * counts[WB_DSQ] + 5 * counts[WR] + 9 * counts[WQ];
+    int bmat = counts[BP] + 3 * counts[BN] + 3 * counts[BB_LSQ] + 3 * counts[BB_DSQ] + 5 * counts[BR] + 9 * counts[BQ];
+    int avg = (wmat + bmat) / 2;
+    int endgame = avg / 10;
+
+    assert(0 <= endgame && endgame < 4);
+    flags |= (3 - endgame);
+
+    entry->value = value;
+    entry->flags = flags;
 
     /* next entry */
     fin = 1;

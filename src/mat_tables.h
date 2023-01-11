@@ -15,8 +15,8 @@ typedef struct __MAT_TABLE_ENTRY__ {
 /* the following W/B counterparts have to be 1 bit position apart*/
 #define BN_MATE_LSQ         0x00000008 /* deliver bishop / knight checkmate to black in light sq corner */
 #define BN_MATE_DSQ         0x00000010
-#define W_CHECKMATING       0x00000020 /* ignore white psqt for WK, use Chebisev distance of kings */
-#define B_CHECKMATING       0x00000040 /* ignore white psqt for WK, use Chebisev distance of kings */
+#define W_CHECKMATING       0x00000020
+#define B_CHECKMATING       0x00000040
   int value;
   uint32_t flags;
 } MAT_TABLE_ENTRY;

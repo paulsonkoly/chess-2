@@ -192,7 +192,7 @@ int evaluate(const BOARD * board) {
 static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6]) {
   /* simple piece checkmate */
   if (mt->flags & (W_CHECKMATING << (colour))) {
-    /* Chebisev distance of kings */
+    /* Chebyshev distance of kings */
     int dist = MAX(MAX(0, kings[1] - kings[4]), MAX(0, kings[2] - kings[5]));
 
     return (80 - 10 * dist);
@@ -201,11 +201,11 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
   if (mt->flags & (W_CHECKMATING << (colour ^ 1) )) {
     /* bishop / knight mate in light square corner */
     if (mt->flags & BN_MATE_LSQ) {
-      return king_bn_mate_dsq[((7 - kings[3 * (colour ^ 1) + 2]) << 3) + kings[3 * (colour ^ 1) + 1]];
+      return king_bn_mate_dsq[((7 - kings[3 * colour + 2]) << 3) + kings[3 * colour + 1]];
     }
     /* bishop / knight mate in dark square corner */
     else if (mt->flags & BN_MATE_DSQ) {
-      return king_bn_mate_dsq[(kings[3 * (colour ^ 1) + 2] << 3) + kings[3 * (colour ^ 1) + 1]];
+      return king_bn_mate_dsq[kings[3 * colour]];
     }
   }
 

@@ -193,7 +193,7 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
   /* simple piece checkmate */
   if (mt->flags & (W_CHECKMATING << (colour))) {
     /* Chebyshev distance of kings */
-    int dist = MAX(MAX(0, kings[1] - kings[4]), MAX(0, kings[2] - kings[5]));
+    int dist = MAX(ABS(kings[1] - kings[4]), ABS(kings[2] - kings[5]));
 
     return (80 - 10 * dist);
   }

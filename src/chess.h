@@ -48,6 +48,7 @@ typedef uint8_t CASTLE;
 /* max half moves in a game */
 #define MAX_GAME_PLYS 2048
 
+#define ABS(a) (((a) < 0) ? -1 * (a) : (a))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 

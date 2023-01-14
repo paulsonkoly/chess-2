@@ -24,12 +24,12 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 
-
 #include "chess.h"
 #include "attacks.h"
 #include "uci.h"
 #include "zobrist.h"
 #include "bench.h"
+#include "mat_tables.h"
 
 void print_bitboard(BITBOARD bb) {
   printf("--------\n");
@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
 {
   initialize_magic();
   initialize_hash();
+  initialize_mat_tables();
 
   if (argc == 2 && 0 == strncmp(argv[1], "bench", strlen("bench"))) {
     bench();
@@ -57,6 +58,8 @@ int main(int argc, char *argv[])
   else {
     uci();
   }
+
+  free(mat_table);
 
   return 0;
 }

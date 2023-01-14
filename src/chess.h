@@ -18,17 +18,6 @@ typedef uint8_t COLOUR;
 #define QUEEN    ((PIECE)5)
 #define KING     ((PIECE)6)
 
-typedef enum {
-  NO_PIECE_V = 0,
-  PAWN_V     = 100,
-  KNIGHT_V   = 300,
-  BISHOP_V   = 300,
-  ROOK_V     = 500,
-  QUEEN_V    = 900,
-  KING_V     = 10000 } PIECE_VALUE;
-
-extern const int piece_values[];
-
 #define WHITE ((COLOUR)0)
 #define BLACK ((COLOUR)1)
 
@@ -59,11 +48,7 @@ typedef uint8_t CASTLE;
 /* max half moves in a game */
 #define MAX_GAME_PLYS 2048
 
-#define ABS(a) (((a) < 0) ? -1 * (a) : (a))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-
-#define LIGHT_SQUARES 0x55aa55aa55aa55aa
-#define DARK_SQUARES 0xaa55aa55aa55aa55
 
 #endif /* ifndef _CHESS_H_ */

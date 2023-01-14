@@ -119,7 +119,7 @@ static void see_capture_test(void ** state) {
                        | ((BITBOARD)PAWN << CAPTURED_MOVE_SHIFT)
                        | b->en_passant;
 
-  assert_int_equal(-200, see(b, &c2d4));
+  assert_int_equal(-225, see(b, &c2d4));
 }
 
 static void see_test(void ** state) {
@@ -130,7 +130,7 @@ static void see_test(void ** state) {
   b3b6.to              = (BITBOARD)1 << 41;
   b3b6.special         = ((BITBOARD)ROOK << PIECE_MOVE_SHIFT) | b->en_passant;
 
-  assert_int_equal(-160, see(b, &b3b6));
+  assert_int_equal(-100, see(b, &b3b6));
 }
 
 static void isolated_test() {

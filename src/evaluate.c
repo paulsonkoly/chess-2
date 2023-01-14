@@ -4,8 +4,6 @@
 #include "pawns.h"
 #include "mat_tables.h"
 
-static const int piece_values[] = { 0, 100, 350, 370, 500, 900 };
-
 static const int knight_bonus[] = {
   -50,-40,-30,-30,-30,-30,-40,-50,
   -40,-20,  0,  0,  0,  0,-20,-40,
@@ -214,10 +212,10 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
 
   /* default - piece square interpolate between middle game - endgame */
   switch (mt->flags & ENDGAME_MASK) {
-    case ENDGAME_0: return king_middlegame_bonus[sq];                                    break;
-    case ENDGAME_1: return (2 * king_middlegame_bonus[sq] + king_endgame_bonus[sq]) / 3; break;
-    case ENDGAME_2: return (king_middlegame_bonus[sq] + 2 * king_endgame_bonus[sq]) / 3; break;
-    case ENDGAME_3: return king_endgame_bonus[sq];                                       break;
+    case ENDGAME_0: return king_middlegame_bonus[sq];                                break;
+    case ENDGAME_1: return king_middlegame_bonus[sq];                                break;
+    case ENDGAME_2: return (king_middlegame_bonus[sq] + king_endgame_bonus[sq]) / 2; break;
+    case ENDGAME_3: return king_endgame_bonus[sq];                                   break;
   }
 
   abort(); /* unreachable */

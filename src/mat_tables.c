@@ -35,8 +35,8 @@ typedef struct {
   MAT_TABLE_ENTRY entry;
 } RULE;
 
-/* first matching rule applies
- * last rule catches all, if that matches juts use normal evaluation
+/* when DRAWN rules match subsequent rules are not tried
+ * matching rule values are summed up, and flags accumulated
  */
 static const RULE rules[] = {
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
@@ -101,12 +101,12 @@ static const RULE rules[] = {
   { "0  0  0      0      0  1  0  0  1      0      0  1", {     0,   DRAWN} },
   { "0  0  0      0      0  1  0  0  0      1      0  1", {     0,   DRAWN} },
 
-  { ">0 0  0      0      0  0  0  1  0      0      0  0", {   350,   0} },    /* piece can't win, against pawn, */
-  { "0  1  0      0      0  0  >0 0  0      0      0  0", {  -350,   0} },    /* take away its value */
-  { ">0 0  0      0      0  0  0  0  1      0      0  0", {   370,   0} },    /* TODO central definition for these values */
-  { "0  0  1      0      0  0  >0 0  0      0      0  0", {  -370,   0} },
-  { ">0 0  0      0      0  0  0  0  0      1      0  0", {   370,   0} },
-  { "0  0  0      1      0  0  >0 0  0      0      0  0", {  -370,   0} },
+  { ">0 0  0      0      0  0  0  1  0      0      0  0", {      KNIGHT_V,   0} }, /* piece can't win, against pawn, */
+  { "0  1  0      0      0  0  >0 0  0      0      0  0", { -1 * KNIGHT_V,   0} },
+  { ">0 0  0      0      0  0  0  0  1      0      0  0", {      BISHOP_V,   0} },
+  { "0  0  1      0      0  0  >0 0  0      0      0  0", { -1 * BISHOP_V,   0} },
+  { ">0 0  0      0      0  0  0  0  0      1      0  0", {      BISHOP_V,   0} },
+  { "0  0  0      1      0  0  >0 0  0      0      0  0", { -1 * BISHOP_V,   0} },
 
   /* bishop and knight check mates */
   { "0  1  1      0      0  0  0  0  0      0      0  0", {     0,   W_CHECKMATING | BN_MATE_LSQ} },
@@ -133,14 +133,21 @@ static const RULE rules[] = {
   { "a  0  1      1      b  c  a  2  0      0      b  c", {    40,   0} },    /* bishop pair vs 2 knights */
   { "a  2  0      0      b  c  a  0  1      1      b  c", {   -40,   0} },
 
-  { "a >b  c      d      e  f >a  b  c      d      e  f", {    30,   0} },    /* discourage trading a minor piece for pawns */
+  /* discourage trading a minor piece for pawns */
+  { "a >b  c      d      e  f >a  b  c      d      e  f", {    30,   0} },
   { "a  b >c      d      e  f >a  b  c      d      e  f", {    30,   0} },
   { "a  b  c      >d     e  f >a  b  c      d      e  f", {    30,   0} },
   { ">a b  c      d      e  f a   >b c      d      e  f", {   -30,   0} },
   { ">a b  c      d      e  f a   b  >c     d      e  f", {   -30,   0} },
   { ">a b  c      d      e  f a   b  c      >d     e  f", {   -30,   0} },
 
-  /* TODO discourage trading Q for R/(B/N)/P */
+  /* discourage trading Q for R/(B/N)/P */
+  { ">=a >b  c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },
+  { ">=a  b >c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },
+  { ">=a  b  c   >d     >e  f  a  b  c      d      e >f", {   -60,   0} },
+  { "a  b  c      d      e >f >=a >b  c     d     >e  f", {    60,   0} },
+  { "a  b  c      d      e >f >=a  b >c     d     >e  f", {    60,   0} },
+  { "a  b  c      d      e >f >=a  b  c    >d     >e  f", {    60,   0} },
 
   { "*  *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* catch all */
 

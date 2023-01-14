@@ -18,6 +18,17 @@ typedef uint8_t COLOUR;
 #define QUEEN    ((PIECE)5)
 #define KING     ((PIECE)6)
 
+typedef enum {
+  NO_PIECE_V = 0,
+  PAWN_V     = 100,
+  KNIGHT_V   = 300,
+  BISHOP_V   = 300,
+  ROOK_V     = 500,
+  QUEEN_V    = 900,
+  KING_V     = 10000 } PIECE_VALUE;
+
+extern const int piece_values[];
+
 #define WHITE ((COLOUR)0)
 #define BLACK ((COLOUR)1)
 

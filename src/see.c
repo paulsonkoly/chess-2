@@ -5,8 +5,6 @@
 #include "see.h"
 #include "attacks.h"
 
-static const int piece_value[] = {0, 100, 325, 400, 500, 900, 10000};
-
 int see(BOARD * board, const MOVE * move) {
   BITBOARD from = move->from;
   BITBOARD to   = move->to;
@@ -116,7 +114,7 @@ int see(BOARD * board, const MOVE * move) {
         ply--;
         for (ply--; ply >= 0; ply--) {
           value = MAX(value, 0);
-          value = piece_value[captures[ply]] - value;
+          value = piece_values[captures[ply]] - value;
         }
 
         /* THE END */

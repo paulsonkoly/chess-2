@@ -332,7 +332,7 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
           break;
       }
 
-      max_depth = 1000;
+      max_depth = MAX_PLYS; /* we would overrun our stores otherwise */
       movetime = (time + MOVES_TO_GO * inc) / MOVES_TO_GO;
       movetime = movetime > time / 2 ? time / 2 : movetime;
 

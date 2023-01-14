@@ -82,6 +82,19 @@ static const int* bonuses[] = {
   king_endgame_bonus
 };
 
+int psqt_value(PIECE piece, COLOUR colour, SQUARE from, SQUARE to) {
+  if (piece < KNIGHT || piece > QUEEN) {
+    return 0;
+  }
+
+  if (colour == WHITE) {
+    from = ((63 - from) & ~0x7) | (from & 0x7);
+    to   = ((63 - to) & ~0x7) | (to & 0x7);
+  }
+
+  return bonuses[piece][to] - bonuses[piece][from];
+}
+
 int evaluate(const BOARD * board) {
   int value = 0;
   int dir[] = {1, -1};

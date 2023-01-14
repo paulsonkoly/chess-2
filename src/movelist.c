@@ -7,6 +7,8 @@
 #include "moveexec.h"
 #include "chess.h"
 #include "see.h"
+#include "evaluate.h"
+
 
 #define MAX_MOVES 2048
 
@@ -81,8 +83,13 @@ static void heuristic_weights(BOARD* board, const MOVE * pv, int depth, const KI
       ptr->value = 10090;
     } else if (killer != NULL && is_killer(killer, depth, 2, ptr)) {
       ptr->value = 10080;
-    } else {
+    } else if (ptr->special & (CAPTURED_MOVE_MASK | EN_PASSANT_CAPTURE_MOVE_MASK)) {
       ptr->value = see(board, ptr) + 1000;
+    } else {
+      ptr->value = psqt_value((ptr->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT,
+          board->next,
+          (SQUARE)__builtin_ctzll(ptr->from),
+          (SQUARE)__builtin_ctzll(ptr->to)) + 500;
     }
   }
 }

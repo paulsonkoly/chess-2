@@ -108,6 +108,18 @@ static const RULE rules[] = {
   { ">0 0  0      0      0  0  0  0  0      1      0  0", {   370,   0} },
   { "0  0  0      1      0  0  >0 0  0      0      0  0", {  -370,   0} },
 
+  /* bishop and knight check mates */
+  { "0  1  1      0      0  0  0  0  0      0      0  0", {     0,   W_CHECKMATING | BN_MATE_LSQ} },
+  { "0  1  0      1      0  0  0  0  0      0      0  0", {     0,   W_CHECKMATING | BN_MATE_DSQ} },
+  { "0  0  0      0      0  0  0  1  1      0      0  0", {     0,   B_CHECKMATING | BN_MATE_LSQ} },
+  { "0  0  0      0      0  0  0  1  0      1      0  0", {     0,   B_CHECKMATING | BN_MATE_DSQ} },
+
+  /* R/Q checkmating but we have to use the king */
+  { "0  0  0      0      1  0  0  0  0      0      0  0", {     0,   W_CHECKMATING} },
+  { "0  0  0      0      0  1  0  0  0      0      0  0", {     0,   W_CHECKMATING} },
+  { "0  0  0      0      0  0  0  0  0      0      1  0", {     0,   B_CHECKMATING} },
+  { "0  0  0      0      0  0  0  0  0      0      0  1", {     0,   B_CHECKMATING} },
+
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
   { ">a 0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },    /* opposite colour bishop endgames */
   { "a  0  1      0      0  0  >a 0  0      1      0  0", {    80,   0} },    /* penalty 80 for winning side */
@@ -127,6 +139,8 @@ static const RULE rules[] = {
   { ">a b  c      d      e  f a   >b c      d      e  f", {   -30,   0} },
   { ">a b  c      d      e  f a   b  >c     d      e  f", {   -30,   0} },
   { ">a b  c      d      e  f a   b  c      >d     e  f", {   -30,   0} },
+
+  /* TODO discourage trading Q for R/(B/N)/P */
 
   { "*  *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* catch all */
 

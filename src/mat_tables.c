@@ -134,12 +134,15 @@ static const RULE rules[] = {
   { "a  2  0      0      b  c  a  0  1      1      b  c", {   -40,   0} },
 
   /* discourage trading a minor piece for pawns */
-  { "a >b  c      d      e  f >a  b  c      d      e  f", {    30,   0} },
-  { "a  b >c      d      e  f >a  b  c      d      e  f", {    30,   0} },
-  { "a  b  c      >d     e  f >a  b  c      d      e  f", {    30,   0} },
-  { ">a b  c      d      e  f a   >b c      d      e  f", {   -30,   0} },
-  { ">a b  c      d      e  f a   b  >c     d      e  f", {   -30,   0} },
-  { ">a b  c      d      e  f a   b  c      >d     e  f", {   -30,   0} },
+  { "a >b  c      d      e  f  >a b  c      d      e  f", {    30,   0} },
+  { "a  b >c      d      e  f  >a b  c      d      e  f", {    30,   0} },
+  { "a  b  c      >d     e  f  >a b  c      d      e  f", {    30,   0} },
+  { ">a b  c      d      e  f  a  >b c      d      e  f", {   -30,   0} },
+  { ">a b  c      d      e  f  a  b  >c     d      e  f", {   -30,   0} },
+  { ">a b  c      d      e  f  a  b  c      >d     e  f", {   -30,   0} },
+  /* knight and pawns against 2 bishops */
+  { ">a >b 0      0      e  f  a  b  1      1      e  f", {  -190,   0} },
+  { "a  b  1      1      e  f  >a >b 0      0      e  f", {   190,   0} },
 
   /* discourage trading Q for R/(B/N)/P */
   { ">=a >b  c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },

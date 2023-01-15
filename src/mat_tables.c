@@ -306,10 +306,13 @@ int match(const char * str, int counts[]) {
       case '>': case '<':
         op = *token++ == '>' ? 0 : 2;
 
-        if (*token++ == '=') {
+        if (*token == '=') {
+          token++;
           op++;
         }
         value = (*token < 'a' ? *token - '0' : vars[*token - 'a']);
+        assert(0 <= value && value <= 8);
+
         switch (op) {
           case 0:
             if (value >= counts[i]) {

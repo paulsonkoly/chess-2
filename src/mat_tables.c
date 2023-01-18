@@ -225,7 +225,7 @@ void initialize_mat_tables() {
     const RULE * rule = rules;
     const char * constraints = NULL;
 
-    while (rule->str) {
+    while (rule->str || rule->entry.flags & CONSTRAINT) {
       int vars[12] = { 0 };
 
       if (rule->entry.flags & CONSTRAINT) {

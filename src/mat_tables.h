@@ -17,8 +17,7 @@ typedef struct __MAT_TABLE_ENTRY__ {
 #define BN_MATE_DSQ         0x00000010
 #define W_CHECKMATING       0x00000020
 #define B_CHECKMATING       0x00000040
-#define CONSTRAINT_S        0x10000000 /* internal use for mat tables */
-#define CONSTRAINT_E        0x20000000 /* internal use for mat tables */
+#define CONSTRAINT          0x10000000 /* internal use for mat tables */
   int value;
   uint32_t flags;
 } MAT_TABLE_ENTRY;

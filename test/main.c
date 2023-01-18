@@ -4,6 +4,7 @@
 #include <cmocka.h>
 #include <string.h>
 
+#include "mat_tables.h"
 #include "board.h"
 #include "attacks.h"
 #include "perft.h"
@@ -14,6 +15,7 @@
 
 #include "uci_tests.h"
 #include "zobrist_tests.h"
+#include "mat_tables_tests.h"
 
 int stopped = 0;
 
@@ -153,7 +155,10 @@ static void weak_test() {
 }
 
 int main(void) {
+  int result;
   initialize_magic();
+  initialize_hash();
+  initialize_mat_tables();
 
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(perft_unit_test1),
@@ -190,7 +195,15 @@ int main(void) {
 
     cmocka_unit_test(zobrist_test1),
     cmocka_unit_test(zobrist_test2),
+
+    cmocka_unit_test(mat_tables_test1),
+    cmocka_unit_test(mat_tables_test2),
+    cmocka_unit_test(mat_tables_test3),
   };
 
-  return cmocka_run_group_tests(tests, NULL, NULL);
+  result = cmocka_run_group_tests(tests, NULL, NULL);
+
+  free(mat_table);
+
+  return result;
 }

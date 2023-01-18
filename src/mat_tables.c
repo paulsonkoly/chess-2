@@ -36,10 +36,10 @@ typedef struct {
   MAT_TABLE_ENTRY entry;
 } RULE;
 
-/* piece constellation match mini language
+/* piece combinations match mini language
  * (c) Paul Sonkoly 2023
  *
- * Rules are tried in turn on a piece constellation and when DRAWN rules match
+ * Rules are tried in turn on a piece combination and when DRAWN rules match
  * subsequent rules are not tried. Matching rule values are summed up, and
  * flags accumulated.
  *
@@ -50,35 +50,27 @@ typedef struct {
  *
  * Constraint group start
  * ----------------------
- * Use CONSTRAINT_S in flags. rule->str is constraint string expressing
+ * Use CONSTRAINT   in flags. rule->str is constraint string expressing
  * arithmetic, relational and logic expressions between variables and
  * constants.
  * Variables are filled from the matcher rule within the constraint group.
  *
  * Constraint group end
  * --------------------
- * Clears active constraints.
+ * Use with NULL rule->str. Clears active constraints.
  *
  * Matcher rule
  * ------------
- * Fills variables with value according to piece constellation. Multiple
+ * Fills variables with value according to piece combination. Multiple
  * appearance of the same variable asserts matching values. Constants assert matching value.
  * Relational constraint asserts value fullfilling constraint.
  * '*' allows any value.
  */
 static const RULE rules[] = {
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { "0  *  0      0      0  0  0  *  0      0      0  0", {     0,   DRAWN} }, /* N vs N/BLSQ/BDSQ */
-  { "0  *  0      0      0  0  0  0  *      0      0  0", {     0,   DRAWN} },
-  { "0  *  0      0      0  0  0  0  0      *      0  0", {     0,   DRAWN} },
-
-  { "0  0  *      0      0  0  0  *  0      0      0  0", {     0,   DRAWN} }, /* BLSQ vs N/BLSQ/BDSQ*/
-  { "0  0  *      0      0  0  0  0  *      0      0  0", {     0,   DRAWN} },
-  { "0  0  *      0      0  0  0  0  0      *      0  0", {     0,   DRAWN} },
-
-  { "0  0  0      *      0  0  0  *  0      0      0  0", {     0,   DRAWN} }, /* BDSQ vs N/BLSQ/BDSQ*/
-  { "0  0  0      *      0  0  0  0  *      0      0  0", {     0,   DRAWN} },
-  { "0  0  0      *      0  0  0  0  0      *      0  0", {     0,   DRAWN} },
+  { "a+b+c<=1 & d+e+f<=1                               ", {     0,   CONSTRAINT   } },
+  { "0  a  b      c      0  0  0  d  e      f      0  0", {     0,   DRAWN} }, /* N/B vs N/B */
+  { NULL,                                                 {     0,   CONSTRAINT   } },
 
   { "a+b=1 & c+d+e+f=1                                 ", {     0,   CONSTRAINT   } },
   { "0  1  a      b      0  0  0  c  d      e      f  0", {     0,   DRAWN} },  /* B+N vs B/N/R */
@@ -219,7 +211,6 @@ void initialize_mat_tables() {
     0, 0, 0, 0, 0, 0 };/* black piece counts */
 
   MAT_TABLE_ENTRY * entry;
-  const char * constraints = NULL;
 
   if (NULL == (mat_table = calloc(MAT_TABLE_SIZE, sizeof(MAT_TABLE_ENTRY)))) {
     abort();
@@ -232,6 +223,7 @@ void initialize_mat_tables() {
     int value = 0;
     unsigned flags = 0;
     const RULE * rule = rules;
+    const char * constraints = NULL;
 
     while (rule->str) {
       int vars[12] = { 0 };
@@ -248,7 +240,6 @@ void initialize_mat_tables() {
           flags |= rule->entry.flags;
 
           if (rule->entry.flags & DRAWN) {
-            constraints = NULL;
             break;
           }
         }

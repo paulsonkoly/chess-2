@@ -36,8 +36,35 @@ typedef struct {
   MAT_TABLE_ENTRY entry;
 } RULE;
 
-/* when DRAWN rules match subsequent rules are not tried
- * matching rule values are summed up, and flags accumulated
+/* piece constellation match mini language
+ * (c) Paul Sonkoly 2023
+ *
+ * Rules are tried in turn on a piece constellation and when DRAWN rules match
+ * subsequent rules are not tried. Matching rule values are summed up, and
+ * flags accumulated.
+ *
+ * Language has 3 types of statements:
+ *  - matcher rule
+ *  - constraint group start
+ *  - constraint group end
+ *
+ * Constraint group start
+ * ----------------------
+ * Use CONSTRAINT_S in flags. rule->str is constraint string expressing
+ * arithmetic, relational and logic expressions between variables and
+ * constants.
+ * Variables are filled from the matcher rule within the constraint group.
+ *
+ * Constraint group end
+ * --------------------
+ * Clears active constraints.
+ *
+ * Matcher rule
+ * ------------
+ * Fills variables with value according to piece constellation. Multiple
+ * appearance of the same variable asserts matching values. Constants assert matching value.
+ * Relational constraint asserts value fullfilling constraint.
+ * '*' allows any value.
  */
 static const RULE rules[] = {
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
@@ -53,13 +80,13 @@ static const RULE rules[] = {
   { "0  0  0      *      0  0  0  0  *      0      0  0", {     0,   DRAWN} },
   { "0  0  0      *      0  0  0  0  0      *      0  0", {     0,   DRAWN} },
 
-  { "a+b=1;c+d+e+f=1                                   ", {     0,   CONSTRAINT_S } },
+  { "a+b=1 & c+d+e+f=1                                 ", {     0,   CONSTRAINT_S } },
   { "0  1  a      b      0  0  0  c  d      e      f  0", {     0,   DRAWN} },  /* B+N vs B/N/R */
   { "0  c  d      e      f  0  0  1  a      b      0  0", {     0,   DRAWN} },
   { "                                                  ", {     0,   CONSTRAINT_E } },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { "a+b=1;                                            ", {     0,   CONSTRAINT_S } },
+  { "a+b=1                                             ", {     0,   CONSTRAINT_S } },
   { "0  0  0      0      1  0  0  0  a      b      0  0", {     0,   DRAWN} }, /* R vs B */
   { "0  0  a      b      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
   { "                                                  ", {     0,   CONSTRAINT_E } },
@@ -67,7 +94,7 @@ static const RULE rules[] = {
   { "0  0  0      0      1  0  0  1  0      0      0  0", {     0,   DRAWN} }, /* R vs N */
   { "0  1  0      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
 
-  { "a+b=1;                                            ", {     0,   CONSTRAINT_S } },
+  { "a+b=1                                             ", {     0,   CONSTRAINT_S } },
   { "0  0  a      b      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+B vs R */
   { "0  0  0      0      1  0  0  0  a      b      1  0", {     0,   DRAWN} },
   { "                                                  ", {     0,   CONSTRAINT_E } },
@@ -85,7 +112,7 @@ static const RULE rules[] = {
   { "0  1  0      0      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+N vs Q */
   { "0  0  0      0      0  1  0  1  0      0      0  1", {     0,   DRAWN} },
 
-  { "a+b=1;                                            ", {     0,   CONSTRAINT_S } },
+  { "a+b=1                                             ", {     0,   CONSTRAINT_S } },
   { "0  0  a      b      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+B vs Q */
   { "0  0  0      0      0  1  0  0  a      b      0  1", {     0,   DRAWN} },
   { "                                                  ", {     0,   CONSTRAINT_E } },
@@ -169,7 +196,7 @@ void initialize_mat_tables() {
   while (1) {
     int i, j;
     int fin;
-    int matched = 0;
+    /* int matched = 0; */
     int value = 0;
     unsigned flags = 0;
     const RULE * rule = rules;
@@ -184,8 +211,8 @@ void initialize_mat_tables() {
       } else {
         fill_vars(rule->str, counts, vars);
 
-        if (match(rule->str, counts, vars) && match_constraints(constraints, counts)) {
-          matched = 1;
+        if (match(rule->str, counts, vars) && match_constraints(constraints, vars)) {
+          /* matched = 1; */
 
           value += rule->entry.value;
           flags |= rule->entry.flags;
@@ -199,6 +226,7 @@ void initialize_mat_tables() {
       rule++;
     }
 
+#if 0
     if (! matched) {
       printf("The following material combination didn't match any rule:\n");
 
@@ -212,6 +240,7 @@ void initialize_mat_tables() {
 
       abort();
     }
+#endif
 
     flags |= endgame_factor(counts);
 
@@ -338,21 +367,121 @@ int match(const char * str, const int counts[], const int vars[]) {
   return 1;
 }
 
+#define OP_PLUS   0x01000000
+#define OP_MINUS  0x02000000
+#define OP_EQ     0x04000000
+#define OP_LT     0x08000000
+#define OP_GT     0x10000000
+#define OP_LTE    0x20000000
+#define OP_GTE    0x40000000
+#define OP_AND    0x80000000
+#define OP        0xff000000
+
+static int precedence(int op) {
+  switch (op) {
+    case OP_PLUS: case OP_MINUS: return 2;
+    case OP_EQ: case OP_LT: case OP_GT: case OP_LTE: case OP_GTE: return 1;
+    case OP_AND: return 0;
+  }
+
+  assert(0);
+  return 0;
+}
+
+#define STACK_SIZE 16
+
 int match_constraints(const char * constraints, const int vars[]) {
   const char * token = constraints;
-  int last = 0;
-  int values[] = { 0, 0 };
-  int value_idx = 0;
+  int stack[STACK_SIZE];
+  int stack_ptr = 0;
+  int rev_polish[STACK_SIZE];
+  int rev_polish_ptr = 0;
+  int i;
 
-  for (; *token; token++) {
+  if (constraints == NULL) {
+    return 1;
+  }
+
+  while (*token) {
+    int itoken = 0;
+
+    /* tokenize */
     switch (*token) {
-      case 'a': case 'b': case'c': case 'd': case 'e': case 'f':
-        
+      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': itoken = vars[*token - 'a']; break;
+
+      case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+         itoken = *token - '0'; break;
+
+      case '+': itoken = OP_PLUS; break;
+
+      case '-': itoken = OP_MINUS; break;
+
+      case '=': itoken = OP_EQ; break;
+
+      case '&': itoken = OP_AND; break;
+
+      case '<':
+        if (*(token + 1) == '=') {
+          token++;
+          itoken = OP_LTE;
+        } else itoken = OP_LT;
         break;
-      default:
-        
+
+      case '>':
+        if (*(token + 1) == '=') {
+          token++;
+          itoken = OP_GTE;
+        } else itoken = OP_GT;
+        break;
+
+      default: token++; continue;
+    }
+    token++;
+
+    /* shunting yard */
+    if ((itoken & OP) == 0) { /* operand */
+      assert(rev_polish_ptr < STACK_SIZE);
+      rev_polish[rev_polish_ptr++] = itoken;
+    } else { /* operator */
+      while (stack_ptr > 0 && precedence(stack[stack_ptr - 1]) >= precedence(itoken)) {
+        assert(rev_polish_ptr < STACK_SIZE);
+        rev_polish[rev_polish_ptr++] = stack[--stack_ptr];
+      }
+
+      assert(stack_ptr < STACK_SIZE);
+      stack[stack_ptr++] = itoken;
     }
   }
+  while (stack_ptr > 0) {
+    assert(rev_polish_ptr < STACK_SIZE);
+    rev_polish[rev_polish_ptr++] = stack[--stack_ptr];
+  }
+
+  /* reverse polish evaluate */
+  for (i = 0; i < rev_polish_ptr; ++i) {
+    int itoken = rev_polish[i];
+
+    if ((itoken & OP) == 0) { /* operand */
+      stack[stack_ptr++] = itoken;
+    } else { /* operator */
+      assert(stack_ptr > 1);
+      int rvalue = stack[--stack_ptr];
+      int lvalue = stack[--stack_ptr];
+
+      switch (itoken) {
+        case OP_PLUS:  stack[stack_ptr++] = lvalue + rvalue; break;
+        case OP_MINUS: stack[stack_ptr++] = lvalue - rvalue; break;
+        case OP_EQ:    stack[stack_ptr++] = lvalue == rvalue; break;
+        case OP_LT:    stack[stack_ptr++] = lvalue < rvalue; break;
+        case OP_GT:    stack[stack_ptr++] = lvalue > rvalue; break;
+        case OP_LTE:   stack[stack_ptr++] = lvalue <= rvalue; break;
+        case OP_GTE:   stack[stack_ptr++] = lvalue >= rvalue; break;
+        case OP_AND:   stack[stack_ptr++] = lvalue && rvalue; break;
+      }
+    }
+  }
+  assert(stack_ptr == 1);
+  return stack[--stack_ptr];
 }
 
 int endgame_factor(int counts[]) {

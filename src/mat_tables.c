@@ -52,36 +52,24 @@ static const RULE rules[] = {
   { "0  0  0      *      0  0  0  0  *      0      0  0", {     0,   DRAWN} },
   { "0  0  0      *      0  0  0  0  0      *      0  0", {     0,   DRAWN} },
 
-  { "0  1  1      0      0  0  0  1  0      0      0  0", {     0,   DRAWN} }, /* B+N vs B/N/R */
-  { "0  1  0      1      0  0  0  1  0      0      0  0", {     0,   DRAWN} },
-  { "0  1  1      0      0  0  0  0  1      0      0  0", {     0,   DRAWN} },
-  { "0  1  0      1      0  0  0  0  1      0      0  0", {     0,   DRAWN} },
-  { "0  1  1      0      0  0  0  0  0      1      0  0", {     0,   DRAWN} },
-  { "0  1  0      1      0  0  0  0  0      1      0  0", {     0,   DRAWN} },
-  { "0  1  1      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
-  { "0  1  0      1      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
-  { "0  1  0      0      0  0  0  1  1      0      0  0", {     0,   DRAWN} },
-  { "0  1  0      0      0  0  0  1  0      1      0  0", {     0,   DRAWN} },
-  { "0  0  1      0      0  0  0  1  1      0      0  0", {     0,   DRAWN} },
-  { "0  0  1      0      0  0  0  1  0      1      0  0", {     0,   DRAWN} },
-  { "0  0  0      1      0  0  0  1  1      0      0  0", {     0,   DRAWN} },
-  { "0  0  0      1      0  0  0  1  0      1      0  0", {     0,   DRAWN} },
-  { "0  0  0      0      1  0  0  1  1      0      0  0", {     0,   DRAWN} },
-  { "0  0  0      0      1  0  0  1  0      1      0  0", {     0,   DRAWN} },
+  { "a+b=1;c+d+e+f=1                                   ", {     0,   CONSTRAINT_S } },
+  { "0  1  a      b      0  0  0  c  d      e      f  0", {     0,   DRAWN} },  /* B+N vs B/N/R */
+  { "0  c  d      e      f  0  0  1  a      b      0  0", {     0,   DRAWN} },
+  { "                                                  ", {     0,   CONSTRAINT_E } },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { "0  0  0      0      1  0  0  0  1      0      0  0", {     0,   DRAWN} }, /* R vs B */
-  { "0  0  0      0      1  0  0  0  0      1      0  0", {     0,   DRAWN} },
-  { "0  0  1      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
-  { "0  0  0      1      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
+  { "a+b=1;                                            ", {     0,   CONSTRAINT_S } },
+  { "0  0  0      0      1  0  0  0  a      b      0  0", {     0,   DRAWN} }, /* R vs B */
+  { "0  0  a      b      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
+  { "                                                  ", {     0,   CONSTRAINT_E } },
 
   { "0  0  0      0      1  0  0  1  0      0      0  0", {     0,   DRAWN} }, /* R vs N */
   { "0  1  0      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
 
-  { "0  0  1      0      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+B vs R */
-  { "0  0  0      1      1  0  0  0  0      0      1  0", {     0,   DRAWN} },
-  { "0  0  0      0      1  0  0  0  1      0      1  0", {     0,   DRAWN} },
-  { "0  0  0      0      1  0  0  0  0      1      1  0", {     0,   DRAWN} },
+  { "a+b=1;                                            ", {     0,   CONSTRAINT_S } },
+  { "0  0  a      b      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+B vs R */
+  { "0  0  0      0      1  0  0  0  a      b      1  0", {     0,   DRAWN} },
+  { "                                                  ", {     0,   CONSTRAINT_E } },
 
   { "0  1  0      0      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+N vs R */
   { "0  0  0      0      1  0  0  1  0      0      1  0", {     0,   DRAWN} },
@@ -96,10 +84,10 @@ static const RULE rules[] = {
   { "0  1  0      0      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+N vs Q */
   { "0  0  0      0      0  1  0  1  0      0      0  1", {     0,   DRAWN} },
 
-  { "0  0  1      0      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+B vs Q */
-  { "0  0  0      1      0  1  0  0  0      0      0  1", {     0,   DRAWN} },
-  { "0  0  0      0      0  1  0  0  1      0      0  1", {     0,   DRAWN} },
-  { "0  0  0      0      0  1  0  0  0      1      0  1", {     0,   DRAWN} },
+  { "a+b=1;                                            ", {     0,   CONSTRAINT_S } },
+  { "0  0  a      b      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+B vs Q */
+  { "0  0  0      0      0  1  0  0  a      b      0  1", {     0,   DRAWN} },
+  { "                                                  ", {     0,   CONSTRAINT_E } },
 
   { ">0 0  0      0      0  0  0  1  0      0      0  0", {      KNIGHT_V,   0} }, /* piece can't win, against pawn, */
   { "0  1  0      0      0  0  >0 0  0      0      0  0", { -1 * KNIGHT_V,   0} },
@@ -115,10 +103,10 @@ static const RULE rules[] = {
   { "0  0  0      0      0  0  0  1  0      1      0  0", {     0,   B_CHECKMATING | BN_MATE_DSQ} },
 
   /* R/Q checkmating but we have to use the king */
-  { "0  0  0      0      1  0  0  0  0      0      0  0", {     0,   W_CHECKMATING} },
-  { "0  0  0      0      0  1  0  0  0      0      0  0", {     0,   W_CHECKMATING} },
-  { "0  0  0      0      0  0  0  0  0      0      1  0", {     0,   B_CHECKMATING} },
-  { "0  0  0      0      0  0  0  0  0      0      0  1", {     0,   B_CHECKMATING} },
+  { "a+b=1                                             ", {     0,   CONSTRAINT_S } },
+  { "0  0  0      0      a  b  0  0  0      0      0  0", {     0,   W_CHECKMATING} },
+  { "0  0  0      0      0  0  0  0  0      0      a  b", {     0,   B_CHECKMATING} },
+  { "                                                  ", {     0,   CONSTRAINT_E } },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
   { ">a 0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },    /* opposite colour bishop endgames */
@@ -152,12 +140,15 @@ static const RULE rules[] = {
   { "a  b  c      d      e >f >=a  b >c     d     >e  f", {    60,   0} },
   { "a  b  c      d      e >f >=a  b  c    >d     >e  f", {    60,   0} },
 
+  /* pawn advantage greater with less pieces */
+
   { "*  *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* catch all */
 
   { NULL,                                                 {     0,   0} }
 };
 
-static int match(const char * token, int counts[]);
+static int match(const char * token, int counts[], int vars[]);
+static int match_constraints(const char * constraints, int vars[]);
 
 void initialize_mat_tables() {
   int counts[MAX_PT] = {
@@ -165,6 +156,7 @@ void initialize_mat_tables() {
     0, 0, 0, 0, 0, 0 };/* black piece counts */
 
   MAT_TABLE_ENTRY * entry;
+  const char * constraints = NULL;
 
   if (NULL == (mat_table = calloc(9 * 9 * 3 * 3 * 2 * 2 * 2 * 2 * 3 * 3 * 2 *2, sizeof(MAT_TABLE_ENTRY)))) {
     abort();
@@ -179,7 +171,13 @@ void initialize_mat_tables() {
     const RULE * rule = rules;
 
     while (rule->str) {
-      if (match(rule->str, counts)) {
+      int vars[12] = { 0 };
+
+      if (rule->entry.flags & CONSTRAINT_S) {
+        constraints = rule->str;
+      } else if (rule->entry.flags & CONSTRAINT_E) {
+        constraints = NULL;
+      } else if (match(rule->str, counts, vars)) {
         matched = 1;
 
         value += rule->entry.value;
@@ -188,6 +186,10 @@ void initialize_mat_tables() {
         if (rule->entry.flags & DRAWN) {
           break;
         }
+      }
+
+      if (matched && constraints && !match_constraints(constraints, vars)) {
+        matched = 0;
       }
       rule++;
     }
@@ -251,9 +253,8 @@ void initialize_mat_tables() {
   }
 }
 
-int match(const char * str, int counts[]) {
+int match(const char * str, int counts[], int vars[]) {
   int i;
-  int vars[12] = { 0 };
   const char * token = str;
 
   /* first pass, fill variables */
@@ -346,6 +347,10 @@ int match(const char * str, int counts[]) {
   }
 
   return 1;
+}
+
+int match_constraints(const char * constraints, int vars[])
+{
 }
 
 const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {

@@ -202,6 +202,20 @@ int main(void) {
     cmocka_unit_test(mat_tables_test4),
     cmocka_unit_test(mat_tables_test5),
     cmocka_unit_test(mat_tables_test6),
+    cmocka_unit_test(mat_tables_test7),
+    cmocka_unit_test(mat_tables_test8),
+    cmocka_unit_test(mat_tables_test9),
+    cmocka_unit_test(mat_tables_test10),
+    cmocka_unit_test(mat_tables_test11),
+    cmocka_unit_test(mat_tables_test12),
+    cmocka_unit_test(mat_tables_test13),
+    cmocka_unit_test(mat_tables_test14),
+    cmocka_unit_test(mat_tables_test15),
+    cmocka_unit_test(mat_tables_test16),
+    cmocka_unit_test(mat_tables_test17),
+    cmocka_unit_test(mat_tables_test18),
+    cmocka_unit_test(mat_tables_test19),
+    cmocka_unit_test(mat_tables_test20),
   };
 
   result = cmocka_run_group_tests(tests, NULL, NULL);

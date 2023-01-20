@@ -78,21 +78,15 @@ static const RULE rules[] = {
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { "a+b=1                                             ", {     0,   CONSTRAINT   } },
-  { "0  0  0      0      1  0  0  0  a      b      0  0", {     0,   DRAWN} }, /* R vs B */
-  { "0  0  a      b      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
+  { "a+b+c=1                                           ", {     0,   CONSTRAINT   } },
+  { "0  0  0      0      1  0  0  a  b      c      0  0", {     0,   DRAWN} }, /* R vs B/N */
+  { "0  a  b      c      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
-  { "0  0  0      0      1  0  0  1  0      0      0  0", {     0,   DRAWN} }, /* R vs N */
-  { "0  1  0      0      0  0  0  0  0      0      1  0", {     0,   DRAWN} },
-
-  { "a+b=1                                             ", {     0,   CONSTRAINT   } },
-  { "0  0  a      b      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+B vs R */
-  { "0  0  0      0      1  0  0  0  a      b      1  0", {     0,   DRAWN} },
+  { "a+b+c=1                                           ", {     0,   CONSTRAINT   } },
+  { "0  a  b      c      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+B/N vs R */
+  { "0  0  0      0      1  0  0  a  b      c      1  0", {     0,   DRAWN} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
-
-  { "0  1  0      0      1  0  0  0  0      0      1  0", {     0,   DRAWN} }, /* R+N vs R */
-  { "0  0  0      0      1  0  0  1  0      0      1  0", {     0,   DRAWN} },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
   { "0  0  0      0      0  1  0  0  1      1      0  0", {     0,   DRAWN} }, /* Q vs B+B */
@@ -101,12 +95,9 @@ static const RULE rules[] = {
   { "0  0  0      0      0  1  0  2  0      0      0  0", {     0,   DRAWN} }, /* Q vs N+N */
   { "0  2  0      0      0  0  0  0  0      0      0  1", {     0,   DRAWN} },
 
-  { "0  1  0      0      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+N vs Q */
-  { "0  0  0      0      0  1  0  1  0      0      0  1", {     0,   DRAWN} },
-
-  { "a+b=1                                             ", {     0,   CONSTRAINT   } },
-  { "0  0  a      b      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+B vs Q */
-  { "0  0  0      0      0  1  0  0  a      b      0  1", {     0,   DRAWN} },
+  { "a+b+c=1                                           ", {     0,   CONSTRAINT   } },
+  { "0  a  b      c      0  1  0  0  0      0      0  1", {     0,   DRAWN} }, /* Q+B vs Q */
+  { "0  0  0      0      0  1  0  a  b      c      0  1", {     0,   DRAWN} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
   { ">0 0  0      0      0  0  0  1  0      0      0  0", {      KNIGHT_V,   0} }, /* piece can't win, against pawn, */
@@ -129,10 +120,13 @@ static const RULE rules[] = {
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
-  { ">a 0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },    /* opposite colour bishop endgames */
-  { "a  0  1      0      0  0  >a 0  0      1      0  0", {    80,   0} },    /* penalty 80 for winning side */
-  { ">a 0  0      1      0  0  a  0  1      0      0  0", {   -80,   0} },
-  { "a  0  0      1      0  0  >a 0  1      0      0  0", {    80,   0} },
+  { "a+1=b                                             ", {     0,   CONSTRAINT   } },
+  { "a  0  1      0      0  0  b  0  0      1      0  0", {    PAWN_V, 0} },    /* opposite colour bishop endgames */
+  { "b  0  1      0      0  0  a  0  0      1      0  0", { -1*PAWN_V, 0} },    /* 1 pawn diff: take away the pawn */
+  { "a+2=b                                             ", {     0,   CONSTRAINT   } },
+  { "a  0  1      0      0  0  b  0  0      1      0  0", {    80,   0} },      /* 2 pawn diff: take away less than a pawn */
+  { "b  0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },      /* 3 pawn diff: should be winning? */
+  { NULL,                                                 {     0,   CONSTRAINT   } },
 
   { "a  0  1      1      b  c  a  1  1      0      b  c", {    30,   0} },    /* bishop pair vs knight and bishop */
   { "a  0  1      1      b  c  a  1  0      1      b  c", {    30,   0} },    /* bonus: 40 */
@@ -141,13 +135,15 @@ static const RULE rules[] = {
   { "a  0  1      1      b  c  a  2  0      0      b  c", {    40,   0} },    /* bishop pair vs 2 knights */
   { "a  2  0      0      b  c  a  0  1      1      b  c", {   -40,   0} },
 
-  /* discourage trading a minor piece for pawns */
+  /* discourage trading a minor piece for pawns, assuming we can still win - not only the minor piece left */
+  { "a+b+c+d+e+f>1                                     ", {     0,   CONSTRAINT   } },
   { "a >b  c      d      e  f  >a b  c      d      e  f", {    30,   0} },
   { "a  b >c      d      e  f  >a b  c      d      e  f", {    30,   0} },
   { "a  b  c      >d     e  f  >a b  c      d      e  f", {    30,   0} },
   { ">a b  c      d      e  f  a  >b c      d      e  f", {   -30,   0} },
   { ">a b  c      d      e  f  a  b  >c     d      e  f", {   -30,   0} },
   { ">a b  c      d      e  f  a  b  c      >d     e  f", {   -30,   0} },
+  { NULL,                                                 {     0,   CONSTRAINT   } },
   /* knight and pawns against 2 bishops */
   { ">a >b 0      0      e  f  a  b  1      1      e  f", {  -190,   0} },
   { "a  b  1      1      e  f  >a >b 0      0      e  f", {   190,   0} },

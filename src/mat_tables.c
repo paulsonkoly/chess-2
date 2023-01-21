@@ -6,6 +6,7 @@
 
 MAT_TABLE_ENTRY * mat_table = NULL;
 
+#define MAT_TABLE_SIZE (9 * 9 * 3 * 3 * 2 * 2 * 2 * 2 * 3 * 3 * 2 * 2)
 #define MAX_PT 12
 
 typedef enum {
@@ -140,15 +141,18 @@ static const RULE rules[] = {
   { "a  b  c      d      e >f >=a  b >c     d     >e  f", {    60,   0} },
   { "a  b  c      d      e >f >=a  b  c    >d     >e  f", {    60,   0} },
 
-  /* pawn advantage greater with less pieces */
+  /* TODO pawn advantage greater with less pieces */
 
   { "*  *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* catch all */
 
   { NULL,                                                 {     0,   0} }
 };
 
-static int match(const char * token, int counts[], int vars[]);
-static int match_constraints(const char * constraints, int vars[]);
+static void fill_vars(const char * token, const int counts[], int vars[]);
+static int match(const char * token, const int counts[], const int vars[]);
+static int match_constraints(const char * constraints, const int vars[]);
+static int endgame_factor(int counts[]);
+static int mat_table_idx(int counts[]);
 
 void initialize_mat_tables() {
   int counts[MAX_PT] = {
@@ -158,7 +162,7 @@ void initialize_mat_tables() {
   MAT_TABLE_ENTRY * entry;
   const char * constraints = NULL;
 
-  if (NULL == (mat_table = calloc(9 * 9 * 3 * 3 * 2 * 2 * 2 * 2 * 3 * 3 * 2 *2, sizeof(MAT_TABLE_ENTRY)))) {
+  if (NULL == (mat_table = calloc(MAT_TABLE_SIZE, sizeof(MAT_TABLE_ENTRY)))) {
     abort();
   }
 
@@ -177,20 +181,21 @@ void initialize_mat_tables() {
         constraints = rule->str;
       } else if (rule->entry.flags & CONSTRAINT_E) {
         constraints = NULL;
-      } else if (match(rule->str, counts, vars)) {
-        matched = 1;
+      } else {
+        fill_vars(rule->str, counts, vars);
 
-        value += rule->entry.value;
-        flags |= rule->entry.flags;
+        if (match(rule->str, counts, vars) && match_constraints(constraints, counts)) {
+          matched = 1;
 
-        if (rule->entry.flags & DRAWN) {
-          break;
+          value += rule->entry.value;
+          flags |= rule->entry.flags;
+
+          if (rule->entry.flags & DRAWN) {
+            break;
+          }
         }
       }
 
-      if (matched && constraints && !match_constraints(constraints, vars)) {
-        matched = 0;
-      }
       rule++;
     }
 
@@ -208,29 +213,9 @@ void initialize_mat_tables() {
       abort();
     }
 
-    entry = & mat_table[
-              counts[WP]                              +
-              counts[WN]                          * 8 +
-              counts[WB_LSQ]                  * 8 * 3 +
-              counts[WB_DSQ]              * 8 * 3 * 2 +
-              counts[WR]              * 8 * 3 * 2 * 2 +
-              counts[WQ]          * 8 * 3 * 2 * 2 * 3 +
-              counts[BP]      * 8 * 3 * 2 * 2 * 3 * 2 +
-              counts[BN]      * 8 * 3 * 2 * 2 * 3 * 2                 * 8 +
-              counts[BB_LSQ]  * 8 * 3 * 2 * 2 * 3 * 2             * 8 * 3 +
-              counts[BB_DSQ]  * 8 * 3 * 2 * 2 * 3 * 2         * 8 * 3 * 2 +
-              counts[BR]      * 8 * 3 * 2 * 2 * 3 * 2     * 8 * 3 * 2 * 2 +
-              counts[BQ]      * 8 * 3 * 2 * 2 * 3 * 2 * 8 * 3 * 2 * 2 * 3];
+    flags |= endgame_factor(counts);
 
-    /* calculate endgame factor */
-    /* total start material : 39 for each side - linear interpolate for each side and then average */
-    int wmat = counts[WP] + 3 * counts[WN] + 3 * counts[WB_LSQ] + 3 * counts[WB_DSQ] + 5 * counts[WR] + 9 * counts[WQ];
-    int bmat = counts[BP] + 3 * counts[BN] + 3 * counts[BB_LSQ] + 3 * counts[BB_DSQ] + 5 * counts[BR] + 9 * counts[BQ];
-    int avg = (wmat + bmat) / 2;
-    int endgame = avg / 10;
-
-    assert(0 <= endgame && endgame < 4);
-    flags |= (3 - endgame);
+    entry = & mat_table[mat_table_idx(counts)];
 
     entry->value = value;
     entry->flags = flags;
@@ -253,7 +238,7 @@ void initialize_mat_tables() {
   }
 }
 
-int match(const char * str, int counts[], int vars[]) {
+void fill_vars(const char * str, const int counts[], int vars[]) {
   int i;
   const char * token = str;
 
@@ -277,8 +262,12 @@ int match(const char * str, int counts[], int vars[]) {
         token++; /* operand */
     }
   }
+}
 
-  token = str;
+int match(const char * str, const int counts[], const int vars[]) {
+  int i;
+  const char * token = str;
+
   for (i = 0; i < MAX_PT; ++i) {
     int value;
     int op;
@@ -349,8 +338,54 @@ int match(const char * str, int counts[], int vars[]) {
   return 1;
 }
 
-int match_constraints(const char * constraints, int vars[])
-{
+int match_constraints(const char * constraints, const int vars[]) {
+  const char * token = constraints;
+  int last = 0;
+  int values[] = { 0, 0 };
+  int value_idx = 0;
+
+  for (; *token; token++) {
+    switch (*token) {
+      case 'a': case 'b': case'c': case 'd': case 'e': case 'f':
+        
+        break;
+      default:
+        
+    }
+  }
+}
+
+int endgame_factor(int counts[]) {
+    /* calculate endgame factor */
+    /* total start material : 39 for each side - linear interpolate for each side and then average */
+    int wmat = counts[WP] + 3 * counts[WN] + 3 * counts[WB_LSQ] + 3 * counts[WB_DSQ] + 5 * counts[WR] + 9 * counts[WQ];
+    int bmat = counts[BP] + 3 * counts[BN] + 3 * counts[BB_LSQ] + 3 * counts[BB_DSQ] + 5 * counts[BR] + 9 * counts[BQ];
+    int avg = (wmat + bmat) / 2;
+    int endgame = avg / 10;
+
+    assert(0 <= endgame && endgame < 4);
+
+    return 3 - endgame;
+}
+
+static int mat_table_idx(int counts[]) {
+  int result =
+    counts[WP]                              +
+    counts[WN]                          * 8 +
+    counts[WB_LSQ]                  * 8 * 3 +
+    counts[WB_DSQ]              * 8 * 3 * 2 +
+    counts[WR]              * 8 * 3 * 2 * 2 +
+    counts[WQ]          * 8 * 3 * 2 * 2 * 3 +
+    counts[BP]      * 8 * 3 * 2 * 2 * 3 * 2 +
+    counts[BN]      * 8 * 3 * 2 * 2 * 3 * 2                 * 8 +
+    counts[BB_LSQ]  * 8 * 3 * 2 * 2 * 3 * 2             * 8 * 3 +
+    counts[BB_DSQ]  * 8 * 3 * 2 * 2 * 3 * 2         * 8 * 3 * 2 +
+    counts[BR]      * 8 * 3 * 2 * 2 * 3 * 2     * 8 * 3 * 2 * 2 +
+    counts[BQ]      * 8 * 3 * 2 * 2 * 3 * 2 * 8 * 3 * 2 * 2 * 3;
+
+  assert(result < MAT_TABLE_SIZE);
+
+  return result;
 }
 
 const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {
@@ -370,18 +405,6 @@ const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {
   counts[BR] = MIN(__builtin_popcountll(board->rooks & COLOUR_BB(board, BLACK)), max_counts[BR]);
   counts[BQ] = MIN(__builtin_popcountll(board->queens & COLOUR_BB(board, BLACK)), max_counts[BQ]);
 
-  return & mat_table[
-      counts[WP]                              +
-      counts[WN]                          * 9 +
-      counts[WB_LSQ]                  * 9 * 3 +
-      counts[WB_DSQ]              * 9 * 3 * 2 +
-      counts[WR]              * 9 * 3 * 2 * 2 +
-      counts[WQ]          * 9 * 3 * 2 * 2 * 3 +
-      counts[BP]      * 9 * 3 * 2 * 2 * 3 * 2 +
-      counts[BN]      * 9 * 3 * 2 * 2 * 3 * 2                 * 9 +
-      counts[BB_LSQ]  * 9 * 3 * 2 * 2 * 3 * 2             * 9 * 3 +
-      counts[BB_DSQ]  * 9 * 3 * 2 * 2 * 3 * 2         * 9 * 3 * 2 +
-      counts[BR]      * 9 * 3 * 2 * 2 * 3 * 2     * 9 * 3 * 2 * 2 +
-      counts[BQ]      * 9 * 3 * 2 * 2 * 3 * 2 * 9 * 3 * 2 * 2 * 3];
+  return & mat_table[mat_table_idx(counts)];
 }
 

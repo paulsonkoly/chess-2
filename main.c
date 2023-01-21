@@ -48,6 +48,10 @@ int stopped = 0;
 
 int main(int argc, char *argv[])
 {
+#if DEBUG
+  printf("DEBUG BUILD\n");
+#endif
+
   initialize_magic();
   initialize_hash();
   initialize_mat_tables();

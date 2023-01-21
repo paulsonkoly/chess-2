@@ -27,6 +27,8 @@ ucimove    {file}{rank}{file}{rank}{promotion}?
 "go"         { return TOK_GO; }
 "depth"      { return TOK_DEPTH; }
 "perft"      { return TOK_PERFT; }
+"evaluate"   { return TOK_EVALUATE; }
+"mattable"   { return TOK_MATTABLE; }
 "movetime"   { return TOK_MOVETIME; }
 "wtime"      { return TOK_WTIME; }
 "winc"       { return TOK_WINC; }

@@ -27,4 +27,11 @@ extern MAT_TABLE_ENTRY * mat_table;
 void initialize_mat_tables();
 const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board);
 
+#if DEBUG
+void mat_table_debug(const BOARD * board);
+#define MAT_TABLE_DEBUG(board) mat_table_debug(board)
+#else
+#define MAT_TABLE_DEBUG(board)
+#endif
+
 #endif /* ifndef __MAT_TABLES_H__ */

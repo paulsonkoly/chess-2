@@ -16,6 +16,7 @@
 #include "uci_tests.h"
 #include "zobrist_tests.h"
 #include "mat_tables_tests.h"
+#include "evaluate_tests.h"
 
 int stopped = 0;
 
@@ -216,6 +217,8 @@ int main(void) {
     cmocka_unit_test(mat_tables_test18),
     cmocka_unit_test(mat_tables_test19),
     cmocka_unit_test(mat_tables_test20),
+
+    cmocka_unit_test(evaluate_test1),
   };
 
   result = cmocka_run_group_tests(tests, NULL, NULL);

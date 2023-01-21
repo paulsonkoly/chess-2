@@ -6,6 +6,8 @@
 #include "uci_tokens.h"
 #include "board.h"
 #include "search.h"
+#include "evaluate.h"
+#include "mat_tables.h"
 #include "perft.h"
 #include "version.h"
 
@@ -31,6 +33,10 @@ UCI_CMD * uci_parse(const char * line) {
     case TOK_IS_READY:
     case TOK_STOP:
     case TOK_QUIT:
+#if DEBUG
+    case TOK_EVALUATE:
+    case TOK_MATTABLE:
+#endif
       cmd->type = (enum UCI_TYPE)tok; return cmd;
 
     case TOK_GO:
@@ -209,6 +215,16 @@ void uci() {
           play_uci_moves(board, cmd->data.position.data.moves);
         }
         break;
+
+#if DEBUG
+      case EVAL:
+        evaluate(board, 1);
+        break;
+
+      case MATTABLE:
+        mat_table_debug(board);
+        break;
+#endif
 
       case QUIT:
         fflush(stdout);

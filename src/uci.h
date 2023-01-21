@@ -1,6 +1,7 @@
 #ifndef _UCI_H_
 #define _UCI_H_
 
+#include "chess.h"
 #include "uci_tokens.h"
 
 #define MOVE_BUFFER_LEN 1024
@@ -12,7 +13,11 @@ enum UCI_TYPE { INVALID = 0,
                 GO = TOK_GO,
                 POSITION = TOK_POSITION,
                 STOP = TOK_STOP,
-                QUIT = TOK_QUIT
+                QUIT = TOK_QUIT,
+#if DEBUG
+                EVAL = TOK_EVALUATE,
+                MATTABLE = TOK_MATTABLE,
+#endif
               };
 enum UCI_GO_TYPE { INFINITE, DEPTH = TOK_DEPTH, MOVETIME = TOK_MOVETIME, WBTIME, PERFT = TOK_PERFT };
 enum UCI_POSITION_TYPE { FEN = TOK_FEN, STARTPOS = TOK_STARTPOS };

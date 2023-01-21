@@ -137,12 +137,12 @@ static const RULE rules[] = {
 
   /* discourage trading a minor piece for pawns, assuming we can still win - not only the minor piece left */
   { "a+b+c+d+e+f>1                                     ", {     0,   CONSTRAINT   } },
-  { "a >b  c      d      e  f  >a b  c      d      e  f", {    30,   0} },
-  { "a  b >c      d      e  f  >a b  c      d      e  f", {    30,   0} },
-  { "a  b  c      >d     e  f  >a b  c      d      e  f", {    30,   0} },
-  { ">a b  c      d      e  f  a  >b c      d      e  f", {   -30,   0} },
-  { ">a b  c      d      e  f  a  b  >c     d      e  f", {   -30,   0} },
-  { ">a b  c      d      e  f  a  b  c      >d     e  f", {   -30,   0} },
+  { "a  b  c      d      e  f  >a <b c      d      e  f", {   110,   0} },
+  { "a  b  c      d      e  f  >a b  <c     d      e  f", {   110,   0} },
+  { "a  b  c      d      e  f  >a b  c      <d     e  f", {   110,   0} },
+  { ">a <b c      d      e  f  a  b  c      d      e  f", {  -110,   0} },
+  { ">a b  <c     d      e  f  a  b  c      d      e  f", {  -110,   0} },
+  { ">a b  c      <d     e  f  a  b  c      d      e  f", {  -110,   0} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
   /* knight and pawns against 2 bishops */
   { ">a >b 0      0      e  f  a  b  1      1      e  f", {  -190,   0} },
@@ -190,8 +190,6 @@ static const RULE rules[] = {
   { ">a b  c      d      e  f a   b  c      d      e  f", {     5,   0} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
-  { "*  *  *      *      *  *  *  *  *      *      *  *", {     0,   0} },    /* catch all */
-
   { NULL,                                                 {     0,   0} }
 };
 
@@ -208,6 +206,11 @@ void initialize_mat_tables() {
 
   MAT_TABLE_ENTRY * entry;
 
+#if DEBUG
+  int combo_matched = 0;
+  int combo_unmatched = 0;
+#endif
+
   if (NULL == (mat_table = calloc(MAT_TABLE_SIZE, sizeof(MAT_TABLE_ENTRY)))) {
     abort();
   }
@@ -215,11 +218,13 @@ void initialize_mat_tables() {
   while (1) {
     int i, j;
     int fin;
-    /* int matched = 0; */
     int value = 0;
     unsigned flags = 0;
     const RULE * rule = rules;
     const char * constraints = NULL;
+#if DEBUG
+    int matched = 0;
+#endif
 
     while (rule->str || rule->entry.flags & CONSTRAINT) {
       int vars[12] = { 0 };
@@ -230,7 +235,9 @@ void initialize_mat_tables() {
         fill_vars(rule->str, counts, vars);
 
         if (match(rule->str, counts, vars) && match_constraints(constraints, vars)) {
-          /* matched = 1; */
+#if DEBUG
+          matched = 1;
+#endif
 
           value += rule->entry.value;
           flags |= rule->entry.flags;
@@ -243,20 +250,11 @@ void initialize_mat_tables() {
 
       rule++;
     }
-
-#if 0
-    if (! matched) {
-      printf("The following material combination didn't match any rule:\n");
-
-      printf("WP\t| WN\t| WBLSQ\t| WBDSQ\t| WR\t| WQ\t| BP\t| BN\t| BBLSQ\t| BBDSQ\t| BR\t| BQ\n");
-      printf("%d\t| %d\t| %d\t| %d\t| %d\t| %d\t| %d\t| %d\t| %d\t| %d\t| %d\t| %d\n",
-          counts[0], counts[1], counts[2], counts[3], counts[4],  counts[5],
-          counts[6], counts[7], counts[8], counts[9], counts[10], counts[11]);
-
-      rule -= 2; /* debug, point it to the rule that;s supposed to match and run in debugger */
-      (volatile int)match(rule->str, counts);
-
-      abort();
+#if DEBUG
+    if (matched) {
+      combo_matched++;
+    } else {
+      combo_unmatched++;
     }
 #endif
 
@@ -280,6 +278,10 @@ void initialize_mat_tables() {
       }
     }
     if (fin) {
+#if DEBUG
+      printf("mat tables %d matched by rule %d unmatched %d total\n",
+          combo_matched, combo_unmatched, combo_matched + combo_unmatched );
+#endif
       return;
     }
   }
@@ -535,9 +537,7 @@ static int mat_table_idx(int counts[]) {
   return result;
 }
 
-const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {
-  int counts[MAX_PT];
-
+static inline void get_counts(const BOARD * board, int counts[]) {
   counts[WP] = MIN(__builtin_popcountll(board->pawns & COLOUR_BB(board, WHITE)), max_counts[WP]);
   counts[WN] = MIN(__builtin_popcountll(board->knights & COLOUR_BB(board, WHITE)), max_counts[WN]);
   counts[WB_LSQ] = MIN(__builtin_popcountll(board->bishops & COLOUR_BB(board, WHITE) & LIGHT_SQUARES), max_counts[WB_LSQ]);
@@ -551,7 +551,56 @@ const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {
   counts[BB_DSQ] = MIN(__builtin_popcountll(board->bishops & COLOUR_BB(board, BLACK) & DARK_SQUARES), max_counts[BB_DSQ]);
   counts[BR] = MIN(__builtin_popcountll(board->rooks & COLOUR_BB(board, BLACK)), max_counts[BR]);
   counts[BQ] = MIN(__builtin_popcountll(board->queens & COLOUR_BB(board, BLACK)), max_counts[BQ]);
+}
+
+const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board) {
+  int counts[MAX_PT];
+
+  get_counts(board, counts);
 
   return & mat_table[mat_table_idx(counts)];
 }
+
+#if DEBUG
+void mat_table_debug(const BOARD * board) {
+  int counts[MAX_PT];
+  const RULE * rule = rules;
+  const char * constraints = NULL;
+
+  get_counts(board, counts);
+
+
+  while (rule->str || rule->entry.flags & CONSTRAINT) {
+    int vars[12] = { 0 };
+
+    if (rule->entry.flags & CONSTRAINT) {
+      constraints = rule->str;
+      printf("constraints %s\n", constraints);
+    } else {
+      fill_vars(rule->str, counts, vars);
+
+      printf("%s\n", rule->str);
+      printf("a: %d b: %d c: %d d: %d e: %d f: %d\n", vars[0], vars[1], vars[2], vars[3], vars[4], vars[5]);
+      printf("matched: %d constrains matched: %d\n",
+          match(rule->str, counts, vars),
+          match_constraints(constraints, vars));
+
+      if (match(rule->str, counts, vars) && match_constraints(constraints, vars)) {
+        printf("MATCHED\n");
+
+        if (rule->entry.flags & DRAWN) {
+          printf("DRAWN\n");
+          return;
+        }
+      }
+    }
+    printf("\n");
+
+    rule++;
+  }
+}
+#define MAT_TABLE_DEBUG(board) mat_table_debug(board)
+#else
+#define MAT_TABLE_DEBUG(board)
+#endif
 

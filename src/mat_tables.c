@@ -148,7 +148,7 @@ static const RULE rules[] = {
   { ">a >b 0      0      e  f  a  b  1      1      e  f", {  -190,   0} },
   { "a  b  1      1      e  f  >a >b 0      0      e  f", {   190,   0} },
 
-  /* discourage trading Q for R/(B/N)/P */
+  /* discourage trading Q for R+(B/N)+P */
   { ">=a >b  c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },
   { ">=a  b >c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },
   { ">=a  b  c   >d     >e  f  a  b  c      d      e >f", {   -60,   0} },

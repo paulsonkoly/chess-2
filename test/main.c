@@ -219,6 +219,9 @@ int main(void) {
     cmocka_unit_test(mat_tables_test20),
 
     cmocka_unit_test(evaluate_test1),
+    cmocka_unit_test(evaluate_test2),
+    cmocka_unit_test(evaluate_test3),
+    cmocka_unit_test(evaluate_test4),
   };
 
   result = cmocka_run_group_tests(tests, NULL, NULL);

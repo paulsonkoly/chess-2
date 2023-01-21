@@ -207,7 +207,7 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
     }
   }
 
-  SQUARE sqs[] = { ((7 - kings[1]) << 3) + kings[2], kings[3] };
+  SQUARE sqs[] = { ((7 - kings[2]) << 3) + kings[1], kings[3] };
   SQUARE sq = sqs[colour];
 
   /* default - piece square interpolate between middle game - endgame */

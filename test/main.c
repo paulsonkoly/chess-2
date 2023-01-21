@@ -222,6 +222,7 @@ int main(void) {
     cmocka_unit_test(evaluate_test2),
     cmocka_unit_test(evaluate_test3),
     cmocka_unit_test(evaluate_test4),
+    cmocka_unit_test(evaluate_test5),
   };
 
   result = cmocka_run_group_tests(tests, NULL, NULL);

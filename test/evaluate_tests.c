@@ -62,3 +62,16 @@ void evaluate_test4(void **state) {
   free(board);
 }
 
+void evaluate_test5(void **state) {
+  BOARD * board;
+  int score;
+
+  /* 2P+Q vs 3P+N+R*/
+  board = parse_fen("5rk1/5ppp/5b2/8/8/8/PP6/1KQ5 b - - 0 1");
+  score = EVALUATE(board);
+
+  assert_true(score < 0);
+
+  free(board);
+}
+

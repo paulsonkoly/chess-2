@@ -148,7 +148,7 @@ static const RULE rules[] = {
   { ">a >b 0      0      e  f  a  b  1      1      e  f", {  -190,   0} },
   { "a  b  1      1      e  f  >a >b 0      0      e  f", {   190,   0} },
 
-  /* discourage trading Q for R+(B/N)+P */
+  /* discourage trading Q for R+(B/N)+P? */
   { ">=a >b  c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },
   { ">=a  b >c    d     >e  f  a  b  c      d      e >f", {   -60,   0} },
   { ">=a  b  c   >d     >e  f  a  b  c      d      e >f", {   -60,   0} },
@@ -520,17 +520,17 @@ int endgame_factor(int counts[]) {
 static int mat_table_idx(int counts[]) {
   int result =
     counts[WP]                              +
-    counts[WN]                          * 8 +
-    counts[WB_LSQ]                  * 8 * 3 +
-    counts[WB_DSQ]              * 8 * 3 * 2 +
-    counts[WR]              * 8 * 3 * 2 * 2 +
-    counts[WQ]          * 8 * 3 * 2 * 2 * 3 +
-    counts[BP]      * 8 * 3 * 2 * 2 * 3 * 2 +
-    counts[BN]      * 8 * 3 * 2 * 2 * 3 * 2                 * 8 +
-    counts[BB_LSQ]  * 8 * 3 * 2 * 2 * 3 * 2             * 8 * 3 +
-    counts[BB_DSQ]  * 8 * 3 * 2 * 2 * 3 * 2         * 8 * 3 * 2 +
-    counts[BR]      * 8 * 3 * 2 * 2 * 3 * 2     * 8 * 3 * 2 * 2 +
-    counts[BQ]      * 8 * 3 * 2 * 2 * 3 * 2 * 8 * 3 * 2 * 2 * 3;
+    counts[WN]                          * 9 +
+    counts[WB_LSQ]                  * 9 * 3 +
+    counts[WB_DSQ]              * 9 * 3 * 2 +
+    counts[WR]              * 9 * 3 * 2 * 2 +
+    counts[WQ]          * 9 * 3 * 2 * 2 * 3 +
+    counts[BP]      * 9 * 3 * 2 * 2 * 3 * 2 +
+    counts[BN]      * 9 * 3 * 2 * 2 * 3 * 2                 * 9 +
+    counts[BB_LSQ]  * 9 * 3 * 2 * 2 * 3 * 2             * 9 * 3 +
+    counts[BB_DSQ]  * 9 * 3 * 2 * 2 * 3 * 2         * 9 * 3 * 2 +
+    counts[BR]      * 9 * 3 * 2 * 2 * 3 * 2     * 9 * 3 * 2 * 2 +
+    counts[BQ]      * 9 * 3 * 2 * 2 * 3 * 2 * 9 * 3 * 2 * 2 * 3;
 
   assert(result < MAT_TABLE_SIZE);
 
@@ -581,7 +581,7 @@ void mat_table_debug(const BOARD * board) {
 
       printf("%s\n", rule->str);
       printf("a: %d b: %d c: %d d: %d e: %d f: %d\n", vars[0], vars[1], vars[2], vars[3], vars[4], vars[5]);
-      printf("matched: %d constrains matched: %d\n",
+      printf("matched: %d constraints matched: %d\n",
           match(rule->str, counts, vars),
           match_constraints(constraints, vars));
 

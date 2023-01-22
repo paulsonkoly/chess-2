@@ -237,7 +237,9 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
   endgame_factor = mt->flags & ENDGAME_MASK;
   static const int shield_value[] = { -40, -20, 0, 0 };
   int safety = __builtin_popcountll(
-      shield(board->pawns & COLOUR_BB(board, colour), colour, board->kings & COLOUR_BB(board, colour))
+      shield((board->pawns | board->bishops) & COLOUR_BB(board, colour), /* fianchettoed bishops */
+             colour,
+             board->kings & COLOUR_BB(board, colour))
       ) * shield_value[endgame_factor];
   DEBUG_PRINT("%s king shield\t%d\n", colour_names[colour], safety);
 

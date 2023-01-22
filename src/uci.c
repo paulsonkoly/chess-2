@@ -218,7 +218,9 @@ void uci() {
 
 #if DEBUG
       case EVAL:
-        evaluate(board, 1);
+        DEBUG_ENABLE;
+        evaluate(board);
+        DEBUG_DISABLE;
         break;
 
       case MATTABLE:

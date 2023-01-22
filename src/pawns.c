@@ -74,3 +74,24 @@ BITBOARD weak(BITBOARD pawns, COLOUR colour) {
   BITBOARD captures = pawn_captures(pawns, colour);
   return pawns & ~ captures;
 }
+
+BITBOARD shield(BITBOARD our_pawns, COLOUR colour, BITBOARD king) {
+  BITBOARD shield = 0;
+  BITBOARD captures = pawn_captures(our_pawns, colour);
+
+  switch (colour) {
+
+    case WHITE:
+      shield = (king << 16) | ((king & ~ AFILE) << 15) | ((king & ~(AFILE | BFILE)) << 14) |
+                               ((king & ~HFILE) << 17) | ((king & ~(HFILE | GFILE)) << 18);
+      break;
+
+    case BLACK:
+      shield = (king >> 16) | ((king & ~ HFILE) >> 15) | ((king & ~(HFILE | GFILE)) >> 14) |
+                               ((king & ~AFILE) >> 17) | ((king & ~(AFILE | BFILE)) >> 18);
+      break;
+  }
+
+  return shield & ~ captures;
+
+}

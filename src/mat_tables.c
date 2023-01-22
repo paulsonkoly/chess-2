@@ -100,12 +100,12 @@ static const RULE rules[] = {
   { "0  0  0      0      0  1  0  a  b      c      0  1", {     0,   DRAWN} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
-  { ">0 0  0      0      0  0  0  1  0      0      0  0", {      KNIGHT_V,   0} }, /* piece can't win, against pawn, */
-  { "0  1  0      0      0  0  >0 0  0      0      0  0", { -1 * KNIGHT_V,   0} },
-  { ">0 0  0      0      0  0  0  0  1      0      0  0", {      BISHOP_V,   0} },
-  { "0  0  1      0      0  0  >0 0  0      0      0  0", { -1 * BISHOP_V,   0} },
-  { ">0 0  0      0      0  0  0  0  0      1      0  0", {      BISHOP_V,   0} },
-  { "0  0  0      1      0  0  >0 0  0      0      0  0", { -1 * BISHOP_V,   0} },
+  { ">0 0  0      0      0  0  0  1  0      0      0  0", {   200,   0} }, /* piece can't win, against pawn, */
+  { "0  1  0      0      0  0  >0 0  0      0      0  0", {  -200,   0} }, /* leave a pawn value up so we still differentiate */
+  { ">0 0  0      0      0  0  0  0  1      0      0  0", {   200,   0} }, /* between position from no-piece to piece */
+  { "0  0  1      0      0  0  >0 0  0      0      0  0", {  -200,   0} }, /* but we would give up the */
+  { ">0 0  0      0      0  0  0  0  0      1      0  0", {   200,   0} }, /* piece for a dangerous pawn */
+  { "0  0  0      1      0  0  >0 0  0      0      0  0", {  -200,   0} },
 
   /* bishop and knight check mates */
   { "0  1  1      0      0  0  0  0  0      0      0  0", {     0,   W_CHECKMATING | BN_MATE_LSQ} },

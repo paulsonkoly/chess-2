@@ -175,7 +175,7 @@ void mat_tables_test14(void **state) {
   board = parse_fen("6k1/6p1/8/8/8/8/8/K1N5 w - - 0 1");
   e = get_mat_table_entry(board);
 
-  assert_int_equal(e->value, -1 * KNIGHT_V);
+  assert_int_equal(e->value, -200);
 
   free(board);
 }

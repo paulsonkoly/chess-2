@@ -4,6 +4,7 @@
 #include <cmocka.h>
 #include <string.h>
 
+#include "mat_tables.h"
 #include "board.h"
 #include "attacks.h"
 #include "perft.h"
@@ -14,6 +15,8 @@
 
 #include "uci_tests.h"
 #include "zobrist_tests.h"
+#include "mat_tables_tests.h"
+#include "evaluate_tests.h"
 
 int stopped = 0;
 
@@ -153,7 +156,10 @@ static void weak_test() {
 }
 
 int main(void) {
+  int result;
   initialize_magic();
+  initialize_hash();
+  initialize_mat_tables();
 
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(perft_unit_test1),
@@ -190,7 +196,38 @@ int main(void) {
 
     cmocka_unit_test(zobrist_test1),
     cmocka_unit_test(zobrist_test2),
+
+    cmocka_unit_test(mat_tables_test1),
+    cmocka_unit_test(mat_tables_test2),
+    cmocka_unit_test(mat_tables_test3),
+    cmocka_unit_test(mat_tables_test4),
+    cmocka_unit_test(mat_tables_test5),
+    cmocka_unit_test(mat_tables_test6),
+    cmocka_unit_test(mat_tables_test7),
+    cmocka_unit_test(mat_tables_test8),
+    cmocka_unit_test(mat_tables_test9),
+    cmocka_unit_test(mat_tables_test10),
+    cmocka_unit_test(mat_tables_test11),
+    cmocka_unit_test(mat_tables_test12),
+    cmocka_unit_test(mat_tables_test13),
+    cmocka_unit_test(mat_tables_test14),
+    cmocka_unit_test(mat_tables_test15),
+    cmocka_unit_test(mat_tables_test16),
+    cmocka_unit_test(mat_tables_test17),
+    cmocka_unit_test(mat_tables_test18),
+    cmocka_unit_test(mat_tables_test19),
+    cmocka_unit_test(mat_tables_test20),
+
+    cmocka_unit_test(evaluate_test1),
+    cmocka_unit_test(evaluate_test2),
+    cmocka_unit_test(evaluate_test3),
+    cmocka_unit_test(evaluate_test4),
+    cmocka_unit_test(evaluate_test5),
   };
 
-  return cmocka_run_group_tests(tests, NULL, NULL);
+  result = cmocka_run_group_tests(tests, NULL, NULL);
+
+  free(mat_table);
+
+  return result;
 }

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "evaluate.h"
 #include "pawns.h"
@@ -105,9 +106,17 @@ int psqt_value(PIECE piece, COLOUR colour, SQUARE from, SQUARE to) {
   return bonuses[piece][to] - bonuses[piece][from];
 }
 
+#if DEBUG
+static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], int debug);
+#else
 static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6]);
+#endif
 
+#if DEBUG
+int evaluate(const BOARD * board, int debug) {
+#else
 int evaluate(const BOARD * board) {
+#endif
   int value = 0;
   int dir[] = {1, -1};
   const MAT_TABLE_ENTRY * mt = get_mat_table_entry(board);
@@ -116,6 +125,9 @@ int evaluate(const BOARD * board) {
   if (mt->flags & DRAWN) {
     return 0;
   }
+
+  DEBUG_PRINT("mat table score\t\t%d\n", mt->value);
+  DEBUG_PRINT("mat table flags\t\t%8.8x\n", mt->flags);
 
   value += mt->value;
 
@@ -144,6 +156,8 @@ int evaluate(const BOARD * board) {
     }
     pawn_value -= 10 * __builtin_popcountll(wk);
 
+    DEBUG_PRINT("%s pawn\t\t%d\n", colour_names[colour], pawn_value);
+
     value += dir[colour] * pawn_value;
   }
 
@@ -164,6 +178,8 @@ int evaluate(const BOARD * board) {
         else {
           value -= piece_values[piece] + bonuses[piece][sq];
         }
+        DEBUG_PRINT("%s %s\t\t%d\n",
+            colour_names[colour], piece_names[piece], piece_values[piece] + bonuses[piece][sq]);
 
         pieces &= pieces - 1;
       }
@@ -181,29 +197,50 @@ int evaluate(const BOARD * board) {
     kings[3 * colour + 2] = rank;
   }
 
+#if DEBUG
+  value += king_evaluate(mt, WHITE, kings, debug) - king_evaluate(mt, BLACK, kings, debug);
+#else
   value += king_evaluate(mt, WHITE, kings) - king_evaluate(mt, BLACK, kings);
+#endif
+
+  DEBUG_PRINT("total\t\t\t%d\n", value);
 
   return (board->next == WHITE ? value : -value);
 }
 
 /* kings: square, file, rank, square, file, rank */
+#if DEBUG
+static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], int debug) {
+#else
 static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6]) {
+#endif
+  int score;
+
   /* simple piece checkmate */
   if (mt->flags & (W_CHECKMATING << (colour))) {
     /* Chebyshev distance of kings */
     int dist = MAX(ABS(kings[1] - kings[4]), ABS(kings[2] - kings[5]));
+    score = 80 - 10 * dist;
 
-    return (80 - 10 * dist);
+    DEBUG_PRINT("%s king distance\t\t%d\n", colour_names[colour], score);
+
+    return score;
   }
 
   if (mt->flags & (W_CHECKMATING << (colour ^ 1) )) {
     /* bishop / knight mate in light square corner */
     if (mt->flags & BN_MATE_LSQ) {
-      return king_bn_mate_dsq[((7 - kings[3 * colour + 2]) << 3) + kings[3 * colour + 1]];
+      score = king_bn_mate_dsq[((7 - kings[3 * colour + 2]) << 3) + kings[3 * colour + 1]];
+
+      DEBUG_PRINT("%s king getting B+N checkmated %d\n", colour_names[colour], score);
+      return score;
     }
     /* bishop / knight mate in dark square corner */
     else if (mt->flags & BN_MATE_DSQ) {
-      return king_bn_mate_dsq[kings[3 * colour]];
+      int score = king_bn_mate_dsq[kings[3 * colour]];
+
+      DEBUG_PRINT("%s king getting B+N checkmated %d\n", colour_names[colour], score);
+      return score;
     }
   }
 
@@ -212,10 +249,21 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
 
   /* default - piece square interpolate between middle game - endgame */
   switch (mt->flags & ENDGAME_MASK) {
-    case ENDGAME_0: return king_middlegame_bonus[sq];                                break;
-    case ENDGAME_1: return king_middlegame_bonus[sq];                                break;
-    case ENDGAME_2: return (king_middlegame_bonus[sq] + king_endgame_bonus[sq]) / 2; break;
-    case ENDGAME_3: return king_endgame_bonus[sq];                                   break;
+    case ENDGAME_0:
+    case ENDGAME_1:
+      score = king_middlegame_bonus[sq];
+      DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
+      return score;
+
+    case ENDGAME_2:
+      score = (king_middlegame_bonus[sq] + king_endgame_bonus[sq]) / 2;
+      DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
+      return score;
+
+    case ENDGAME_3:
+      score = king_endgame_bonus[sq];
+      DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
+      return score;
   }
 
   abort(); /* unreachable */

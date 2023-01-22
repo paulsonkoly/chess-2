@@ -119,7 +119,7 @@ int quiesce(BOARD * board, int alpha, int beta) {
       return 0;
   }
 
-  stand_pat = evaluate(board);
+  stand_pat = EVALUATE(board);
 
   if (stand_pat >= beta) {
     ml_close_frame();

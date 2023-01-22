@@ -4,6 +4,17 @@
 #include <stdint.h>
 #include <strings.h>
 
+#ifndef NDEBUG
+#define DEBUG 1
+#define DEBUG_PRINT(...)                      \
+  if (debug) {                                \
+    printf(__VA_ARGS__);                      \
+  }
+#else
+#define DEBUG_PRINT(...)
+#endif /* ifndef NDEBUG */
+
+
 typedef uint8_t SQUARE;
 #define NO_SQUARE ((SQUARE)(-1))
 
@@ -28,9 +39,12 @@ typedef enum {
   KING_V     = 10000 } PIECE_VALUE;
 
 extern const int piece_values[];
+extern const char * piece_names[];
 
 #define WHITE ((COLOUR)0)
 #define BLACK ((COLOUR)1)
+
+extern const char * colour_names[];
 
 typedef uint64_t BITBOARD;
 

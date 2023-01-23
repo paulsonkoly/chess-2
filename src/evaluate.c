@@ -3,6 +3,7 @@
 
 #include "evaluate.h"
 #include "pawns.h"
+#include "board.h"
 #include "mat_tables.h"
 
 static const int knight_bonus[] = {
@@ -106,17 +107,9 @@ int psqt_value(PIECE piece, COLOUR colour, SQUARE from, SQUARE to) {
   return bonuses[piece][to] - bonuses[piece][from];
 }
 
-#if DEBUG
-static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], int debug);
-#else
-static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6]);
-#endif
+static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], const BOARD * board);
 
-#if DEBUG
-int evaluate(const BOARD * board, int debug) {
-#else
 int evaluate(const BOARD * board) {
-#endif
   int value = 0;
   int dir[] = {1, -1};
   const MAT_TABLE_ENTRY * mt = get_mat_table_entry(board);
@@ -197,11 +190,7 @@ int evaluate(const BOARD * board) {
     kings[3 * colour + 2] = rank;
   }
 
-#if DEBUG
-  value += king_evaluate(mt, WHITE, kings, debug) - king_evaluate(mt, BLACK, kings, debug);
-#else
-  value += king_evaluate(mt, WHITE, kings) - king_evaluate(mt, BLACK, kings);
-#endif
+  value += king_evaluate(mt, WHITE, kings, board) - king_evaluate(mt, BLACK, kings, board);
 
   DEBUG_PRINT("total\t\t\t%d\n", value);
 
@@ -209,12 +198,9 @@ int evaluate(const BOARD * board) {
 }
 
 /* kings: square, file, rank, square, file, rank */
-#if DEBUG
-static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], int debug) {
-#else
-static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6]) {
-#endif
+static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], const BOARD * board) {
   int score;
+  int endgame_factor = 0;
 
   /* simple piece checkmate */
   if (mt->flags & (W_CHECKMATING << (colour))) {
@@ -248,25 +234,22 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
   SQUARE sq = sqs[colour];
 
   /* default - piece square interpolate between middle game - endgame */
-  switch (mt->flags & ENDGAME_MASK) {
-    case ENDGAME_0:
-    case ENDGAME_1:
-      score = king_middlegame_bonus[sq];
-      DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
-      return score;
+  endgame_factor = mt->flags & ENDGAME_MASK;
+  static const int shield_value[] = { -40, -20, 0, 0 };
+  int safety = __builtin_popcountll(
+      shield((board->pawns | board->bishops) & COLOUR_BB(board, colour), /* fianchettoed bishops */
+             colour,
+             board->kings & COLOUR_BB(board, colour))
+      ) * shield_value[endgame_factor];
+  DEBUG_PRINT("%s king shield\t%d\n", colour_names[colour], safety);
 
-    case ENDGAME_2:
-      score = (king_middlegame_bonus[sq] + king_endgame_bonus[sq]) / 2;
-      DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
-      return score;
+  static const int mdl_psqt_weight[] = { 2, 2, 1, 0};
+  static const int end_psqt_weight[] = { 0, 0, 1, 2};
 
-    case ENDGAME_3:
-      score = king_endgame_bonus[sq];
-      DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
-      return score;
-  }
+  score = (mdl_psqt_weight[endgame_factor] * king_middlegame_bonus[sq] +
+           end_psqt_weight[endgame_factor] * king_endgame_bonus[sq]) / 2;
+  DEBUG_PRINT("%s king psqt\t\t%d\n", colour_names[colour], score);
 
-  abort(); /* unreachable */
-  return 0;
+  return score + safety;
 }
 

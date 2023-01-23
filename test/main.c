@@ -11,9 +11,9 @@
 #include "movelist.h"
 #include "movegen.h"
 #include "see.h"
-#include "pawns.h"
 
 #include "uci_tests.h"
+#include "pawns_tests.h"
 #include "zobrist_tests.h"
 #include "mat_tables_tests.h"
 #include "evaluate_tests.h"
@@ -136,25 +136,6 @@ static void see_test(void ** state) {
   assert_int_equal(-160, see(b, &b3b6));
 }
 
-static void isolated_test() {
-  BITBOARD pawns = 0x00000000488a8900ULL;
-
-  assert_int_equal(0x0000000008080800ULL, isolated(pawns));
-}
-
-static void passers_test() {
-  BITBOARD our_pawns = 0x00000000000a2a00ULL;
-  BITBOARD their_pawns = 0x00c2000000000000ULL;
-
-  assert_int_equal(0x0000000000080000ULL, passers(our_pawns, their_pawns, WHITE));
-}
-
-static void weak_test() {
-  BITBOARD pawns = 0x0000800020120900ULL;
-
-  assert_int_equal(0x0000800000000900ULL, weak(pawns, WHITE));
-}
-
 int main(void) {
   int result;
   initialize_magic();
@@ -173,9 +154,11 @@ int main(void) {
     cmocka_unit_test(forcing_moves_test),
     cmocka_unit_test(see_capture_test),
     cmocka_unit_test(see_test),
-    cmocka_unit_test(isolated_test),
-    cmocka_unit_test(passers_test),
-    cmocka_unit_test(weak_test),
+
+    cmocka_unit_test(pawns_test1),
+    cmocka_unit_test(pawns_test2),
+    cmocka_unit_test(pawns_test3),
+    cmocka_unit_test(pawns_test4),
 
     cmocka_unit_test(uci_parser_test1),
     cmocka_unit_test(uci_parser_test2),

@@ -5,13 +5,18 @@
 #include <strings.h>
 
 #ifndef NDEBUG
+#define DEBUG_ENABLE (debug = 1)
 #define DEBUG 1
 #define DEBUG_PRINT(...)                      \
   if (debug) {                                \
     printf(__VA_ARGS__);                      \
   }
+extern int debug;
+#define DEBUG_DISABLE (debug = 0)
 #else
+#define DEBUG_ENABLE
 #define DEBUG_PRINT(...)
+#define DEBUG_DISABLE
 #endif /* ifndef NDEBUG */
 
 

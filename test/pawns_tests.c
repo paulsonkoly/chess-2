@@ -23,12 +23,19 @@ void pawns_test2(void ** state) {
 }
 
 void pawns_test3(void ** state) {
+  BITBOARD our_pawns = 0x0000000002000000ULL;
+  BITBOARD their_pawns = 0x0000000000000100ULL;
+  /* a2 / b4 */
+  assert_int_equal(0x0000000000000000ULL, passers(our_pawns, their_pawns, BLACK));
+}
+
+void pawns_test4(void ** state) {
   BITBOARD pawns = 0x0000800020120900ULL;
   /* weak */
   assert_int_equal(0x0000800000000900ULL, weak(pawns, WHITE));
 }
 
-void pawns_test4(void ** state) {
+void pawns_test5(void ** state) {
   BITBOARD pawns = 0x000000100400d300ULL;
   BITBOARD king  = 0x0000000000000040ULL;
   /* shield */

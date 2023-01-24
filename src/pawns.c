@@ -65,7 +65,7 @@ BITBOARD passers(BITBOARD our_pawns, BITBOARD their_pawns, COLOUR colour) {
   /* squares enemy pawns are capable of covering (ignoring pawns switching files by capturing) */
   BITBOARD enemycover = frontspan(their_pawns, 1 - colour);
 
-  enemycover |= ((enemycover & ~AFILE) >> 1) | ((enemycover & ~HFILE << 1));
+  enemycover |= ((enemycover & ~AFILE) >> 1) | ((enemycover & ~HFILE) << 1);
 
   return frontline & ~ enemycover;
 }

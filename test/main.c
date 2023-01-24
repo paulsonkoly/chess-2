@@ -159,6 +159,7 @@ int main(void) {
     cmocka_unit_test(pawns_test2),
     cmocka_unit_test(pawns_test3),
     cmocka_unit_test(pawns_test4),
+    cmocka_unit_test(pawns_test5),
 
     cmocka_unit_test(uci_parser_test1),
     cmocka_unit_test(uci_parser_test2),

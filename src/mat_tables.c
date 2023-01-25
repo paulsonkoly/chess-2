@@ -44,6 +44,11 @@ typedef struct {
  * subsequent rules are not tried. Matching rule values are summed up, and
  * flags accumulated.
  *
+ * Variables: single letter variables from 'a' to 'z'.
+ * Constants: single digit numbers from 0 to 9 or * (any number) - only in
+ * matcher rules.
+ * Operators: + - * / = &
+ *
  * Language has 3 types of statements:
  *  - matcher rule
  *  - constraint group start
@@ -51,7 +56,7 @@ typedef struct {
  *
  * Constraint group start
  * ----------------------
- * Use CONSTRAINT   in flags. rule->str is constraint string expressing
+ * Use CONSTRAINT in flags. rule->str is constraint string expressing
  * arithmetic, relational and logic expressions between variables and
  * constants.
  * Variables are filled from the matcher rule within the constraint group.
@@ -63,8 +68,8 @@ typedef struct {
  * Matcher rule
  * ------------
  * Fills variables with value according to piece combination. Multiple
- * appearance of the same variable asserts matching values. Constants assert matching value.
- * Relational constraint asserts value fullfilling constraint.
+ * appearance of the same variable asserts matching values. Constants assert
+ * matching value. Relational constraint asserts value fullfilling constraint.
  * '*' allows any value.
  */
 static const RULE rules[] = {

@@ -135,9 +135,9 @@ int evaluate(const BOARD * board) {
     BITBOARD pass = passers(my_pawns, their_pawns, colour);
     BITBOARD wk   = weak(my_pawns, colour);
 
-    DEBUG_PRINT("%s isolated %8.8lx\n", colour_names[colour], iso);
-    DEBUG_PRINT("%s passer %8.8lx\n", colour_names[colour], pass);
-    DEBUG_PRINT("%s weak %8.8lx\n", colour_names[colour], wk);
+    DEBUG_PRINT("%s isolated\t\t%8.8lx\n", colour_names[colour], iso);
+    DEBUG_PRINT("%s passer\t\t%8.8lx\n", colour_names[colour], pass);
+    DEBUG_PRINT("%s weak\t\t%8.8lx\n", colour_names[colour], wk);
 
     pawn_value += piece_values[PAWN] * __builtin_popcountll(my_pawns);
     pawn_value -= 20 * __builtin_popcountll(iso);

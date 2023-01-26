@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #include "mat_tables.h"
 
@@ -43,6 +44,11 @@ typedef struct {
  * subsequent rules are not tried. Matching rule values are summed up, and
  * flags accumulated.
  *
+ * Variables: single letter variables from 'a' to 'z'.
+ * Constants: single digit numbers from 0 to 9 or * (any number) - only in
+ * matcher rules.
+ * Operators: + - * / = &
+ *
  * Language has 3 types of statements:
  *  - matcher rule
  *  - constraint group start
@@ -50,7 +56,7 @@ typedef struct {
  *
  * Constraint group start
  * ----------------------
- * Use CONSTRAINT   in flags. rule->str is constraint string expressing
+ * Use CONSTRAINT in flags. rule->str is constraint string expressing
  * arithmetic, relational and logic expressions between variables and
  * constants.
  * Variables are filled from the matcher rule within the constraint group.
@@ -62,8 +68,8 @@ typedef struct {
  * Matcher rule
  * ------------
  * Fills variables with value according to piece combination. Multiple
- * appearance of the same variable asserts matching values. Constants assert matching value.
- * Relational constraint asserts value fullfilling constraint.
+ * appearance of the same variable asserts matching values. Constants assert
+ * matching value. Relational constraint asserts value fullfilling constraint.
  * '*' allows any value.
  */
 static const RULE rules[] = {
@@ -156,6 +162,12 @@ static const RULE rules[] = {
   { "a  b  c      d      e >f >=a  b >c     d     >e  f", {    60,   0} },
   { "a  b  c      d      e >f >=a  b  c    >d     >e  f", {    60,   0} },
 
+  /* discourage trading R for 2(B/N)+P? */
+  { "b+c+d+2<=g+h+i                                    ", {     0,   CONSTRAINT   } },
+  { ">=a  b  c    d     >e  f  a  g  h      i      e  f", {   -60,   0} },
+  { "a  g  h      i      e  f >=a b  c      d     >e  f", {    60,   0} },
+  { NULL,                                                 {     0,   CONSTRAINT   } },
+
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
 
   /* pawn advantage greater with less pieces */
@@ -193,6 +205,8 @@ static const RULE rules[] = {
   { NULL,                                                 {     0,   0} }
 };
 
+#define MAX_VARS ('z' - 'a')
+
 static void fill_vars(const char * token, const int counts[], int vars[]);
 static int match(const char * token, const int counts[], const int vars[]);
 static int match_constraints(const char * constraints, const int vars[]);
@@ -227,7 +241,7 @@ void initialize_mat_tables() {
 #endif
 
     while (rule->str || rule->entry.flags & CONSTRAINT) {
-      int vars[12] = { 0 };
+      int vars[MAX_VARS] = { 0 };
 
       if (rule->entry.flags & CONSTRAINT) {
         constraints = rule->str;
@@ -295,20 +309,20 @@ void fill_vars(const char * str, const int counts[], int vars[]) {
   for (i = 0; i < MAX_PT; ++i) {
     while (*token == ' ') token++;
 
-    switch (*token) {
-      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-        vars[*token - 'a'] = counts[i];
-        token++;
-        break;
-
-      case '<': case '>':
-        token++;
-        if (*token == '=') {
+    if (*token >= 'a' && *token <= 'z') {
+      vars[*token - 'a'] = counts[i];
+      token++;
+    } else {
+      switch (*token) {
+        case '<': case '>':
           token++;
-        }
+          if (*token == '=') {
+            token++;
+          }
 
-      default:
-        token++; /* operand */
+        default:
+          token++; /* operand */
+      }
     }
   }
 }
@@ -323,64 +337,60 @@ int match(const char * str, const int counts[], const int vars[]) {
 
     while (*token == ' ') token++;
 
-    switch (*token) {
-
-      case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8':
-        if (*token - '0' == counts[i]) {
-          token++;
-        } else {
-          return 0;
-        }
-        break;
-
-      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-        if (vars[*token - 'a'] == counts[i]) {
-          token++;
-        } else {
-          return 0;
-        }
-        break;
-
-      case '*':
+    if (*token >= 'a' && *token <= 'z') {
+      if (vars[*token - 'a'] == counts[i]) {
         token++;
-        break;
-
-      case '>': case '<':
-        op = *token++ == '>' ? 0 : 2;
-
-        if (*token == '=') {
-          token++;
-          op++;
-        }
-        value = (*token < 'a' ? *token - '0' : vars[*token - 'a']);
-        assert(0 <= value && value <= 8);
-
-        switch (op) {
-          case 0:
-            if (value >= counts[i]) {
-              return 0;
-            }
-            break;
-          case 1:
-            if (value > counts[i]) {
-              return 0;
-            }
-            break;
-          case 2:
-            if (value <= counts[i]) {
-              return 0;
-            }
-            break;
-          case 3:
-            if (value < counts[i]) {
-              return 0;
-            }
-            break;
-        }
+      } else {
+        return 0;
+      }
+    } else if (*token >= '0' && *token <= '9') {
+      if (*token - '0' == counts[i]) {
         token++;
-        break;
+      } else {
+        return 0;
+      }
+    } else {
+      switch (*token) {
 
-      default:;
+        case '*': token++; break;
+
+        case '>': case '<':
+          op = *token++ == '>' ? 0 : 2;
+
+          if (*token == '=') {
+            token++;
+            op++;
+          }
+          value = (*token < 'a' ? *token - '0' : vars[*token - 'a']);
+          assert(0 <= value && value <= 8);
+
+          switch (op) {
+            case 0:
+              if (value >= counts[i]) {
+                return 0;
+              }
+              break;
+            case 1:
+              if (value > counts[i]) {
+                return 0;
+              }
+              break;
+            case 2:
+              if (value <= counts[i]) {
+                return 0;
+              }
+              break;
+            case 3:
+              if (value < counts[i]) {
+                return 0;
+              }
+              break;
+          }
+          token++;
+          break;
+
+        default:;
+      }
     }
   }
 
@@ -426,35 +436,37 @@ int match_constraints(const char * constraints, const int vars[]) {
     int itoken = 0;
 
     /* tokenize */
-    switch (*token) {
-      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': itoken = vars[*token - 'a']; break;
+    if (*token >= 'a' && *token <= 'z') {
+        itoken = vars[*token - 'a'];
+    }
+    else if (*token >= '0' && *token <= '9') {
+      itoken = *token - '0';
+    } else {
+      switch (*token) {
+        case '+': itoken = OP_PLUS; break;
 
-      case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-         itoken = *token - '0'; break;
+        case '-': itoken = OP_MINUS; break;
 
-      case '+': itoken = OP_PLUS; break;
+        case '=': itoken = OP_EQ; break;
 
-      case '-': itoken = OP_MINUS; break;
+        case '&': itoken = OP_AND; break;
 
-      case '=': itoken = OP_EQ; break;
+        case '<':
+          if (*(token + 1) == '=') {
+            token++;
+            itoken = OP_LTE;
+          } else itoken = OP_LT;
+          break;
 
-      case '&': itoken = OP_AND; break;
+        case '>':
+          if (*(token + 1) == '=') {
+            token++;
+            itoken = OP_GTE;
+          } else itoken = OP_GT;
+          break;
 
-      case '<':
-        if (*(token + 1) == '=') {
-          token++;
-          itoken = OP_LTE;
-        } else itoken = OP_LT;
-        break;
-
-      case '>':
-        if (*(token + 1) == '=') {
-          token++;
-          itoken = OP_GTE;
-        } else itoken = OP_GT;
-        break;
-
-      default: token++; continue;
+        default: token++; continue;
+      }
     }
     token++;
 
@@ -571,7 +583,9 @@ void mat_table_debug(const BOARD * board) {
 
 
   while (rule->str || rule->entry.flags & CONSTRAINT) {
-    int vars[12] = { 0 };
+    int vars[MAX_VARS];
+
+    memset(vars, 0xca, sizeof(int) * MAX_VARS);
 
     if (rule->entry.flags & CONSTRAINT) {
       constraints = rule->str;
@@ -580,7 +594,13 @@ void mat_table_debug(const BOARD * board) {
       fill_vars(rule->str, counts, vars);
 
       printf("%s\n", rule->str);
-      printf("a: %d b: %d c: %d d: %d e: %d f: %d\n", vars[0], vars[1], vars[2], vars[3], vars[4], vars[5]);
+
+      for (int i = 0; i < MAX_VARS; ++i) {
+        if (vars[i] != (signed)0xcacacaca) {
+          printf("%c: %d ", i + 'a', vars[i]);
+        }
+      }
+      printf("\n");
       printf("matched: %d constraints matched: %d\n",
           match(rule->str, counts, vars),
           match_constraints(constraints, vars));

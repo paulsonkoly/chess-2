@@ -457,13 +457,10 @@ int checkmate(const BOARD * board) {
     occ &= ~ defender;
     opp &= ~ attacker;
 
-    if (bishop_bitboard(king_sq, occ) & board->bishops & opp) {
+    if (bishop_bitboard(king_sq, occ) & (board->bishops | board->queens) & opp) {
       pinned = 1;
     }
-    else if (rook_bitboard(king_sq, occ) & board->rooks & opp) {
-      pinned = 1;
-    }
-    else if ((bishop_bitboard(king_sq, occ) | rook_bitboard(king_sq, occ)) & board->queens & opp) {
+    else if (rook_bitboard(king_sq, occ) & (board->rooks | board->queens) & opp) {
       pinned = 1;
     }
 
@@ -490,13 +487,10 @@ int checkmate(const BOARD * board) {
     /* we move somewhere on the blocked squares */
     occ |= blocked;
 
-    if (bishop_bitboard(king_sq, occ) & board->bishops & opp) {
+    if (bishop_bitboard(king_sq, occ) & (board->bishops | board->queens) & opp) {
       pinned = 1;
     }
-    else if (rook_bitboard(king_sq, occ) & board->rooks & opp) {
-      pinned = 1;
-    }
-    else if ((bishop_bitboard(king_sq, occ) | rook_bitboard(king_sq, occ)) & board->queens & opp) {
+    else if (rook_bitboard(king_sq, occ) & (board->rooks | board->queens) & opp) {
       pinned = 1;
     }
 
@@ -505,6 +499,176 @@ int checkmate(const BOARD * board) {
     }
 
     defenders &= defenders - 1;
+  }
+
+  return 1;
+}
+
+int stalemate(const BOARD * board) {
+  BITBOARD me    = COLOUR_BB(board, board->next);
+  BITBOARD opp   = COLOUR_BB(board, board->next ^ 1);
+  BITBOARD king  = board->kings & me;
+  SQUARE king_sq = __builtin_ctzll(king);
+  BITBOARD occ   = OCCUPANCY_BB(board);
+
+  if (is_attacked(board, king, board->next ^ 1)) {
+    return 0;
+  }
+
+  /* look at pawns guaranteed not to be pinned first */
+  BITBOARD maybe_pinned;
+  BITBOARD pieces;
+  maybe_pinned = (bishop_bitboard(king_sq, occ) | rook_bitboard(king_sq, occ)) & me;
+
+  /* this should give an answer 99% of the time we also don't have to bother
+   * with double pushes as if there is no single pawn push there can't be a
+   * double pawn push
+   */
+  pieces = board->pawns & me & ~maybe_pinned;
+  if (single_pawn_pushes(pieces, ~occ, board->next)) {
+    return 0;
+  }
+  if (pawn_captures(pieces, board->next) & COLOUR_BB(board, board->next ^ 1)) {
+    return 0;
+  }
+
+  /* queens can't be pinned to the extent that they can't move, for instance
+   * they can always capture the pinner.
+   */
+  pieces = board->queens & me;
+  while (pieces) {
+    BITBOARD piece = pieces & - pieces;
+    SQUARE sq = __builtin_ctzll(piece);
+
+    if ((bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & ~me) {
+      return 0;
+    }
+
+    pieces &= pieces -1;
+  }
+
+  /* bishop can only be paralyzed by rook or queen but in case of queen not the
+   * one it can capture */
+  pieces = board->bishops & me;
+  while (pieces) {
+    BITBOARD piece = pieces & - pieces;
+    SQUARE sq = __builtin_ctzll(piece);
+    BITBOARD occ = OCCUPANCY_BB(board) & ~piece;
+
+    if (!(rook_bitboard(king_sq, occ) & (board->rooks | board->queens) & opp)) {
+      if (bishop_bitboard(sq, occ) & ~me) {
+        return 0;
+      }
+    }
+
+    pieces &= pieces -1;
+  }
+
+  /* rooks can only be paralyzed by bishop or queen but in case of queen not the
+   * one it can capture  */
+  pieces = board->rooks & me;
+  while (pieces) {
+    BITBOARD piece = pieces & - pieces;
+    SQUARE sq = __builtin_ctzll(piece);
+    BITBOARD occ = OCCUPANCY_BB(board) & ~piece;
+
+    if (!(bishop_bitboard(king_sq, occ) & (board->bishops | board->queens) & opp)) {
+      if (rook_bitboard(sq, occ) & ~me) {
+        return 0;
+      }
+    }
+
+    pieces &= pieces -1;
+  }
+
+  /* knight move in pins cannot be legal */
+  pieces = board->knights & me;
+  while (pieces) {
+    BITBOARD piece = pieces & - pieces;
+    SQUARE sq = __builtin_ctzll(piece);
+    BITBOARD occ = OCCUPANCY_BB(board) & ~piece;
+    int pinned = 0;
+
+    if (piece & maybe_pinned) {
+      if (bishop_bitboard(king_sq, occ) & (board->bishops | board->queens) & opp) {
+        pinned = 1;
+      }
+      else if (rook_bitboard(king_sq, occ) & (board->rooks | board->queens) & opp) {
+        pinned = 1;
+      }
+    }
+
+    if (!pinned && (knight_attacks[sq] & ~me)) {
+      return 0;
+    }
+
+    pieces &= pieces -1;
+  }
+
+  BITBOARD king_moves = king_attacks[king_sq] & ~me;
+  while (king_moves) {
+    BITBOARD king_move = king_moves & - king_moves;
+
+    if (! is_attacked(board, king_move, board->next ^ 1)) {
+      return 0;
+    }
+
+    king_moves &= king_moves -1;
+  }
+
+  /* maybe pinned pawns */
+  pieces = board->pawns & me & maybe_pinned;
+  while (pieces) {
+    BITBOARD piece = pieces & - pieces;
+    BITBOARD targets = single_pawn_pushes(piece, ~occ, board->next);
+    BITBOARD nocc = (occ & ~piece) | targets;
+    int pinned;
+
+    if (bishop_bitboard(king_sq, nocc) & (board->bishops | board->queens) & opp) {
+      pinned = 1;
+    }
+    else if (rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp) {
+      pinned = 1;
+    }
+
+    if (!pinned && targets) {
+      return 0;
+    }
+
+    targets = pawn_captures(piece, board->next) & COLOUR_BB(board, board->next ^ 1);
+    nocc = (occ & ~piece) | targets;
+    pinned = 0;
+
+    if (bishop_bitboard(king_sq, nocc) & (board->bishops | board->queens) & ~targets & opp) {
+      pinned = 1;
+    }
+    else if (rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp) {
+      pinned = 1;
+    }
+
+    if (!pinned && targets) {
+      return 0;
+    }
+
+    pieces &= pieces - 1;
+  }
+
+  /* finally deal with en passant */
+  if (board->en_passant ) {
+    pieces = pawn_captures(board->en_passant, board->next ^ 1);
+
+    while (pieces) {
+      BITBOARD piece = pieces & - pieces;
+      BITBOARD targets = board->en_passant;
+      BITBOARD remove = SINGLE_PAWN_PUSH(board->en_passant, board->next ^ 1);
+      BITBOARD nocc = (occ & ~piece & ~ remove) | targets;
+
+      if (!(rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp)) {
+        return 0;
+      }
+
+      pieces &= pieces - 1;
+    }
   }
 
   return 1;

@@ -3,7 +3,7 @@
 src += $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d)  # one dependency file for each source
-CFLAGS=-Wall -Werror -pedantic -g -DNDEBUG -I$(BUILDROOT)/src
+CFLAGS=-Wall -Werror -pedantic -O2 -g -DNDEBUG -I$(BUILDROOT)/src
 
 build: $(obj)
 

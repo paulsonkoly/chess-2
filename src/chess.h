@@ -81,6 +81,7 @@ typedef uint8_t CASTLE;
 #define ABS(a) (((a) < 0) ? -1 * (a) : (a))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define SIGNUM(a) ((a) ? ((a) > 0 ? 1 : -1) : 0)
 
 #define LIGHT_SQUARES 0x55aa55aa55aa55aa
 #define DARK_SQUARES 0xaa55aa55aa55aa55

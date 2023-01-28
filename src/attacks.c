@@ -266,6 +266,20 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour) {
   return (left_captures | right_captures | spec_left_captures | spec_right_captures);
 }
 
+BITBOARD single_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour) {
+  return SINGLE_PAWN_PUSH(colour, pawns) & empty;
+}
+
+static const BITBOARD double_pawn_push_ranks[2] = {
+  0x00000000ff000000, 0x000000ff00000000
+};
+
+BITBOARD double_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour) {
+  BITBOARD single_pushes = single_pawn_pushes(pawns, empty, colour);
+
+  return SINGLE_PAWN_PUSH(colour,single_pushes) & empty & double_pawn_push_ranks[colour];
+}
+
 /* does the move attack the square - either stepping out of an x-ray attack or directly */
 int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq) {
   PIECE piece = (move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
@@ -324,8 +338,174 @@ BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour) {
   return res;
 }
 
+BITBOARD block(const BOARD * board, BITBOARD squares, COLOUR colour) {
+  BITBOARD blockers = COLOUR_BB(board, colour);
+  BITBOARD res = 0;
+  BITBOARD occ = OCCUPANCY_BB(board);
+  BITBOARD occ_no_pawn;
+  BITBOARD dpawn;
+
+  BITBOARD_SCAN(squares) {
+    SQUARE sq = BITBOARD_SCAN_ITER(squares);
+    BITBOARD sub = 0;
+
+    /* king can't block */
+    sub |= knight_attacks[sq] & board->knights;
+    sub |= bishop_bitboard(sq, occ) & board->bishops;
+    sub |= rook_bitboard(sq, occ) & board->rooks;
+    sub |= (bishop_bitboard(sq, occ) | rook_bitboard(sq, occ)) & board->queens;
+
+    res |= sub & blockers;
+  }
+
+  /* we are making a pawn move backwards, so ignore the pawn in occupancy, as
+   * we are moving where the actual pawn is, but don't ignore a blocking pawn
+   * otherwise we would jump over it. See:
+   * 6k1/8/8/1b6/3PP3/r1PKP3/2PRB3/8 w - - 0 1
+   */
+  occ_no_pawn = occ & ~(board->pawns & blockers);
+
+  /* double pawn push blocking */
+  dpawn = double_pawn_push_ranks[colour] & squares;
+  dpawn = single_pawn_pushes(dpawn, ~occ, 1 - colour);
+  dpawn = single_pawn_pushes(dpawn, ~occ_no_pawn, 1 - colour);
+
+  res |= (single_pawn_pushes(squares, ~occ_no_pawn, 1 - colour) | dpawn) & blockers & board->pawns;
+
+  return res;
+}
+
 BITBOARD in_check(const BOARD * board, COLOUR colour) {
   BITBOARD king = board->kings & COLOUR_BB(board, colour);
 
   return is_attacked(board, king, 1 - colour);
+}
+
+BITBOARD in_between_table[64][64];
+
+void initialize_in_between() {
+  SQUARE file_a, rank_a, file_b, rank_b;
+
+  for (file_a = 0; file_a < 8; ++file_a) {
+    for (rank_a = 0; rank_a < 8; ++rank_a) {
+      for (file_b = 0; file_b < 8; ++file_b) {
+        for (rank_b = 0; rank_b < 8; ++rank_b) {
+          if ((file_a == file_b) || (rank_a == rank_b) || (ABS(file_a - file_b) == ABS(rank_a - rank_b))) {
+            SQUARE iter_f = file_a;
+            SQUARE iter_r = rank_a;
+            SQUARE file_d = SIGNUM(file_b - file_a);
+            SQUARE rank_d = SIGNUM(rank_b - rank_a);
+            BITBOARD result = 0;
+
+            while (iter_f != file_b || iter_r != rank_b) {
+              result |= (1ULL << ((iter_r << 3) + iter_f));
+              iter_f += file_d;
+              iter_r += rank_d;
+            }
+            in_between_table[(rank_a << 3) + file_a][(rank_b << 3) + file_b] =
+              result | (1ULL << ((rank_b << 3) + file_b));
+          } else {
+            in_between_table[(rank_a << 3) + file_a][(rank_b << 3) + file_b] = 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+int checkmate(const BOARD * board) {
+  BITBOARD king = board->kings & COLOUR_BB(board, board->next);
+  BITBOARD attackers;
+  BITBOARD defenders;
+
+  attackers = is_attacked(board, king, board->next ^ 1);
+
+  if (! attackers) {
+    return 0;
+  }
+
+  /* making the king move first */
+  SQUARE king_sq = __builtin_ctzll(king);
+  BITBOARD king_moves = king_attacks[king_sq] & ~ COLOUR_BB(board, board->next);
+  while (king_moves) {
+    BITBOARD to = king_moves & - king_moves;
+
+    if (! is_attacked(board, to, board->next ^ 1)) {
+      return 0;
+    }
+
+    king_moves &= king_moves - 1;
+  }
+
+  if (__builtin_popcountll(attackers) > 1) { /* double check, and king can't move */
+    return 1;
+  }
+
+  BITBOARD attacker = attackers; /* only 1 attacker */
+
+  /* see if we can capture the attacker */
+  defenders = is_attacked(board, attacker, board->next);
+
+  /* are all my defenders pinned in a way that they can't capture the attacker */
+  while (defenders) {
+    BITBOARD defender = defenders & - defenders;
+    BITBOARD occ = OCCUPANCY_BB(board);
+    BITBOARD opp = COLOUR_BB(board, board->next ^ 1);
+    int pinned = 0;
+
+    /* dummy mk move */
+    occ &= ~ defender;
+    opp &= ~ attacker;
+
+    if (bishop_bitboard(king_sq, occ) & board->bishops & opp) {
+      pinned = 1;
+    }
+    else if (rook_bitboard(king_sq, occ) & board->rooks & opp) {
+      pinned = 1;
+    }
+    else if ((bishop_bitboard(king_sq, occ) | rook_bitboard(king_sq, occ)) & board->queens & opp) {
+      pinned = 1;
+    }
+
+    if (! pinned) {
+      return 0;
+    }
+
+    defenders &= defenders - 1;
+  }
+
+  /* block the attacker */
+  SQUARE attacker_sq = __builtin_ctzll(attacker);
+  BITBOARD blocked = in_between_table[king_sq][attacker_sq] & ~ (king | attacker);
+
+  defenders = block(board, blocked, board->next);
+  while (defenders) {
+    BITBOARD defender = defenders & - defenders;
+    BITBOARD occ = OCCUPANCY_BB(board);
+    BITBOARD opp = COLOUR_BB(board, board->next ^ 1);
+    int pinned = 0;
+
+    /* dummy mk move */
+    occ &= ~ defender;
+    /* we move somewhere on the blocked squares */
+    occ |= blocked;
+
+    if (bishop_bitboard(king_sq, occ) & board->bishops & opp) {
+      pinned = 1;
+    }
+    else if (rook_bitboard(king_sq, occ) & board->rooks & opp) {
+      pinned = 1;
+    }
+    else if ((bishop_bitboard(king_sq, occ) | rook_bitboard(king_sq, occ)) & board->queens & opp) {
+      pinned = 1;
+    }
+
+    if (! pinned) {
+      return 0;
+    }
+
+    defenders &= defenders - 1;
+  }
+
+  return 1;
 }

@@ -86,49 +86,26 @@ int repetition(const BOARD * board) {
 
 int quiesce(BOARD * board, int alpha, int beta) {
   MOVE * ptr;
-  int legal_found = 0;
   int stand_pat;
 
   nodes++;
 
-  if (repetition(board)) {
-    return 0;
-  }
-
-  ml_open_frame();
-
-  add_moves(board, ALL_MOVES);
-
-  for (ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
-    execute_move(board, ptr);
-
-    if (! in_check(board, 1 - board->next)) {
-      undo_move(board, ptr);
-      legal_found = 1;
-      break;
-    }
-    undo_move(board, ptr);
-  }
-
-  if (!legal_found) {
-    ml_close_frame();
-
-    if (in_check(board, board->next))
-      return -10000;
-    else
-      return 0;
-  }
+  if (repetition(board)) return 0;
+  if (checkmate(board))  return -10000;
+  if (stalemate(board))  return 0;
 
   stand_pat = evaluate(board);
 
   if (stand_pat >= beta) {
-    ml_close_frame();
-
     return beta;
   }
 
   if (alpha < stand_pat)
     alpha = stand_pat;
+
+  ml_open_frame();
+
+  add_moves(board, ALL_MOVES);
 
   for (ptr = ml_forcing(board); ptr != NULL; ptr = ptr->next) {
     int score;

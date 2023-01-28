@@ -622,7 +622,7 @@ int stalemate(const BOARD * board) {
     BITBOARD piece = pieces & - pieces;
     BITBOARD targets = single_pawn_pushes(piece, ~occ, board->next);
     BITBOARD nocc = (occ & ~piece) | targets;
-    int pinned;
+    int pinned = 0;
 
     if (bishop_bitboard(king_sq, nocc) & (board->bishops | board->queens) & opp) {
       pinned = 1;

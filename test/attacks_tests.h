@@ -20,5 +20,6 @@ void attacks_test16(void **state);
 void attacks_test17(void **state);
 void attacks_test18(void **state);
 void attacks_test19(void **state);
+void attacks_test20(void **state);
 
 #endif /* ifndef __ATTACKS_TESTS__ */

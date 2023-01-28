@@ -187,4 +187,14 @@ void attacks_test19(void **state) {
   free(board);
 }
 
+void attacks_test20(void **state) {
+  BOARD * board;
+  /* a tricky checkmate */
+  board = parse_fen("rnbq2kr/pp1PbQpp/2p5/8/2B5/8/PPP1NnPP/RNB1K2R b KQ - 0 1");
+
+  assert_true(checkmate(board));
+  free(board);
+}
+
+
 

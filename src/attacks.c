@@ -445,6 +445,9 @@ int checkmate(const BOARD * board) {
 
   /* see if we can capture the attacker */
   defenders = is_attacked(board, attacker, occ, board->next);
+  /* remove the king, if the king can capture the attacker it would have done
+   * in the king moves try */
+  defenders &= ~king;
 
   /* are all my defenders pinned in a way that they can't capture the attacker */
   while (defenders) {

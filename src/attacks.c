@@ -315,13 +315,12 @@ int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq) {
   return sub != 0ULL;
 }
 
-BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour) {
+BITBOARD is_attacked(const BOARD * board, BITBOARD squares, BITBOARD occ, COLOUR colour) {
   BITBOARD oppbb = COLOUR_BB(board, colour);
   BITBOARD res = 0;
 
   BITBOARD_SCAN(squares) {
     SQUARE sq = BITBOARD_SCAN_ITER(squares);
-    BITBOARD occ = OCCUPANCY_BB(board);
     BITBOARD sub = 0;
 
     sub |= king_attacks[sq] & board->kings;
@@ -378,7 +377,7 @@ BITBOARD block(const BOARD * board, BITBOARD squares, COLOUR colour) {
 BITBOARD in_check(const BOARD * board, COLOUR colour) {
   BITBOARD king = board->kings & COLOUR_BB(board, colour);
 
-  return is_attacked(board, king, 1 - colour);
+  return is_attacked(board, king, OCCUPANCY_BB(board), 1 - colour);
 }
 
 BITBOARD in_between_table[64][64];
@@ -417,8 +416,9 @@ int checkmate(const BOARD * board) {
   BITBOARD king = board->kings & COLOUR_BB(board, board->next);
   BITBOARD attackers;
   BITBOARD defenders;
+  BITBOARD occ = OCCUPANCY_BB(board);
 
-  attackers = is_attacked(board, king, board->next ^ 1);
+  attackers = is_attacked(board, king, occ, board->next ^ 1);
 
   if (! attackers) {
     return 0;
@@ -430,7 +430,7 @@ int checkmate(const BOARD * board) {
   while (king_moves) {
     BITBOARD to = king_moves & - king_moves;
 
-    if (! is_attacked(board, to, board->next ^ 1)) {
+    if (! is_attacked(board, to, occ & ~king, board->next ^ 1)) {
       return 0;
     }
 
@@ -444,7 +444,7 @@ int checkmate(const BOARD * board) {
   BITBOARD attacker = attackers; /* only 1 attacker */
 
   /* see if we can capture the attacker */
-  defenders = is_attacked(board, attacker, board->next);
+  defenders = is_attacked(board, attacker, occ, board->next);
 
   /* are all my defenders pinned in a way that they can't capture the attacker */
   while (defenders) {
@@ -511,7 +511,7 @@ int stalemate(const BOARD * board) {
   SQUARE king_sq = __builtin_ctzll(king);
   BITBOARD occ   = OCCUPANCY_BB(board);
 
-  if (is_attacked(board, king, board->next ^ 1)) {
+  if (is_attacked(board, king, occ, board->next ^ 1)) {
     return 0;
   }
 
@@ -609,7 +609,7 @@ int stalemate(const BOARD * board) {
   while (king_moves) {
     BITBOARD king_move = king_moves & - king_moves;
 
-    if (! is_attacked(board, king_move, board->next ^ 1)) {
+    if (! is_attacked(board, king_move, occ & ~king, board->next ^ 1)) {
       return 0;
     }
 

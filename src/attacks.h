@@ -22,7 +22,7 @@ BITBOARD pawn_captures(BITBOARD pawns, COLOUR colour);
 BITBOARD single_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour);
 BITBOARD double_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour);
 
-BITBOARD is_attacked(const BOARD * board, BITBOARD squares, COLOUR colour);
+BITBOARD is_attacked(const BOARD * board, BITBOARD squares, BITBOARD occupancy, COLOUR colour);
 BITBOARD in_check(const BOARD * board, COLOUR colour);
 /* does the move attack the square - either stepping out of an x-ray attack or directly */
 int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq);

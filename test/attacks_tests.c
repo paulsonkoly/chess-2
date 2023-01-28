@@ -23,7 +23,7 @@ void attacks_test1(void **state) {
 void attacks_test2(void **state) {
   BOARD * board;
 
-  board = parse_fen("6k1/8/8/8/8/8/6PP/3r3K w - - 0 1");
+  board = parse_fen("1k6/8/8/8/8/8/5PPP/2r3K1 w - - 0 1");
 
   assert_true(checkmate(board));
 

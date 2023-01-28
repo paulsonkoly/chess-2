@@ -247,7 +247,7 @@ void add_castles(const BOARD * board) {
 
         BITBOARD check_squares = kb | castle_king_from_to[c];
 
-        if (is_attacked(board, check_squares, 1 - board->next)) continue;
+        if (is_attacked(board, check_squares, occ, 1 - board->next)) continue;
 
         MOVE * move = ml_allocate();
 

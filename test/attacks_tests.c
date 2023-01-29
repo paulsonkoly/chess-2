@@ -181,7 +181,7 @@ void attacks_test18(void **state) {
 void attacks_test19(void **state) {
   BOARD * board;
   /* en passant capture is pinned */
-  board = parse_fen("1kb4q/6p1/3p2P1/r2Pp1K1/r7/8/8/8 w - - 0 2");
+  board = parse_fen("1kb4q/6p1/3p2P1/r2Pp1K1/r7/8/8/8 w - e6 0 2");
 
   assert_true(stalemate(board));
   free(board);

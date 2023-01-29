@@ -657,14 +657,13 @@ int stalemate(const BOARD * board) {
   }
 
   /* finally deal with en passant */
-  if (board->en_passant ) {
-    pieces = pawn_captures(board->en_passant, board->next ^ 1);
+  if (board->en_passant) {
+    pieces          = pawn_captures(board->en_passant, board->next ^ 1) & board->pawns & me;
+    BITBOARD remove = SINGLE_PAWN_PUSH(board->next ^ 1, board->en_passant);
 
     while (pieces) {
       BITBOARD piece = pieces & - pieces;
-      BITBOARD targets = board->en_passant;
-      BITBOARD remove = SINGLE_PAWN_PUSH(board->en_passant, board->next ^ 1);
-      BITBOARD nocc = (occ & ~piece & ~ remove) | targets;
+      BITBOARD nocc  = (occ & ~piece & ~remove) | board->en_passant;
 
       if (!(rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp)) {
         return 0;

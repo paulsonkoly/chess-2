@@ -33,6 +33,8 @@ typedef struct _MOVE_ {
   BITBOARD from;
   BITBOARD to;
 
+#define MOVE_VALUE_MASK     0x0000ffff
+#define MOVE_VALUE_YIELDED  0x10000000
   MOVEVAL value;
 
   struct _MOVE_ * next;

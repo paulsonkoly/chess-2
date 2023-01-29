@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "attacks.h"
 #include "board.h"
 #include "move.h"
 #include "movegen.h"
@@ -88,10 +89,10 @@ BOARD * parse_fen(const char * fen) {
 
   for (; *ptr != ' '; ++ptr) {
     switch (*ptr) {
-      case 'K': board->castle |= CALC_CASTLE(WHITE, SHORT_CASTLE); break;
-      case 'Q': board->castle |= CALC_CASTLE(WHITE, LONG_CASTLE); break;
-      case 'k': board->castle |= CALC_CASTLE(BLACK, SHORT_CASTLE); break;
-      case 'q': board->castle |= CALC_CASTLE(BLACK, LONG_CASTLE); break;
+      case 'K': board->castle |= WHITE_SHORT_CASTLE; break;
+      case 'Q': board->castle |= WHITE_LONG_CASTLE; break;
+      case 'k': board->castle |= BLACK_SHORT_CASTLE; break;
+      case 'q': board->castle |= BLACK_LONG_CASTLE; break;
     }
   }
   for (; *ptr == ' '; ++ptr);
@@ -191,17 +192,17 @@ COLOUR colour_at_board(const BOARD* board, SQUARE sq) {
   if (board->by_colour.whitepieces & bb) return WHITE;
   if (board->by_colour.blackpieces & bb) return BLACK;
 
-  return 0;
+  return NO_COLOUR;
 }
 
 void print_board(const BOARD* board) {
 
-  const char * s = " pnbrqkPNBRQK";
+  const char * s = " pnbrqk PNBRQK ";
 
-  if (board->castle & CALC_CASTLE(WHITE, SHORT_CASTLE)) printf("K");
-  if (board->castle & CALC_CASTLE(WHITE, LONG_CASTLE)) printf("Q");
-  if (board->castle & CALC_CASTLE(BLACK, SHORT_CASTLE)) printf("k");
-  if (board->castle & CALC_CASTLE(BLACK, LONG_CASTLE)) printf("q");
+  if (board->castle & WHITE_SHORT_CASTLE) printf("K");
+  if (board->castle & WHITE_LONG_CASTLE) printf("Q");
+  if (board->castle & BLACK_SHORT_CASTLE) printf("k");
+  if (board->castle & BLACK_LONG_CASTLE) printf("q");
   printf("\n");
 
   for (SQUARE r = 56; r < 64; r -= 8) {
@@ -211,7 +212,7 @@ void print_board(const BOARD* board) {
       PIECE p = piece_at_board(board, 1ULL << sq);
       COLOUR c = colour_at_board(board, sq);
 
-      printf("|%c ", s[6 * c + p]);
+      printf("|%c ", s[7 * c + p]);
     }
 
     printf("|\n");
@@ -250,10 +251,10 @@ void print_fen(const BOARD* board) {
 
   printf(" %c ", "wb"[board->next]);
 
-  if (board->castle & CALC_CASTLE(WHITE, SHORT_CASTLE)) printf("K");
-  if (board->castle & CALC_CASTLE(WHITE, LONG_CASTLE)) printf("Q");
-  if (board->castle & CALC_CASTLE(BLACK, SHORT_CASTLE)) printf("k");
-  if (board->castle & CALC_CASTLE(BLACK, LONG_CASTLE)) printf("q");
+  if (board->castle & WHITE_SHORT_CASTLE) printf("K");
+  if (board->castle & WHITE_LONG_CASTLE) printf("Q");
+  if (board->castle & BLACK_SHORT_CASTLE) printf("k");
+  if (board->castle & BLACK_LONG_CASTLE) printf("q");
   if (board->castle == 0) printf("-");
 
   if (board->en_passant) {

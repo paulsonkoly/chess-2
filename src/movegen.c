@@ -68,6 +68,7 @@ static void add_normal_moves(const BOARD * board, PIECE piece, BITBOARD allowed_
                             | board->en_passant
                             | (((BITBOARD)castle_update(board, piece, from | to) << CASTLE_RIGHT_CHANGE_SHIFT))
                             | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT);
+      move->value           = 0;
 
       attacked &= attacked - 1;
     }
@@ -99,6 +100,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
     move->from            = SINGLE_PAWN_PUSH(1 - board->next, to);
     move->to              = to;
     move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT) | board->en_passant;
+    move->value           = 0;
 
     targets &= targets - 1;
   }
@@ -117,6 +119,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
       move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
                             | ((BITBOARD)piece << PROMOTION_MOVE_SHIFT)
                             | board->en_passant;
+      move->value           = 0;
     }
 
     targets &= targets - 1;
@@ -134,6 +137,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
     move->from            = from;
     move->to              = to;
     move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT) | (board->en_passant ^ en_passant);
+    move->value           = 0;
 
     targets &= targets - 1;
   }
@@ -154,6 +158,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
       move->special         = (((BITBOARD)PAWN) << PIECE_MOVE_SHIFT)
                             | board->en_passant
                             | s;
+      move->value           = 0;
 
       f &= f - 1;
     }
@@ -176,6 +181,7 @@ void add_pawn_moves(const BOARD * board, BITBOARD allowed_targets) {
       move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
                             | board->en_passant
                             | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT);
+      move->value           = 0;
 
       f &= f - 1;
     }
@@ -270,6 +276,173 @@ void add_moves(const BOARD * board) {
   allowed_targets = ~NEXT_COLOUR_BB(board);
   for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
     add_normal_moves(board, piece, allowed_targets);
+  }
+}
+
+#include <assert.h>
+
+MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_STATE * state) {
+  MOVEGEN_PHASE next = state->phase;
+
+  while (1) {
+    switch (next) {
+      case MOVEGEN_START:
+        ml_open_frame();
+
+        state->frame_open = 1;
+
+        for (PIECE piece = PAWN; piece < KING; ++piece) {
+          state->generated[piece] = 0;
+        }
+
+        if (pv) {
+          next = MOVEGEN_PV;
+        } else if (killer) {
+          next = MOVEGEN_KILLER1;
+        } else {
+          next = MOVEGEN_REST;
+        }
+        break;
+
+      case MOVEGEN_PV: {
+        const MOVE * pv_move = pv_get_move(pv, ply);
+
+        if (killer) {
+          next = MOVEGEN_KILLER1;
+        } else {
+          next = MOVEGEN_REST;
+        }
+
+        if (pv_move) {
+          PIECE piece = (pv_move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
+          BITBOARD to = pv_move->to;
+
+          if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
+            state->generated[piece] |= to;
+            add_normal_moves(board, piece, to);
+
+            for (MOVE * move = ml_first(); move != NULL; move = move->next) { /* TODO normal iteration */
+              if (MOVE_EQUAL(move, pv_move)) {
+                move->value |= MOVE_VALUE_YIELDED;
+
+                state->phase = next;
+                return move;
+              }
+            }
+          }
+        }
+        break;
+      }
+
+      case MOVEGEN_KILLER1: {
+        const MOVE * killer_move = killer_get_move(killer, ply, 0);
+        next = MOVEGEN_KILLER2;
+
+        if (killer_move) {
+          PIECE piece = (killer_move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
+          BITBOARD to = killer_move->to;
+
+          if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
+            state->generated[piece] |= to;
+            add_normal_moves(board, piece, to);
+
+            for (MOVE * move = ml_first(); move != NULL; move = move->next) { /* TODO normal iteration */
+              if (MOVE_EQUAL(move, killer_move)) {
+                move->value |= MOVE_VALUE_YIELDED;
+
+                state->phase = next;
+                return move;
+              }
+            }
+          }
+        }
+        /* FALLTHROUGH */
+      }
+
+      case MOVEGEN_KILLER2: {
+        const MOVE * killer_move = killer_get_move(killer, ply, 1);
+        next = MOVEGEN_REST;
+
+        if (killer_move) {
+          PIECE piece = (killer_move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
+          BITBOARD to = killer_move->to;
+
+          if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
+            state->generated[piece] |= to;
+            add_normal_moves(board, piece, to);
+
+            for (MOVE * move = ml_first(); move != NULL; move = move->next) { /* TODO normal iteration */
+              if (MOVE_EQUAL(move, killer_move)) {
+                move->value |= MOVE_VALUE_YIELDED;
+
+                state->phase = next;
+                return move;
+              }
+            }
+          }
+        }
+        /* FALLTHROUGH */
+      }
+
+      case MOVEGEN_REST: {
+        BITBOARD no_friendly = ~ COLOUR_BB(board, board->next);
+        /* TODO fix this nonsense */
+        add_pawn_moves(board, 0xffffffffffffffff);
+        add_castles(board);
+        for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
+          add_normal_moves(board, piece, no_friendly & ~state->generated[piece]);
+        }
+
+        switch (state->movegen_type) {
+
+          case MOVEGEN_PERFT:
+            state->iterator = ml_first();
+            break;
+
+          case MOVEGEN_SORT: {
+            state->iterator = ml_sort(board, pv, killer, ply);
+            break;
+          }
+
+          case MOVEGEN_FORCING:
+            state->iterator = ml_forcing(board);
+            break;
+
+          default:;
+        }
+
+        next = MOVEGEN_REST_YIELD;
+        /* FALLTHROUGH */
+      }
+
+      case MOVEGEN_REST_YIELD: {
+        MOVE * result = state->iterator;
+
+        while (result && result->value & MOVE_VALUE_YIELDED) {
+          result = result->next;
+        }
+
+        if (result) {
+          state->iterator = result->next;
+        } else {
+          state->frame_open = 0;
+          ml_close_frame();
+        }
+
+        state->phase = next;
+
+        return result;
+      }
+
+
+      default:;
+    }
+  }
+}
+
+void moves_done(const MOVEGEN_STATE * mg_state) {
+  if (mg_state->frame_open) {
+    ml_close_frame();
   }
 }
 

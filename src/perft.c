@@ -10,22 +10,20 @@
 
 unsigned long long perft(BOARD * board, int depth, int print) {
   unsigned long long int count = 0;
+  MOVEGEN_STATE mg_state = { MOVEGEN_START };
+  MOVE * move;
 
   if (depth == 0) {
     return 1;
   }
 
-  ml_open_frame();
-
-  add_moves(board);
-
-  for (MOVE * ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
+  while ((move = moves(board, 0, NULL, NULL, &mg_state))) {
     unsigned long long int current;
 
-    execute_move(board, ptr);
+    execute_move(board, move);
 
     if (in_check(board, 1 - board->next)) {
-      undo_move(board, ptr);
+      undo_move(board, move);
 
       continue;
     }
@@ -34,17 +32,15 @@ unsigned long long perft(BOARD * board, int depth, int print) {
 
     current = perft(board, depth - 1, 0);
 
-    undo_move(board, ptr);
+    undo_move(board, move);
 
     if (print) {
-      print_move(ptr);
+      print_move(move);
       printf(" %lld\n", current);
     }
 
     count += current;
   }
-
-  ml_close_frame();
 
   if (print) {
     printf(" %lld\n", count);

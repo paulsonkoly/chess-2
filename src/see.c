@@ -10,7 +10,7 @@
  **/
 static const int piece_values_mod[] = {NO_PIECE_V, PAWN_V, KNIGHT_V, BISHOP_V + 40, ROOK_V, QUEEN_V, KING_V};
 
-int see(BOARD * board, const MOVE * move) {
+int see(const BOARD * board, const MOVE * move) {
   BITBOARD from = move->from;
   BITBOARD to   = move->to;
   SQUARE tosq   = __builtin_ctzll(to);

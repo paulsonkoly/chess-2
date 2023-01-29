@@ -86,7 +86,8 @@ int repetition(const BOARD * board) {
 }
 
 int quiesce(BOARD * board, int alpha, int beta) {
-  MOVE * ptr;
+  MOVE * move;
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_FORCING, 0, 0 };
   int stand_pat;
 
   nodes++;
@@ -104,26 +105,22 @@ int quiesce(BOARD * board, int alpha, int beta) {
   if (alpha < stand_pat)
     alpha = stand_pat;
 
-  ml_open_frame();
-
-  add_moves(board);
-
-  for (ptr = ml_forcing(board); ptr != NULL; ptr = ptr->next) {
+  while ((move = moves(board, 0, NULL, NULL, &mg_state))) {
     int score;
 
-    execute_move(board, ptr);
+    execute_move(board, move);
 
     if (in_check(board, 1 - board->next)) {
-      undo_move(board, ptr);
+      undo_move(board, move);
       continue;
     }
 
     score = -quiesce(board, -beta, -alpha);
 
-    undo_move(board, ptr);
+    undo_move(board, move);
 
     if (score >= beta) {
-      ml_close_frame();
+      moves_done(&mg_state);
       return beta;
     }
 
@@ -131,7 +128,6 @@ int quiesce(BOARD * board, int alpha, int beta) {
       alpha = score;
   }
 
-  ml_close_frame();
   return alpha;
 }
 
@@ -177,6 +173,8 @@ int negascout(BOARD* board,
   int beta2;
   unsigned long long delta;
   int count;
+  MOVE * move;
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_SORT, 0, 0 };
 
   assert(0 <= reduced_depth && reduced_depth <= depth);
 
@@ -210,20 +208,16 @@ int negascout(BOARD* board,
 
   lpv = pv_init();
 
-  ml_open_frame();
-
-  add_moves(board);
-
   beta2 = beta;
 
   count = 1;
 
-  for (MOVE * ptr = ml_sort(board, pv_getmove(opv, ply), depth, killer); ptr != NULL; ptr = ptr->next) {
+  while ((move = moves(board, ply, opv, killer, &mg_state))) {
 
-    execute_move(board, ptr);
+    execute_move(board, move);
 
     if (in_check(board, 1 - board->next)) {
-      undo_move(board, ptr);
+      undo_move(board, move);
       continue;
     }
 
@@ -235,10 +229,10 @@ int negascout(BOARD* board,
       score = -negascout(board, ply + 1, depth - 1, lmr(reduced_depth, count), -beta, -alpha, opv, &lpv, killer);
     }
 
-    undo_move(board, ptr);
+    undo_move(board, move);
 
     if (alpha < score || (alpha == score && !legal_found)) {
-      pv_insert(lpv, ptr, ply);
+      pv_insert(lpv, move, ply);
       pv_swap(&lpv, npv);
       alpha = score;
     }
@@ -246,11 +240,11 @@ int negascout(BOARD* board,
     legal_found = 1;
 
     if (alpha >= beta) {
-      save_killer(killer, depth, ptr);
+      save_killer(killer, ply, move);
 
       pv_destroy(lpv);
 
-      ml_close_frame();
+      moves_done(&mg_state);
 
       return alpha;
     }
@@ -261,8 +255,6 @@ int negascout(BOARD* board,
   }
 
   pv_destroy(lpv);
-
-  ml_close_frame();
 
   if (!legal_found) {
     if (in_check(board, board->next))
@@ -351,7 +343,7 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
     printf("info score cp %d depth %d time %llu pv ", score, depth, delta);
 
     for (int i = 0; i < pv_count(npv); ++i) {
-      const MOVE * ptr = pv_getmove(npv, i);
+      const MOVE * ptr = pv_get_move(npv, i);
 
       if (i == 0) {
         bestmove = ptr;

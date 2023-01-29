@@ -55,11 +55,8 @@ typedef enum {
 extern const int piece_values[];
 extern const char * piece_names[];
 
-enum {
-  WHITE     = 0,
-  BLACK     = 1,
-  NO_COLOUR = 2,
-};
+#define WHITE ((COLOUR)0)
+#define BLACK ((COLOUR)1)
 
 extern const char * colour_names[];
 

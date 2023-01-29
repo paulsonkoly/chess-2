@@ -28,7 +28,3 @@ const MOVE * killer_get_move(const KILLER * killer, int ply, int lane) {
   return NULL;
 }
 
-/* int is_killer(const KILLER * killer, int depth, int bank, const MOVE * move) { */
-/*   return killer->valid[depth][bank] && MOVE_EQUAL(& killer->moves[depth][bank], move); */
-/* } */
-

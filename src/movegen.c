@@ -268,14 +268,17 @@ void add_castles(const BOARD * board) {
   }
 }
 
-void add_moves(const BOARD * board) {
+void add_moves(const BOARD * board, int only_captures) {
   BITBOARD allowed_targets = COLOUR_BB(board, 1 - board->next);
 
-  add_pawn_moves(board, 0xffffffffffffffff);
-  add_castles(board);
-  allowed_targets = ~NEXT_COLOUR_BB(board);
-  for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
-    add_normal_moves(board, piece, allowed_targets);
+  switch (only_captures) {
+  case 0:
+    add_pawn_moves(board, 0xffffffffffffffff);
+    add_castles(board);
+    allowed_targets = ~NEXT_COLOUR_BB(board);
+  case 1:
+    for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
+      add_normal_moves(board, piece, allowed_targets);
   }
 }
 

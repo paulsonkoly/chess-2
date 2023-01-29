@@ -3,7 +3,6 @@
 
 #include "chess.h"
 #include "zobrist.h"
-#include "move.h"
 
 typedef struct _BOARD_ {
    BITBOARD pawns;
@@ -44,6 +43,5 @@ COLOUR colour_at_board(const BOARD* board, SQUARE sq);
 void print_board(const BOARD* board);
 void print_fen(const BOARD* board);
 HASH calculate_hash(const BOARD* board);
-int move_playable(const BOARD * board, const MOVE * move);
 
 #endif /* ifndef _BOARD_H_ */

@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
 #endif
 
   initialize_magic();
+  initialize_in_between();
   initialize_hash();
   initialize_mat_tables();
 

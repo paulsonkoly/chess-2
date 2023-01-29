@@ -76,19 +76,6 @@ static void add_normal_moves(const BOARD * board, PIECE piece, BITBOARD allowed_
   }
 }
 
-BITBOARD single_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour) {
-  return SINGLE_PAWN_PUSH(colour, pawns) & empty;
-}
-
-static const BITBOARD double_pawn_push_ranks[2] = {
-  0x00000000ff000000, 0x000000ff00000000
-};
-
-BITBOARD double_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour) {
-  BITBOARD single_pushes = single_pawn_pushes(pawns, empty, colour);
-
-  return SINGLE_PAWN_PUSH(colour,single_pushes) & empty & double_pawn_push_ranks[colour];
-}
 
 #define PROMOTIONS ((BITBOARD)0xff000000000000ff)
 
@@ -260,7 +247,7 @@ void add_castles(const BOARD * board) {
 
         BITBOARD check_squares = kb | castle_king_from_to[c];
 
-        if (is_attacked(board, check_squares, 1 - board->next)) continue;
+        if (is_attacked(board, check_squares, occ, 1 - board->next)) continue;
 
         MOVE * move = ml_allocate();
 

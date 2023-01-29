@@ -12,6 +12,7 @@
 #include "movegen.h"
 #include "see.h"
 
+#include "attacks_tests.h"
 #include "uci_tests.h"
 #include "pawns_tests.h"
 #include "zobrist_tests.h"
@@ -139,6 +140,7 @@ static void see_test(void ** state) {
 int main(void) {
   int result;
   initialize_magic();
+  initialize_in_between();
   initialize_hash();
   initialize_mat_tables();
 
@@ -207,6 +209,27 @@ int main(void) {
     cmocka_unit_test(evaluate_test3),
     cmocka_unit_test(evaluate_test4),
     cmocka_unit_test(evaluate_test5),
+
+    cmocka_unit_test(attacks_test1),
+    cmocka_unit_test(attacks_test2),
+    cmocka_unit_test(attacks_test3),
+    cmocka_unit_test(attacks_test4),
+    cmocka_unit_test(attacks_test5),
+    cmocka_unit_test(attacks_test6),
+    cmocka_unit_test(attacks_test7),
+    cmocka_unit_test(attacks_test8),
+    cmocka_unit_test(attacks_test9),
+    cmocka_unit_test(attacks_test10),
+    cmocka_unit_test(attacks_test11),
+    cmocka_unit_test(attacks_test12),
+    cmocka_unit_test(attacks_test13),
+    cmocka_unit_test(attacks_test14),
+    cmocka_unit_test(attacks_test15),
+    cmocka_unit_test(attacks_test16),
+    cmocka_unit_test(attacks_test17),
+    cmocka_unit_test(attacks_test18),
+    cmocka_unit_test(attacks_test19),
+    cmocka_unit_test(attacks_test20),
   };
 
   result = cmocka_run_group_tests(tests, NULL, NULL);

@@ -279,6 +279,7 @@ void add_moves(const BOARD * board, int only_captures) {
   case 1:
     for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
       add_normal_moves(board, piece, allowed_targets);
+    }
   }
 }
 

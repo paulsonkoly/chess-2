@@ -417,6 +417,7 @@ int checkmate(const BOARD * board) {
   BITBOARD attackers;
   BITBOARD defenders;
   BITBOARD occ = OCCUPANCY_BB(board);
+  BITBOARD opp = COLOUR_BB(board, board->next ^ 1);
 
   attackers = is_attacked(board, king, occ, board->next ^ 1);
 
@@ -452,18 +453,17 @@ int checkmate(const BOARD * board) {
   /* are all my defenders pinned in a way that they can't capture the attacker */
   while (defenders) {
     BITBOARD defender = defenders & - defenders;
-    BITBOARD occ = OCCUPANCY_BB(board);
-    BITBOARD opp = COLOUR_BB(board, board->next ^ 1);
+    BITBOARD nocc = occ;
     int pinned = 0;
 
     /* dummy mk move */
-    occ &= ~ defender;
+    nocc &= ~ defender;
     opp &= ~ attacker;
 
-    if (bishop_bitboard(king_sq, occ) & (board->bishops | board->queens) & opp) {
+    if (bishop_bitboard(king_sq, nocc) & (board->bishops | board->queens) & opp) {
       pinned = 1;
     }
-    else if (rook_bitboard(king_sq, occ) & (board->rooks | board->queens) & opp) {
+    else if (rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp) {
       pinned = 1;
     }
 
@@ -474,6 +474,26 @@ int checkmate(const BOARD * board) {
     defenders &= defenders - 1;
   }
 
+  /* en passant capture */
+  if (board->en_passant) {
+    BITBOARD remove = SINGLE_PAWN_PUSH(board->next ^ 1, board->en_passant);
+
+    if (remove == attacker) {
+      BITBOARD pieces = pawn_captures(board->en_passant, board->next ^ 1) & board->pawns & COLOUR_BB(board, board->next);
+
+      while (pieces) {
+        BITBOARD piece = pieces & - pieces;
+        BITBOARD nocc  = (occ & ~piece & ~remove) | board->en_passant;
+
+        if (!(rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp)) {
+          return 0;
+        }
+
+        pieces &= pieces - 1;
+      }
+    }
+  }
+
   /* block the attacker */
   SQUARE attacker_sq = __builtin_ctzll(attacker);
   BITBOARD blocked = in_between_table[king_sq][attacker_sq] & ~ (king | attacker);
@@ -481,19 +501,19 @@ int checkmate(const BOARD * board) {
   defenders = block(board, blocked, board->next);
   while (defenders) {
     BITBOARD defender = defenders & - defenders;
-    BITBOARD occ = OCCUPANCY_BB(board);
-    BITBOARD opp = COLOUR_BB(board, board->next ^ 1);
-    int pinned = 0;
+    BITBOARD nocc     = OCCUPANCY_BB(board);
+    BITBOARD opp      = COLOUR_BB(board, board->next ^ 1);
+    int pinned        = 0;
 
     /* dummy mk move */
-    occ &= ~ defender;
+    nocc &= ~ defender;
     /* we move somewhere on the blocked squares */
-    occ |= blocked;
+    nocc |= blocked;
 
-    if (bishop_bitboard(king_sq, occ) & (board->bishops | board->queens) & opp) {
+    if (bishop_bitboard(king_sq, nocc) & (board->bishops | board->queens) & opp) {
       pinned = 1;
     }
-    else if (rook_bitboard(king_sq, occ) & (board->rooks | board->queens) & opp) {
+    else if (rook_bitboard(king_sq, nocc) & (board->rooks | board->queens) & opp) {
       pinned = 1;
     }
 

@@ -71,7 +71,7 @@ static void forcing_moves_count_test(void **state)
 
   ml_open_frame();
 
-  add_moves(b, ALL_MOVES);
+  add_moves(b);
 
   for (ptr = ml_forcing(b); ptr != NULL; ptr = ptr->next) {
     count ++;
@@ -91,7 +91,7 @@ static void forcing_moves_test(void **state) {
 
   ml_open_frame();
 
-  add_moves(b, ALL_MOVES);
+  add_moves(b);
 
   for (ptr = ml_forcing(b); ptr != NULL; ptr = ptr->next) {
     char buffer[6];

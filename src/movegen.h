@@ -4,10 +4,7 @@
 #include "board.h"
 #include "chess.h"
 
-#define ALL_MOVES 0
-#define ONLY_CAPTURES 1
-
-void add_moves(const BOARD * board, int only_captures);
+void add_moves(const BOARD * board);
 
 CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto);
 BITBOARD castling_rook_from_to(CASTLE castle);

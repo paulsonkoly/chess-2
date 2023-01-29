@@ -17,7 +17,7 @@ unsigned long long perft(BOARD * board, int depth, int print) {
 
   ml_open_frame();
 
-  add_moves(board, ALL_MOVES);
+  add_moves(board);
 
   for (MOVE * ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
     unsigned long long int current;

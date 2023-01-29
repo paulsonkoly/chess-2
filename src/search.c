@@ -106,7 +106,7 @@ int quiesce(BOARD * board, int alpha, int beta) {
 
   ml_open_frame();
 
-  add_moves(board, ALL_MOVES);
+  add_moves(board);
 
   for (ptr = ml_forcing(board); ptr != NULL; ptr = ptr->next) {
     int score;
@@ -212,7 +212,7 @@ int negascout(BOARD* board,
 
   ml_open_frame();
 
-  add_moves(board, ALL_MOVES);
+  add_moves(board);
 
   beta2 = beta;
 

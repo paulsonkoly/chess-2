@@ -32,9 +32,10 @@ typedef struct _MOVE_ {
 
   BITBOARD from;
   BITBOARD to;
-
-#define MOVE_VALUE_MASK     0x0000ffff
-#define MOVE_VALUE_YIELDED  0x10000000
+/* TODO remove all this */
+#define MOVE_VALUE_MASK        0x0000ffff
+#define MOVE_VALUE_YIELDED     0x10000000
+#define MOVE_VALUE_NOT_FORCING 0x20000000
   MOVEVAL value;
 
   struct _MOVE_ * next;

@@ -7,29 +7,33 @@
 #include "pv.h"
 
 typedef enum {
-  MOVEGEN_START,
+  MOVEGEN_START = 0,
   MOVEGEN_PV,
   MOVEGEN_KILLER1,
   MOVEGEN_KILLER2,
-  MOVEGEN_REST,
-  MOVEGEN_REST_YIELD,
+  MOVEGEN_FORCING,
+  MOVEGEN_FORCING_YIELD,
+  MOVEGEN_OTHER,
+  MOVEGEN_OTHER_YIELD,
 } MOVEGEN_PHASE;
 
 /* TODO this is temporary while the rest of the moves are in 1 phase */
 typedef enum {
   MOVEGEN_PERFT,
   MOVEGEN_SORT,
-  MOVEGEN_FORCING
+  MOVEGEN_QUIESCE
 } MOVEGEN_TYPE;
-
 
 typedef struct __MOVEGEN_STATE__ {
   MOVEGEN_PHASE phase;
   MOVEGEN_TYPE movegen_type; /* TODO this is temporary while the rest of the moves are in 1 phase */
-  MOVE * iterator;
   int frame_open;
   BITBOARD generated[7];
 } MOVEGEN_STATE;
+
+#if DEBUG
+extern unsigned long long phase_counts[8];
+#endif
 
 MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_STATE * state);
 void moves_done(const MOVEGEN_STATE * state);

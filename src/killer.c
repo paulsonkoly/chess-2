@@ -11,11 +11,8 @@ void reset_killer(KILLER * killer) {
 }
 
 void save_killer(KILLER * killer, int depth, MOVE * move) {
-  int index = 0;
-
-  if (killer->valid[depth][0]) {
-    index = 1;
-  }
+  /* ix 0: always replace ix 1: never replace */
+  int index = killer->valid[depth][1] ^ 1;
 
   killer->valid[depth][index] = 1;
   memcpy(&killer->moves[depth][index], move, sizeof(MOVE));

@@ -13,7 +13,6 @@
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
-#include "movelist.h"
 #include "pv.h"
 #include "chess.h"
 
@@ -87,7 +86,7 @@ int repetition(const BOARD * board) {
 
 int quiesce(BOARD * board, int alpha, int beta) {
   MOVE * move;
-  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_FORCING, 0, 0 };
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_QUIESCE, 0 };
   int stand_pat;
 
   nodes++;
@@ -174,7 +173,7 @@ int negascout(BOARD* board,
   unsigned long long delta;
   int count;
   MOVE * move;
-  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_SORT, 0, 0 };
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_SORT, 0 };
 
   assert(0 <= reduced_depth && reduced_depth <= depth);
 
@@ -267,6 +266,7 @@ int negascout(BOARD* board,
 }
 
 #define MOVES_TO_GO 25
+#include "movegen.h"
 
 int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
   PV * opv; /* old PV */
@@ -359,6 +359,12 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
     pv_swap(&opv, &npv);
   }
+
+#if DEBUG
+  printf("info movegen phase counts %lld %lld %lld %lld %lld %lld %lld %lld\n",
+      phase_counts[0], phase_counts[1], phase_counts[2], phase_counts[3],
+      phase_counts[4], phase_counts[5], phase_counts[6], phase_counts[7]);
+#endif
 
   if (bestmove) {
     printf("bestmove ");

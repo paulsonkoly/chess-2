@@ -66,41 +66,32 @@ static void perft_unit_test_talkchess5(void **state) {
 static void forcing_moves_count_test(void **state)
 {
   BOARD * b = parse_fen("2r3k1/1P2P3/8/8/4p3/3B4/8/6K1 w - - 0 1");
-  MOVE * ptr;
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_QUIESCE };
   int count = 0;
 
-  ml_open_frame();
-
-  add_moves(b);
-
-  for (ptr = ml_forcing(b); ptr != NULL; ptr = ptr->next) {
+  while (moves(b, 0, NULL, NULL, &mg_state)) {
     count ++;
   }
 
   assert_int_equal(8, count);
-
-  ml_close_frame();
 }
 
 static void forcing_moves_test(void **state) {
   BOARD * b = parse_fen("2r3k1/1P2P3/8/8/4p3/3B4/8/6K1 w - - 0 1");
   MOVE * ptr;
-  const char * moves[] = {
+  const char * mvs[] = {
     "d3e4", "e7e8q", "e7e8r", "b7c8n", "b7c8b", "b7c8r", "b7c8q", "d3c4"
   };
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_QUIESCE };
 
-  ml_open_frame();
-
-  add_moves(b);
-
-  for (ptr = ml_forcing(b); ptr != NULL; ptr = ptr->next) {
+  while ((ptr = moves(b, 0, NULL, NULL, &mg_state))) {
     char buffer[6];
     int match = 0;
 
     print_move_buffer(ptr, buffer);
 
     for (int i = 0; i < 8; ++i) {
-      if (0 == strcmp(moves[i], buffer)) {
+      if (0 == strcmp(mvs[i], buffer)) {
         match = 1;
         break;
       }
@@ -108,9 +99,6 @@ static void forcing_moves_test(void **state) {
 
     assert_true(match);
   }
-
-
-  ml_close_frame();
 }
 
 static void see_capture_test(void ** state) {

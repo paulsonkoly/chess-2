@@ -37,8 +37,6 @@ typedef struct _MOVE_ {
 #define MOVE_VALUE_YIELDED     0x10000000
 #define MOVE_VALUE_NOT_FORCING 0x20000000
   MOVEVAL value;
-
-  struct _MOVE_ * next;
 } MOVE;
 
 void print_move(const MOVE * move);

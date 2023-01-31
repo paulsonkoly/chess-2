@@ -10,7 +10,7 @@
 
 unsigned long long perft(BOARD * board, int depth, int print) {
   unsigned long long int count = 0;
-  MOVEGEN_STATE mg_state = { MOVEGEN_START };
+  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_PERFT, 0 };
   MOVE * move;
 
   if (depth == 0) {

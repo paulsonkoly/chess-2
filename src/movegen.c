@@ -70,7 +70,6 @@ static void add_normal_moves(const BOARD * board, PIECE piece, BITBOARD allowed_
                             | board->en_passant
                             | (((BITBOARD)castle_update(board, piece, from | to) << CASTLE_RIGHT_CHANGE_SHIFT))
                             | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT);
-      move->value           = 0;
 
       attacked &= attacked - 1;
     }
@@ -104,7 +103,6 @@ static void add_pawn_captures(const BOARD * board) {
       move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
                             | board->en_passant
                             | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT);
-      move->value           = 0;
 
       f &= f - 1;
     }
@@ -133,7 +131,6 @@ static void add_pawn_captures(const BOARD * board) {
                               | ((BITBOARD)piece << PROMOTION_MOVE_SHIFT)
                               | (((BITBOARD)piece_at_board(board, to)) << CAPTURED_MOVE_SHIFT)
                               | (((BITBOARD)castle_update(board, piece, from | to) << CASTLE_RIGHT_CHANGE_SHIFT));
-        move->value           = 0;
       }
 
       f &= f - 1;
@@ -158,7 +155,6 @@ static void add_pawn_captures(const BOARD * board) {
       move->special         = (((BITBOARD)PAWN) << PIECE_MOVE_SHIFT)
                             | board->en_passant
                             | s;
-      move->value           = 0;
 
       f &= f - 1;
     }
@@ -187,7 +183,6 @@ void add_pawn_promotions(const BOARD * board) {
       move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT)
                             | ((BITBOARD)piece << PROMOTION_MOVE_SHIFT)
                             | board->en_passant;
-      move->value           = 0;
     }
 
     targets &= targets - 1;
@@ -212,7 +207,6 @@ void add_pawn_pushes(const BOARD * board) {
     move->from            = SINGLE_PAWN_PUSH(1 - board->next, to);
     move->to              = to;
     move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT) | board->en_passant;
-    move->value           = 0;
 
     targets &= targets - 1;
   }
@@ -229,7 +223,6 @@ void add_pawn_pushes(const BOARD * board) {
     move->from            = from;
     move->to              = to;
     move->special         = ((BITBOARD)PAWN << PIECE_MOVE_SHIFT) | (board->en_passant ^ en_passant);
-    move->value           = 0;
 
     targets &= targets - 1;
   }
@@ -279,7 +272,6 @@ void add_castles(const BOARD * board) {
                       | castle_rook_from_to[c]
                       | board->en_passant
                       | (((BITBOARD)castle_update(board, KING, castle_king_from_to[c]) << CASTLE_RIGHT_CHANGE_SHIFT));
-        move->value   = 0;
       }
     }
   }
@@ -288,6 +280,9 @@ void add_castles(const BOARD * board) {
 #if DEBUG
 unsigned long long phase_counts[8] = { 0 };
 #endif
+
+#define IS_SET_IN_64(store, ix) ((store[(ix) >> 6]) & (1ULL << ((ix) & 63)))
+#define SET_IN_64(store, ix) ((store[(ix) >> 6]) |= (1ULL << ((ix) & 63)))
 
 /* Semi-lazy phase based move generator
  *
@@ -343,7 +338,12 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         state->frame_open = 1;
 
         for (PIECE piece = PAWN; piece < KING; ++piece) {
-          state->generated[piece] = 0;
+          state->generated[piece] = 0ULL;
+        }
+
+        for (int i = 0; i < 2; ++i) {
+          state->yielded[i] = 0ULL;
+          state->not_forcing[i] = 0ULL;
         }
 
         if (pv) {
@@ -374,7 +374,10 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 
             for (MOVE * move = ml_first(); move != ml_last(); move++) {
               if (MOVE_EQUAL(move, pv_move)) {
-                move->value |= MOVE_VALUE_YIELDED;
+                int ix = move - ml_first();
+
+                SET_IN_64(state->yielded, ix);
+                move->value = 20000;
 
                 state->phase = next;
                 return move;
@@ -394,6 +397,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           BITBOARD to = killer_move->to;
 
           if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
+            int ix = 0;
             BITBOARD generated = state->generated[piece];
             if (!(generated & to)) {
               add_normal_moves(board, piece, ~generated);
@@ -401,12 +405,15 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
             }
 
             for (MOVE * move = ml_first(); move != ml_last(); move++) {
-              if (!(move->value & MOVE_VALUE_YIELDED) && MOVE_EQUAL(move, killer_move)) {
-                move->value |= MOVE_VALUE_YIELDED;
+              if (!(IS_SET_IN_64(state->yielded, ix) && MOVE_EQUAL(move, killer_move))) {
+
+                SET_IN_64(state->yielded, ix);
+                move->value = 19000;
 
                 state->phase = next;
                 return move;
               }
+              ix++;
             }
           }
         }
@@ -424,6 +431,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
             BITBOARD generated = state->generated[piece];
             state->generated[piece] |= to;
+            int ix = 0;
 
             if (!(generated & to)) {
               add_normal_moves(board, piece, ~generated);
@@ -431,12 +439,16 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
             }
 
             for (MOVE * move = ml_first(); move != ml_last(); move++) {
-              if (!(move->value & MOVE_VALUE_YIELDED) && MOVE_EQUAL(move, killer_move)) {
-                move->value |= MOVE_VALUE_YIELDED;
+
+              if (!IS_SET_IN_64(state->yielded, ix) && MOVE_EQUAL(move, killer_move)) {
+
+                SET_IN_64(state->yielded, ix);
+                move->value = 18000;
 
                 state->phase = next;
                 return move;
               }
+              ix++;
             }
           }
         }
@@ -445,6 +457,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 
       case MOVEGEN_FORCING: {
         SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
+        int ix = 0;
 
         add_pawn_captures(board);
         add_pawn_promotions(board);
@@ -457,21 +470,22 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         }
 
         for (MOVE * move = ml_first(); move != ml_last(); move++) {
-          if (!(move->value & MOVE_VALUE_YIELDED)) {
+          if (!IS_SET_IN_64(state->yielded, ix)) {
 
             if (move->special & CAPTURED_MOVE_MASK) {
-              move->value |= see(board, move) + 10000;
+              move->value = see(board, move) + 10000;
             } else if (move->special & PROMOTION_MOVE_MASK) {
               PIECE promo = (move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT;
-              move->value |= piece_values[promo] + 9000;
+              move->value = piece_values[promo] + 9000;
             } else if (move->special & EN_PASSANT_CAPTURE_MOVE_MASK) {
-              move->value |= 8000;
+              move->value = 8000;
             } else if (move_attacks_sq(board, move, king)) {
-              move->value |= 10000;
+              move->value = 10000;
             } else {
-              move->value |= MOVE_VALUE_NOT_FORCING;
+              SET_IN_64(state->not_forcing, ix);
             }
           }
+          ix++;
         }
 
         next = MOVEGEN_FORCING_YIELD;
@@ -481,18 +495,27 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
       case MOVEGEN_FORCING_YIELD: {
         MOVE * result = NULL;
         MOVEVAL max = 0;
+        int mix = 0;
+        uint64_t flags[2];
+        int ix = 0;
+
+        for (int i = 0; i < 2; ++i) {
+          flags[i] = state->yielded[i] | state->not_forcing[i];
+        }
 
         for (MOVE * move = ml_first(); move != ml_last(); move++) {
-          if (!(move->value & (MOVE_VALUE_YIELDED | MOVE_VALUE_NOT_FORCING))) {
-            if (max < (move->value & MOVE_VALUE_MASK)) {
-              max = move->value & MOVE_VALUE_MASK;
+          if (!IS_SET_IN_64(flags, ix)) {
+            if (max < move->value) {
+              max = move->value;
               result = move;
+              mix = ix;
             }
           }
+          ix++;
         }
 
         if (result) {
-          result->value |= MOVE_VALUE_YIELDED;
+          SET_IN_64(state->yielded, mix);
           state->phase = next;
           return result;
         } else {
@@ -509,6 +532,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 
       case MOVEGEN_OTHER: {
         SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
+        int ix = 0;
 
         add_pawn_pushes(board);
         add_castles(board);
@@ -521,19 +545,20 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         /* assign psqt heuristics to moves */
         for (MOVE * move = ml_first(); move != ml_last(); move++) {
 
-          if (!(move->value & MOVE_VALUE_YIELDED)) {
+          if (!IS_SET_IN_64(state->yielded, ix)) {
             assert(! (move->special & CAPTURED_MOVE_MASK));
             /* TODO for instance a castling that attacks the king or a pawn push is only found here */
             /* and thus missed from quiesce now */
             if (move_attacks_sq(board, move, king)) {
-              move->value |= 1000;
+              move->value = 1000;
             } else {
-              move->value |= psqt_value((move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT,
+              move->value = psqt_value((move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT,
                   board->next,
                   (SQUARE)__builtin_ctzll(move->from),
                   (SQUARE)__builtin_ctzll(move->to)) + 500;
             }
           }
+          ix++;
         }
 
         next = MOVEGEN_OTHER_YIELD;
@@ -543,18 +568,22 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
       case MOVEGEN_OTHER_YIELD: {
         MOVE * result = NULL;
         MOVEVAL max = 0;
+        int ix = 0;
+        int mix = 0;
 
         for (MOVE * move = ml_first(); move != ml_last(); move++) {
-          if (!(move->value & MOVE_VALUE_YIELDED)) {
-            if (max < (move->value & MOVE_VALUE_MASK)) {
-              max = move->value & MOVE_VALUE_MASK;
+          if (!IS_SET_IN_64(state->yielded, ix)) {
+            if (max < move->value) {
+              max = move->value;
+              mix = ix;
               result = move;
             }
           }
+          ix++;
         }
 
         if (result) {
-          result->value |= MOVE_VALUE_YIELDED;
+          SET_IN_64(state->yielded, mix);
           state->phase = next;
         } else {
           ml_close_frame();

@@ -204,16 +204,18 @@ void print_board(const BOARD* board) {
   printf("\n");
 
   for (SQUARE r = 56; r < 64; r -= 8) {
+    printf("+--+--+--+--+--+--+--+--+\n");
     for (SQUARE f = 0; f != 8; f += 1) {
       SQUARE sq = r | f;
       PIECE p = piece_at_board(board, 1ULL << sq);
       COLOUR c = colour_at_board(board, sq);
 
-      printf("%c", s[6 * c + p]);
+      printf("|%c ", s[6 * c + p]);
     }
 
-    printf("\n");
+    printf("|\n");
   }
+  printf("+--+--+--+--+--+--+--+--+\n");
 }
 
 void print_fen(const BOARD* board) {

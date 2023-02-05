@@ -29,13 +29,18 @@ typedef enum {
 #define MOVEGEN_FLAGS_PAWN_FORCING   4
 #define MOVEGEN_FLAGS_CASTLE         8
 
+/* single per move flags indexed by move index from movelist stored in
+ * consecutive 64 bit numbers
+ */
+#define MOVEGEN_IX_64BIT_LANES       2
+
 typedef struct __MOVEGEN_STATE__ {
   MOVEGEN_PHASE phase;
   MOVEGEN_TYPE movegen_type; /* TODO this is temporary while the rest of the moves are in 1 phase */
   unsigned flags;
   BITBOARD generated[7];
-  uint64_t yielded[2];
-  uint64_t not_forcing[2];
+  uint64_t yielded[MOVEGEN_IX_64BIT_LANES];
+  uint64_t not_forcing[MOVEGEN_IX_64BIT_LANES];
 } MOVEGEN_STATE;
 
 #if DEBUG

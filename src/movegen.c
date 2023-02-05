@@ -325,7 +325,7 @@ static MOVE * yield_move(const MOVE * move, MOVEGEN_STATE * state) {
   MOVE * first = ml_first();
   int count = ml_last() - first;
 
-  for (int lane = 0; lane < 2; ++lane) {
+  for (int lane = 0; lane < MOVEGEN_IX_64BIT_LANES; ++lane) {
     int count_in_lane = count >> (lane * 6);
     uint64_t to_yield = (~state->yielded[lane] & ((1ULL << count_in_lane) - 1));
 
@@ -349,7 +349,7 @@ static MOVE * yield_move(const MOVE * move, MOVEGEN_STATE * state) {
   return NULL;
 }
 
-static MOVE * yield_max_weight(uint64_t enabled[2], MOVEGEN_STATE * state) {
+static MOVE * yield_max_weight(uint64_t enabled[MOVEGEN_IX_64BIT_LANES], MOVEGEN_STATE * state) {
   MOVE * first     = ml_first();
   int count        = ml_last() - first;
   MOVE * max_move  = NULL;
@@ -357,7 +357,7 @@ static MOVE * yield_max_weight(uint64_t enabled[2], MOVEGEN_STATE * state) {
   int max_lane     = 0;
   uint64_t max_bit = 0;
 
-  for (int lane = 0; lane < 2; ++lane) {
+  for (int lane = 0; lane < MOVEGEN_IX_64BIT_LANES; ++lane) {
     int count_in_lane = count >> (lane * 6);
     uint64_t to_yield = (~enabled[lane] & ((1ULL << count_in_lane) - 1));
 
@@ -442,7 +442,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           state->generated[piece] = 0ULL;
         }
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < MOVEGEN_IX_64BIT_LANES; ++i) {
           state->yielded[i]     = 0ULL;
           state->not_forcing[i] = 0ULL;
         }
@@ -558,9 +558,9 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 
       case MOVEGEN_FORCING_YIELD: {
         MOVE * result = NULL;
-        uint64_t flags[2];
+        uint64_t flags[MOVEGEN_IX_64BIT_LANES];
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < MOVEGEN_IX_64BIT_LANES; ++i) {
           flags[i] = state->yielded[i] | state->not_forcing[i];
         }
 

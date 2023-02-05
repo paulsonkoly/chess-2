@@ -322,13 +322,13 @@ void generate_move(const BOARD * board, const MOVE * move, MOVEGEN_STATE * state
 }
 
 static MOVE * yield_move(const MOVE * move, MOVEGEN_STATE * state) {
-  MOVE * first = ml_first();
-  int count = ml_last() - first;
+  MOVE * first      = ml_first();
+  int count         = ml_last() - first;
+  int lane          = count >> 6;
+  int count_in_lane = count & 127;
+  uint64_t to_yield = (~state->yielded[lane] & ((1ULL << count_in_lane) - 1));
 
-  for (int lane = 0; lane < MOVEGEN_IX_64BIT_LANES; ++lane) {
-    int count_in_lane = count >> (lane * 6);
-    uint64_t to_yield = (~state->yielded[lane] & ((1ULL << count_in_lane) - 1));
-
+  while (lane >= 0) {
     while (to_yield) {
       uint64_t iso = to_yield & -to_yield;
       int ix = __builtin_ctzll(iso) + lane * 64;
@@ -344,23 +344,26 @@ static MOVE * yield_move(const MOVE * move, MOVEGEN_STATE * state) {
 
       to_yield &= to_yield - 1;
     }
+
+    to_yield = ~state->yielded[--lane];
   }
 
   return NULL;
 }
 
 static MOVE * yield_max_weight(uint64_t enabled[MOVEGEN_IX_64BIT_LANES], MOVEGEN_STATE * state) {
-  MOVE * first     = ml_first();
-  int count        = ml_last() - first;
-  MOVE * max_move  = NULL;
-  MOVEVAL max      = 0;
-  int max_lane     = 0;
-  uint64_t max_bit = 0;
+  MOVE * first      = ml_first();
+  int count         = ml_last() - first;
+  int lane          = count >> 6;
+  int count_in_lane = count & 127;
+  uint64_t to_yield = (~enabled[lane] & ((1ULL << count_in_lane) - 1));
 
-  for (int lane = 0; lane < MOVEGEN_IX_64BIT_LANES; ++lane) {
-    int count_in_lane = count >> (lane * 6);
-    uint64_t to_yield = (~enabled[lane] & ((1ULL << count_in_lane) - 1));
+  MOVE * max_move   = NULL;
+  MOVEVAL max       = 0;
+  int max_lane      = 0;
+  uint64_t max_bit  = 0;
 
+  while (lane >= 0) {
     while (to_yield) {
       uint64_t iso = to_yield & -to_yield;
       int ix = __builtin_ctzll(iso) + lane * 64;
@@ -376,6 +379,8 @@ static MOVE * yield_max_weight(uint64_t enabled[MOVEGEN_IX_64BIT_LANES], MOVEGEN
 
       to_yield &= to_yield - 1;
     }
+
+    to_yield = ~enabled[--lane];
   }
 
   if (max_move) {

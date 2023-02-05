@@ -253,6 +253,7 @@ void print_fen(const BOARD* board) {
   if (board->castle & CALC_CASTLE(WHITE, LONG_CASTLE)) printf("Q");
   if (board->castle & CALC_CASTLE(BLACK, SHORT_CASTLE)) printf("k");
   if (board->castle & CALC_CASTLE(BLACK, LONG_CASTLE)) printf("q");
+  if (board->castle == 0) printf("-");
 
   if (board->en_passant) {
     SQUARE ep = ffsl(board->en_passant) - 1;

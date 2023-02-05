@@ -27,11 +27,11 @@ static int ply = -1;
 
 static MOVE store[MAX_MOVES];
 /* first move of each ply */
-static MOVE * frame[MAX_PLYS];
+static MOVE * frame[MAX_PLIES];
 /* the free slot */
 static MOVE * alloc;
 /* first move to play within ply */
-static MOVE * first[MAX_PLYS];
+static MOVE * first[MAX_PLIES];
 
 void ml_open_frame() {
   ply++;

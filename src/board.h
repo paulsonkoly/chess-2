@@ -27,7 +27,7 @@ typedef struct _BOARD_ {
      HASH hash;
 #define HIST_CANT_REPEAT 0x00000001
      unsigned int flags;
-   } history[MAX_GAME_PLYS];
+   } history[MAX_GAME_PLIES];
 
 } BOARD;
 

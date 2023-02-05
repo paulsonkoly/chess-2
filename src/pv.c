@@ -8,7 +8,7 @@
 
 typedef struct _PV_ {
   int count;
-  MOVE store[MAX_PLYS];
+  MOVE store[MAX_PLIES];
 } PV;
 
 PV * pv_init() {
@@ -36,7 +36,7 @@ void pv_swap(PV** pv1, PV** pv2) {
 
 void pv_insert(PV * pv, const MOVE * move, int offset) {
 #if defined(DEBUG_PV)
-  assert(offset < MAX_PLYS);
+  assert(offset < MAX_PLIES);
 #endif
   pv->store[offset] = *move;
   pv->count = pv->count + 1;

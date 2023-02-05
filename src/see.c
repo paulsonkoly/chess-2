@@ -40,7 +40,7 @@ int see(BOARD * board, const MOVE * move) {
     }
   };
 
-  PIECE captures[MAX_PLYS];
+  PIECE captures[MAX_PLIES];
 
   PIECE start[2] = { PAWN, PAWN };
   PIECE piece    = (move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;

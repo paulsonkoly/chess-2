@@ -24,10 +24,15 @@ typedef enum {
   MOVEGEN_QUIESCE
 } MOVEGEN_TYPE;
 
+#define MOVEGEN_FLAGS_FRAME_OPEN     1
+#define MOVEGEN_FLAGS_PAWN_PUSH      2
+#define MOVEGEN_FLAGS_PAWN_FORCING   4
+#define MOVEGEN_FLAGS_CASTLE         8
+
 typedef struct __MOVEGEN_STATE__ {
   MOVEGEN_PHASE phase;
   MOVEGEN_TYPE movegen_type; /* TODO this is temporary while the rest of the moves are in 1 phase */
-  int frame_open;
+  unsigned flags;
   BITBOARD generated[7];
   uint64_t yielded[2];
   uint64_t not_forcing[2];

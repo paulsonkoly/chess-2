@@ -284,6 +284,107 @@ unsigned long long phase_counts[8] = { 0 };
 #define IS_SET_IN_64(store, ix) ((store[(ix) >> 6]) & (1ULL << ((ix) & 63)))
 #define SET_IN_64(store, ix) ((store[(ix) >> 6]) |= (1ULL << ((ix) & 63)))
 
+void generate_move(const BOARD * board, const MOVE * move, MOVEGEN_STATE * state) {
+
+  PIECE piece = (move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
+  BITBOARD to = move->to;
+
+  switch (piece) {
+    case PAWN: {
+      if (move->special & (CAPTURED_MOVE_MASK | EN_PASSANT_CAPTURE_MOVE_MASK | PROMOTION_MOVE_MASK)) {
+        if (! (state->flags & MOVEGEN_FLAGS_PAWN_FORCING)) {
+          state->flags |= MOVEGEN_FLAGS_PAWN_FORCING;
+          add_pawn_captures(board);
+          add_pawn_promotions(board);
+        }
+      } else {
+        if (! (state->flags & MOVEGEN_FLAGS_PAWN_PUSH)) {
+          state->flags |= MOVEGEN_FLAGS_PAWN_PUSH;
+          add_pawn_pushes(board);
+        }
+      }
+
+      break;
+    }
+
+    default: {
+      if (move->special & CASTLE_ROOK_MOVE_MASK) {
+        if (! (state->flags & MOVEGEN_FLAGS_CASTLE)) {
+          state->flags |= MOVEGEN_FLAGS_CASTLE;
+          add_castles(board);
+        }
+      } else if (! (state->generated[piece] & to)) {
+        state->generated[piece] |= to;
+        add_normal_moves(board, piece, to);
+      }
+    }
+  }
+}
+
+static MOVE * yield_move(const MOVE * move, MOVEGEN_STATE * state) {
+  MOVE * first = ml_first();
+  int count = ml_last() - first;
+
+  for (int lane = 0; lane < 2; ++lane) {
+    int count_in_lane = count >> (lane * 6);
+    uint64_t to_yield = (~state->yielded[lane] & ((1ULL << count_in_lane) - 1));
+
+    while (to_yield) {
+      uint64_t iso = to_yield & -to_yield;
+      int ix = __builtin_ctzll(iso) + lane * 64;
+
+      MOVE * candidate = &first[ix];
+
+      if (MOVE_EQUAL(move, candidate)) {
+
+        state->yielded[lane] |= iso;
+
+        return candidate;
+      }
+
+      to_yield &= to_yield - 1;
+    }
+  }
+
+  return NULL;
+}
+
+static MOVE * yield_max_weight(uint64_t enabled[2], MOVEGEN_STATE * state) {
+  MOVE * first     = ml_first();
+  int count        = ml_last() - first;
+  MOVE * max_move  = NULL;
+  MOVEVAL max      = 0;
+  int max_lane     = 0;
+  uint64_t max_bit = 0;
+
+  for (int lane = 0; lane < 2; ++lane) {
+    int count_in_lane = count >> (lane * 6);
+    uint64_t to_yield = (~enabled[lane] & ((1ULL << count_in_lane) - 1));
+
+    while (to_yield) {
+      uint64_t iso = to_yield & -to_yield;
+      int ix = __builtin_ctzll(iso) + lane * 64;
+
+      MOVE * candidate = &first[ix];
+
+      if (candidate->value > max) {
+        max_move = candidate;
+        max      = candidate->value;
+        max_lane = lane;
+        max_bit  = iso;
+      }
+
+      to_yield &= to_yield - 1;
+    }
+  }
+
+  if (max_move) {
+    state->yielded[max_lane] |= max_bit;
+  }
+
+  return max_move;
+}
+
 /* Semi-lazy phase based move generator
  *
  * Yields all pseudo-legal moves to the caller one move at a time and once
@@ -335,14 +436,14 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
       case MOVEGEN_START:
         ml_open_frame();
 
-        state->frame_open = 1;
+        state->flags = MOVEGEN_FLAGS_FRAME_OPEN;
 
-        for (PIECE piece = PAWN; piece < KING; ++piece) {
+        for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
           state->generated[piece] = 0ULL;
         }
 
         for (int i = 0; i < 2; ++i) {
-          state->yielded[i] = 0ULL;
+          state->yielded[i]     = 0ULL;
           state->not_forcing[i] = 0ULL;
         }
 
@@ -365,24 +466,15 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         }
 
         if (pv_move) {
-          PIECE piece = (pv_move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
-          BITBOARD to = pv_move->to;
+          MOVE * yielded;
 
-          if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
-            state->generated[piece] |= to;
-            add_normal_moves(board, piece, to);
+          generate_move(board, pv_move, state);
 
-            for (MOVE * move = ml_first(); move != ml_last(); move++) {
-              if (MOVE_EQUAL(move, pv_move)) {
-                int ix = move - ml_first();
+          if ((yielded = yield_move(pv_move, state))) {
+            yielded->value = 20000;
+            state->phase   = next;
 
-                SET_IN_64(state->yielded, ix);
-                move->value = 20000;
-
-                state->phase = next;
-                return move;
-              }
-            }
+            return yielded;
           }
         }
         break;
@@ -393,85 +485,57 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         next = MOVEGEN_KILLER2;
 
         if (killer_move) {
-          PIECE piece = (killer_move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
-          BITBOARD to = killer_move->to;
+          MOVE * yielded;
 
-          if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
-            int ix = 0;
-            BITBOARD generated = state->generated[piece];
-            if (!(generated & to)) {
-              add_normal_moves(board, piece, ~generated);
-              state->generated[piece] = generated | to;
-            }
+          generate_move(board, killer_move, state);
 
-            for (MOVE * move = ml_first(); move != ml_last(); move++) {
-              if (!(IS_SET_IN_64(state->yielded, ix) && MOVE_EQUAL(move, killer_move))) {
+          if ((yielded = yield_move(killer_move, state))) {
+            yielded->value = 19000;
+            state->phase   = next;
 
-                SET_IN_64(state->yielded, ix);
-                move->value = 19000;
-
-                state->phase = next;
-                return move;
-              }
-              ix++;
-            }
+            return yielded;
           }
         }
-        /* FALLTHROUGH */
       }
+      /* FALLTHROUGH */
 
       case MOVEGEN_KILLER2: {
         const MOVE * killer_move = killer_get_move(killer, ply, 1);
         next = MOVEGEN_FORCING;
 
         if (killer_move) {
-          PIECE piece = (killer_move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT;
-          BITBOARD to = killer_move->to;
+          MOVE * yielded;
 
-          if (PAWN < piece && !(to & COLOUR_BB(board, board->next))) { /* TODO */
-            BITBOARD generated = state->generated[piece];
-            state->generated[piece] |= to;
-            int ix = 0;
+          generate_move(board, killer_move, state);
 
-            if (!(generated & to)) {
-              add_normal_moves(board, piece, ~generated);
-              state->generated[piece] = generated | to;
-            }
+          if ((yielded = yield_move(killer_move, state))) {
+            yielded->value = 18000;
+            state->phase   = next;
 
-            for (MOVE * move = ml_first(); move != ml_last(); move++) {
-
-              if (!IS_SET_IN_64(state->yielded, ix) && MOVE_EQUAL(move, killer_move)) {
-
-                SET_IN_64(state->yielded, ix);
-                move->value = 18000;
-
-                state->phase = next;
-                return move;
-              }
-              ix++;
-            }
+            return yielded;
           }
         }
-        /* FALLTHROUGH */
       }
+      /* FALLTHROUGH */
 
       case MOVEGEN_FORCING: {
         SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
         int ix = 0;
 
-        add_pawn_captures(board);
-        add_pawn_promotions(board);
+        /* TODO add checks */
+        if (! (state->flags & MOVEGEN_FLAGS_PAWN_FORCING)) {
+          add_pawn_captures(board);
+          add_pawn_promotions(board);
+        }
         for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
           /* captures */
           BITBOARD generate = COLOUR_BB(board, board->next ^ 1) & ~state->generated[piece];
           add_normal_moves(board, piece, generate);
           state->generated[piece] |= generate;
-          /* TODO add checks */
         }
 
         for (MOVE * move = ml_first(); move != ml_last(); move++) {
           if (!IS_SET_IN_64(state->yielded, ix)) {
-
             if (move->special & CAPTURED_MOVE_MASK) {
               move->value = see(board, move) + 10000;
             } else if (move->special & PROMOTION_MOVE_MASK) {
@@ -494,28 +558,13 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 
       case MOVEGEN_FORCING_YIELD: {
         MOVE * result = NULL;
-        MOVEVAL max = 0;
-        int mix = 0;
         uint64_t flags[2];
-        int ix = 0;
 
         for (int i = 0; i < 2; ++i) {
           flags[i] = state->yielded[i] | state->not_forcing[i];
         }
 
-        for (MOVE * move = ml_first(); move != ml_last(); move++) {
-          if (!IS_SET_IN_64(flags, ix)) {
-            if (max < move->value) {
-              max = move->value;
-              result = move;
-              mix = ix;
-            }
-          }
-          ix++;
-        }
-
-        if (result) {
-          SET_IN_64(state->yielded, mix);
+        if ((result = yield_max_weight(flags, state))) {
           state->phase = next;
           return result;
         } else {
@@ -534,8 +583,12 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
         int ix = 0;
 
-        add_pawn_pushes(board);
-        add_castles(board);
+        if (! (state->flags & MOVEGEN_FLAGS_PAWN_PUSH)) {
+          add_pawn_pushes(board);
+        }
+        if (! (state->flags & MOVEGEN_FLAGS_CASTLE)) {
+          add_castles(board);
+        }
         for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
           /* non-captures */
           BITBOARD generate = ~(COLOUR_BB(board, board->next) | state->generated[piece]);
@@ -562,30 +615,14 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         }
 
         next = MOVEGEN_OTHER_YIELD;
+        state->phase = next;
         /* FALLTHROUGH */
       }
 
       case MOVEGEN_OTHER_YIELD: {
         MOVE * result = NULL;
-        MOVEVAL max = 0;
-        int ix = 0;
-        int mix = 0;
 
-        for (MOVE * move = ml_first(); move != ml_last(); move++) {
-          if (!IS_SET_IN_64(state->yielded, ix)) {
-            if (max < move->value) {
-              max = move->value;
-              mix = ix;
-              result = move;
-            }
-          }
-          ix++;
-        }
-
-        if (result) {
-          SET_IN_64(state->yielded, mix);
-          state->phase = next;
-        } else {
+        if (!(result = yield_max_weight(state->yielded, state))) {
           ml_close_frame();
         }
         return result;
@@ -600,7 +637,7 @@ void moves_done(const MOVEGEN_STATE * mg_state) {
 #if DEBUG
   phase_counts[mg_state->phase]++;
 #endif
-  if (mg_state->frame_open) {
+  if (mg_state->flags & MOVEGEN_FLAGS_FRAME_OPEN) {
     ml_close_frame();
   }
 }

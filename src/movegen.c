@@ -480,9 +480,9 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         break;
       }
 
-      case MOVEGEN_KILLER1: {
-        const MOVE * killer_move = killer_get_move(killer, ply, 0);
-        next = MOVEGEN_KILLER2;
+      case MOVEGEN_KILLER1: case MOVEGEN_KILLER2: {
+        const MOVE * killer_move = killer_get_move(killer, ply, next - MOVEGEN_KILLER1);
+        next++;
 
         if (killer_move) {
           MOVE * yielded;
@@ -490,26 +490,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           generate_move(board, killer_move, state);
 
           if ((yielded = yield_move(killer_move, state))) {
-            yielded->value = 19000;
-            state->phase   = next;
-
-            return yielded;
-          }
-        }
-      }
-      /* FALLTHROUGH */
-
-      case MOVEGEN_KILLER2: {
-        const MOVE * killer_move = killer_get_move(killer, ply, 1);
-        next = MOVEGEN_FORCING;
-
-        if (killer_move) {
-          MOVE * yielded;
-
-          generate_move(board, killer_move, state);
-
-          if ((yielded = yield_move(killer_move, state))) {
-            yielded->value = 18000;
+            yielded->value = 19000 + next;
             state->phase   = next;
 
             return yielded;

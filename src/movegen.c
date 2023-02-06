@@ -250,30 +250,30 @@ BITBOARD castling_rook_from_to(CASTLE castle) {
 
 void add_castles(const BOARD * board) {
   BITBOARD occ = OCCUPANCY_BB(board);
+  CASTLE castle = board->castle & CASTLES_OF(board->next);
 
-  for (CASTLE castle = 0; castle <= 1; ++castle) {
-    CASTLE c = (board->next << 1) | castle;
+  while (castle) {
+    CASTLE iso = castle & -castle;
 
-    if (board->castle & ((CASTLE)1 << c)) {
-      BITBOARD rb = BITBOARD_BETWEEN(castle_rook_from_to[c]);
-      BITBOARD kb = BITBOARD_BETWEEN(castle_king_from_to[c]);
+    BITBOARD rb = BITBOARD_BETWEEN(castle_rook_from_to[iso]);
+    BITBOARD kb = BITBOARD_BETWEEN(castle_king_from_to[iso]);
 
-      if (! ((rb | kb) & occ)) {
+    if (! ((rb | kb) & occ)) {
 
-        BITBOARD check_squares = kb | castle_king_from_to[c];
+      BITBOARD check_squares = kb | castle_king_from_to[iso];
 
-        if (is_attacked(board, check_squares, occ, 1 - board->next)) continue;
+      if (is_attacked(board, check_squares, occ, 1 - board->next)) continue;
 
-        MOVE * move = ml_allocate();
+      MOVE * move = ml_allocate();
 
-        move->from    = castle_king_from_to[c] & board->kings;
-        move->to      = castle_king_from_to[c] & ~board->kings;
-        move->special = ((BITBOARD)KING << PIECE_MOVE_SHIFT)
-                      | castle_rook_from_to[c]
-                      | board->en_passant
-                      | (((BITBOARD)castle_update(board, KING, castle_king_from_to[c]) << CASTLE_RIGHT_CHANGE_SHIFT));
-      }
+      move->from    = castle_king_from_to[iso] & board->kings;
+      move->to      = castle_king_from_to[iso] & ~board->kings;
+      move->special = ((BITBOARD)KING << PIECE_MOVE_SHIFT)
+        | castle_rook_from_to[iso]
+        | board->en_passant
+        | (((BITBOARD)castle_update(board, KING, castle_king_from_to[iso]) << CASTLE_RIGHT_CHANGE_SHIFT));
     }
+    castle &= castle - 1;
   }
 }
 
@@ -505,10 +505,10 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
       /* FALLTHROUGH */
 
       case MOVEGEN_FORCING: {
-        SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
+        SQUARE king  = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
+        BITBOARD dcs = discovered_checkers(board);
         int ix = 0;
 
-        /* TODO add checks */
         if (! (state->flags & MOVEGEN_FLAGS_PAWN_FORCING)) {
           add_pawn_captures(board);
           add_pawn_promotions(board);
@@ -519,11 +519,18 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           BITBOARD pawns = board->pawns & COLOUR_BB(board, board->next);
           BITBOARD empty = ~OCCUPANCY_BB(board);
 
-          if ((single_pawn_pushes(pawns, empty, board->next) |
-                double_pawn_pushes(pawns, empty, board->next)) & pawn_push_to) {
+
+          if ((dcs & COLOUR_BB(board, board->next) & board->pawns) |
+              ((single_pawn_pushes(pawns, empty, board->next) |
+                double_pawn_pushes(pawns, empty, board->next)) & pawn_push_to)) {
             state->flags |= MOVEGEN_FLAGS_PAWN_PUSH;
             add_pawn_pushes(board);
           }
+        }
+        /* in case of castle is check add them now, it's 2 moves at most */
+        if (! (state->flags & MOVEGEN_FLAGS_CASTLE)) {
+          state->flags |= MOVEGEN_FLAGS_CASTLE;
+          add_castles(board);
         }
 
         for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
@@ -531,6 +538,16 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           BITBOARD generate = COLOUR_BB(board, board->next ^ 1);
           /* direct checks */
           generate |= normal_attacks(board, piece, king, ~OCCUPANCY_BB(board));
+          /* discovered checks */
+          BITBOARD pdcs = dcs & COLOUR_BB(board, board->next) & ((&board->pawns)[piece - PAWN]);
+          while (pdcs) {
+            BITBOARD iso = pdcs & - pdcs;
+            SQUARE sq = __builtin_ctzll(iso);
+
+            generate |= normal_attacks(board, piece, sq, ~OCCUPANCY_BB(board));
+
+            pdcs &= pdcs - 1;
+          }
           /* already generated */
           generate &= ~state->generated[piece];
 
@@ -584,14 +601,13 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
       }
 
       case MOVEGEN_OTHER: {
+#if DEBUG
         SQUARE king = __builtin_ctzll(board->kings & COLOUR_BB(board, board->next ^ 1));
+#endif
         int ix = 0;
 
         if (! (state->flags & MOVEGEN_FLAGS_PAWN_PUSH)) {
           add_pawn_pushes(board);
-        }
-        if (! (state->flags & MOVEGEN_FLAGS_CASTLE)) {
-          add_castles(board);
         }
         for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
           /* non-captures */
@@ -604,17 +620,12 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 
           if (!IS_SET_IN_64(state->yielded, ix)) {
             assert(! (move->special & (CAPTURED_MOVE_MASK | PROMOTION_MOVE_MASK | EN_PASSANT_CAPTURE_MOVE_MASK)));
-            /* TODO for instance a castling that attacks the king or a pawn push is only found here */
-            /* and thus missed from quiesce now */
-            /* assert(! move_attacks_sq(board, move, king)); */
-            if (move_attacks_sq(board, move, king)) {
-              move->value = 1000;
-            } else {
-              move->value = psqt_value((move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT,
-                  board->next,
-                  (SQUARE)__builtin_ctzll(move->from),
-                  (SQUARE)__builtin_ctzll(move->to)) + 500;
-            }
+            assert(! move_attacks_sq(board, move, king));
+
+            move->value = psqt_value((move->special & PIECE_MOVE_MASK) >> PIECE_MOVE_SHIFT,
+                board->next,
+                (SQUARE)__builtin_ctzll(move->from),
+                (SQUARE)__builtin_ctzll(move->to)) + 500;
           }
           ix++;
         }

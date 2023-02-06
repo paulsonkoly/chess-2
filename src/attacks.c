@@ -374,6 +374,31 @@ BITBOARD block(const BOARD * board, BITBOARD squares, COLOUR colour) {
   return res;
 }
 
+BITBOARD discovered_checkers(const BOARD * board) {
+  BITBOARD king  = board->kings & COLOUR_BB(board, board->next ^ 1);
+  SQUARE king_sq = __builtin_ctzll(king);
+  BITBOARD occ   = OCCUPANCY_BB(board);
+
+  BITBOARD candidates = (bishop_bitboard(king_sq, occ) | rook_bitboard(king_sq, occ)) & COLOUR_BB(board, board->next);
+  BITBOARD result = 0;
+
+  while (candidates) {
+    BITBOARD iso = candidates & - candidates;
+
+    /* remove the candidate */
+    BITBOARD nocc = occ & ~ iso;
+
+    if ((bishop_bitboard(king_sq, nocc) & COLOUR_BB(board, board->next) & (board->bishops | board->queens)) ||
+        (rook_bitboard(king_sq, nocc) & COLOUR_BB(board, board->next) & (board->rooks | board->queens))) {
+      result |= iso;
+    }
+
+    candidates &= candidates - 1;
+  }
+
+  return result;
+}
+
 BITBOARD in_check(const BOARD * board, COLOUR colour) {
   BITBOARD king = board->kings & COLOUR_BB(board, colour);
 

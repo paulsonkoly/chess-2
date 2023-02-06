@@ -513,9 +513,27 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           add_pawn_captures(board);
           add_pawn_promotions(board);
         }
+        /* pawn push checks */
+        if (! (state->flags & MOVEGEN_FLAGS_PAWN_PUSH)) {
+          BITBOARD pawn_push_to = pawn_captures(board->kings & COLOUR_BB(board, board->next ^ 1), board->next ^ 1);
+          BITBOARD pawns = board->pawns & COLOUR_BB(board, board->next);
+          BITBOARD empty = ~OCCUPANCY_BB(board);
+
+          if ((single_pawn_pushes(pawns, empty, board->next) |
+                double_pawn_pushes(pawns, empty, board->next)) & pawn_push_to) {
+            state->flags |= MOVEGEN_FLAGS_PAWN_PUSH;
+            add_pawn_pushes(board);
+          }
+        }
+
         for (PIECE piece = KNIGHT; piece <= KING; ++piece) {
           /* captures */
-          BITBOARD generate = COLOUR_BB(board, board->next ^ 1) & ~state->generated[piece];
+          BITBOARD generate = COLOUR_BB(board, board->next ^ 1);
+          /* direct checks */
+          generate |= normal_attacks(board, piece, king, ~OCCUPANCY_BB(board));
+          /* already generated */
+          generate &= ~state->generated[piece];
+
           add_normal_moves(board, piece, generate);
           state->generated[piece] |= generate;
         }
@@ -526,9 +544,9 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
               move->value = see(board, move) + 10000;
             } else if (move->special & PROMOTION_MOVE_MASK) {
               PIECE promo = (move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT;
-              move->value = piece_values[promo] + 9000;
+              move->value = piece_values[promo] + 9900;
             } else if (move->special & EN_PASSANT_CAPTURE_MOVE_MASK) {
-              move->value = 8000;
+              move->value = 9900;
             } else if (move_attacks_sq(board, move, king)) {
               move->value = 10000;
             } else {
@@ -585,9 +603,10 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
         for (MOVE * move = ml_first(); move != ml_last(); move++) {
 
           if (!IS_SET_IN_64(state->yielded, ix)) {
-            assert(! (move->special & CAPTURED_MOVE_MASK));
+            assert(! (move->special & (CAPTURED_MOVE_MASK | PROMOTION_MOVE_MASK | EN_PASSANT_CAPTURE_MOVE_MASK)));
             /* TODO for instance a castling that attacks the king or a pawn push is only found here */
             /* and thus missed from quiesce now */
+            /* assert(! move_attacks_sq(board, move, king)); */
             if (move_attacks_sq(board, move, king)) {
               move->value = 1000;
             } else {

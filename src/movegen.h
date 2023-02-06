@@ -29,16 +29,23 @@ typedef enum {
 #define MOVEGEN_FLAGS_PAWN_FORCING   4
 #define MOVEGEN_FLAGS_CASTLE         8
 
-/* single per move flags indexed by move index from movelist stored in
- * consecutive 64 bit numbers
- */
 #define MOVEGEN_IX_64BIT_LANES       2
 
 typedef struct __MOVEGEN_STATE__ {
   MOVEGEN_PHASE phase;
   MOVEGEN_TYPE movegen_type; /* TODO this is temporary while the rest of the moves are in 1 phase */
   unsigned flags;
+
+  /* per piece type bits indexed by to square of moves, the move with such
+   * target sq / piece type has already been generated
+   */
   BITBOARD generated[7];
+
+  /* single per move flags indexed by move index from movelist stored in
+   * consecutive 64 bit numbers. Yielded is set when the move has been given to
+   * the caller, not_forcing is set when the move has been generated, but
+   * hasn't been yielded by the forcing phase.
+   */
   uint64_t yielded[MOVEGEN_IX_64BIT_LANES];
   uint64_t not_forcing[MOVEGEN_IX_64BIT_LANES];
 } MOVEGEN_STATE;

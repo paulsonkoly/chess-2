@@ -262,16 +262,16 @@ void add_castles(const BOARD * board) {
 
       BITBOARD check_squares = kb | castle_king_from_to[iso];
 
-      if (is_attacked(board, check_squares, occ, 1 - board->next)) continue;
+      if (! is_attacked(board, check_squares, occ, 1 - board->next)) {
+        MOVE * move = ml_allocate();
 
-      MOVE * move = ml_allocate();
-
-      move->from    = castle_king_from_to[iso] & board->kings;
-      move->to      = castle_king_from_to[iso] & ~board->kings;
-      move->special = ((BITBOARD)KING << PIECE_MOVE_SHIFT)
-        | castle_rook_from_to[iso]
-        | board->en_passant
-        | (((BITBOARD)castle_update(board, KING, castle_king_from_to[iso]) << CASTLE_RIGHT_CHANGE_SHIFT));
+        move->from    = castle_king_from_to[iso] & board->kings;
+        move->to      = castle_king_from_to[iso] & ~board->kings;
+        move->special = ((BITBOARD)KING << PIECE_MOVE_SHIFT)
+          | castle_rook_from_to[iso]
+          | board->en_passant
+          | (((BITBOARD)castle_update(board, KING, castle_king_from_to[iso]) << CASTLE_RIGHT_CHANGE_SHIFT));
+      }
     }
     castle &= castle - 1;
   }

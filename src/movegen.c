@@ -41,7 +41,7 @@ CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
     ((fromto & ((BITBOARD)1 << 56)) >> 53) | ((fromto & ((BITBOARD)1 << 63)) >> 61);
 
   if (piece == KING) {
-    castle |= (SHORT_CASTLE | LONG_CASTLE) << (board->next * 2);
+    castle |= CASTLES_OF(board->next);
   }
 
   return board->castle ^ (board->castle & ~castle);
@@ -253,24 +253,24 @@ void add_castles(const BOARD * board) {
   CASTLE castle = board->castle & CASTLES_OF(board->next);
 
   while (castle) {
-    CASTLE iso = castle & -castle;
+    int ix = __builtin_ctz(castle & -castle);
 
-    BITBOARD rb = BITBOARD_BETWEEN(castle_rook_from_to[iso]);
-    BITBOARD kb = BITBOARD_BETWEEN(castle_king_from_to[iso]);
+    BITBOARD rb = BITBOARD_BETWEEN(castle_rook_from_to[ix]);
+    BITBOARD kb = BITBOARD_BETWEEN(castle_king_from_to[ix]);
 
     if (! ((rb | kb) & occ)) {
 
-      BITBOARD check_squares = kb | castle_king_from_to[iso];
+      BITBOARD check_squares = kb | castle_king_from_to[ix];
 
       if (! is_attacked(board, check_squares, occ, 1 - board->next)) {
         MOVE * move = ml_allocate();
 
-        move->from    = castle_king_from_to[iso] & board->kings;
-        move->to      = castle_king_from_to[iso] & ~board->kings;
+        move->from    = castle_king_from_to[ix] & board->kings;
+        move->to      = castle_king_from_to[ix] & ~board->kings;
         move->special = ((BITBOARD)KING << PIECE_MOVE_SHIFT)
-          | castle_rook_from_to[iso]
+          | castle_rook_from_to[ix]
           | board->en_passant
-          | (((BITBOARD)castle_update(board, KING, castle_king_from_to[iso]) << CASTLE_RIGHT_CHANGE_SHIFT));
+          | (((BITBOARD)castle_update(board, KING, castle_king_from_to[ix]) << CASTLE_RIGHT_CHANGE_SHIFT));
       }
     }
     castle &= castle - 1;

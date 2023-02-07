@@ -143,7 +143,9 @@ void uci(void) {
     switch (cmd->type) {
 
       case UCI:
-        printf("id name chess2 (%s)\n", "#(VERSION)");
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+        printf("id name chess2 (%s)\n", EXPAND_AND_QUOTE(VERSION));
         printf("id author Paul Sonkoly\n");
         printf("uciok\n");
         break;

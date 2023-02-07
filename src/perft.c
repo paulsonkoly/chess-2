@@ -6,7 +6,6 @@
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
-#include "movelist.h"
 
 unsigned long long perft(BOARD * board, int depth, int print) {
   unsigned long long int count = 0;

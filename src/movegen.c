@@ -1,6 +1,8 @@
 #include "movegen.h"
 
 #include <strings.h>
+#include <assert.h>
+#include <stdlib.h>
 
 #include "chess.h"
 #include "see.h"

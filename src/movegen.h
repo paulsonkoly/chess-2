@@ -1,8 +1,11 @@
 #ifndef _MOVEGEN_H_
 #define _MOVEGEN_H_
 
+#include <stdint.h>
+
 #include "board.h"
 #include "chess.h"
+#include "move.h"
 #include "killer.h"
 #include "pv.h"
 

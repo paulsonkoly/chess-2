@@ -266,7 +266,6 @@ int negascout(BOARD* board,
 }
 
 #define MOVES_TO_GO 25
-#include "movegen.h"
 
 int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
   PV * opv; /* old PV */

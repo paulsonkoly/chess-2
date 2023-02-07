@@ -1,7 +1,6 @@
 #include "movelist.h"
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include "chess.h"
 

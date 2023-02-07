@@ -1,5 +1,7 @@
 src = uci.yy.c
 
+iwyu:version.h
+
 include ../makefile.mk
 
 version=$(shell                                             \
@@ -22,8 +24,6 @@ version.h:
 	@  static const char * version = "$(version)";
 	@#endif
 	@EOS
-
-iwyu: version.h
 
 .PHONY: clean
 clean:

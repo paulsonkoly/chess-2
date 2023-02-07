@@ -1,7 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 
+#include "chess.h"
 #include "see.h"
 #include "attacks.h"
 
@@ -82,7 +81,7 @@ int see(BOARD * board, const MOVE * move) {
         }
         if (0UL != (from = attackers[side][BISHOP])) {
           piece = BISHOP;
-          from &= from;
+          from &= -from;
           break;
         }
 
@@ -92,7 +91,7 @@ int see(BOARD * board, const MOVE * move) {
         }
         if (0UL != (from = attackers[side][ROOK])) {
           piece = ROOK;
-          from &= from;
+          from &= -from;
           break;
         }
 
@@ -103,14 +102,14 @@ int see(BOARD * board, const MOVE * move) {
         }
         if (0UL != (from = attackers[side][QUEEN])) {
           piece = QUEEN;
-          from &= from;
+          from &= -from;
           break;
         }
 
       case KING:
         if (0UL != (from = attackers[side][KING])) {
           piece = KING;
-          from &= from;
+          from &= -from;
           break;
         }
 

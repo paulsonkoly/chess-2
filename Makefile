@@ -13,3 +13,8 @@ chess2: $(obj)
 clean:
 	@cd src && make clean
 	rm -f $(obj) chess2
+
+.PHONY: iwyu_recurse
+iwyu: iwyu_recurse
+iwyu_recurse:
+	@cd src && make iwyu

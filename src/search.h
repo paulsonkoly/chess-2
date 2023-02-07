@@ -2,7 +2,6 @@
 #define _SEARCH_H_
 
 #include "board.h"
-#include "move.h"
 #include "killer.h"
 #include "pv.h"
 

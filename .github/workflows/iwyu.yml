@@ -1,0 +1,19 @@
+name: iwyu CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install iwyu
+      run: sudo apt-get install include-what-you-see
+    - name: iwyu
+      run: make iwyu

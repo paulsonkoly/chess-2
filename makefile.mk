@@ -23,3 +23,13 @@ build: $(obj)
 .PHONY: cleandep
 cleandep:
 	rm -f $(dep)
+
+iwyus = $(src:.c=.iwyu)
+
+.PHONY: %.iwyu
+%.iwyu: %.c
+	include-what-you-use -Xiwyu --error=1 $(filter-out -DNDEBUG, $(CFLAGS)) $<
+
+.PHONY: iwyu
+iwyu: $(iwyus)
+

@@ -1,7 +1,7 @@
 #include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 
+#include "chess.h"
 #include "pv.h"
 
 #define DEBUG_PV 1
@@ -11,7 +11,7 @@ typedef struct _PV_ {
   MOVE store[MAX_PLIES];
 } PV;
 
-PV * pv_init() {
+PV * pv_init(void) {
   PV * ret;
   if (NULL != (ret = malloc(sizeof(PV)))) {
     ret->count = 0;

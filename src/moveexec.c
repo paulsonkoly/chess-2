@@ -4,6 +4,7 @@
 #include "chess.h"
 #include "board.h"
 #include "move.h"
+#include "zobrist.h"
 
 #ifndef NDEBUG
 #define EXPECT_EQL(ba, bb)                                                           \

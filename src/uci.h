@@ -59,6 +59,6 @@ typedef struct _UCI_CMD_ {
 
 UCI_CMD * uci_parse(const char * line);
 void uci_free(UCI_CMD * cmd);
-void uci();
+void uci(void);
 
 #endif /* ifndef _UCI_H_ */

@@ -1,6 +1,7 @@
 #ifndef _EVALUATE_H_
 #define _EVALUATE_H_
 
+#include "chess.h"
 #include "board.h"
 
 int evaluate(const BOARD * board);

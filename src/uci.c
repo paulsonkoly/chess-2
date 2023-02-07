@@ -122,7 +122,7 @@ void uci_free(UCI_CMD * cmd) {
   free(cmd);
 }
 
-void uci() {
+void uci(void) {
   BOARD * board;
 
   board = initial_board();

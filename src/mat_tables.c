@@ -213,7 +213,7 @@ static int match_constraints(const char * constraints, const int vars[]);
 static int endgame_factor(int counts[]);
 static int mat_table_idx(int counts[]);
 
-void initialize_mat_tables() {
+void initialize_mat_tables(void) {
   int counts[MAX_PT] = {
     0, 0, 0, 0, 0, 0,  /* white piece counts */
     0, 0, 0, 0, 0, 0 };/* black piece counts */

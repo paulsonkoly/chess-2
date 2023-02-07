@@ -1,14 +1,13 @@
 #ifndef _PV_H_
 #define _PV_H_
 
-#include "chess.h"
 #include "move.h"
 
 /* principal variation */
 typedef struct _PV_ PV;
 
 /* allocate new PV */
-PV * pv_init();
+PV * pv_init(void);
 /* destroy PV */
 void pv_destroy(PV* pv);
 /* reset PV to empty */

@@ -1,7 +1,7 @@
 #include "movegen.h"
 
 #include <strings.h>
-#include <stdlib.h>
+
 #include "chess.h"
 #include "move.h"
 #include "board.h"

@@ -193,7 +193,7 @@ BITBOARD calculate_rook_attack(SQUARE sq, BITBOARD occ) {
   return result;
 }
 
-void initialize_magic() {
+void initialize_magic(void) {
   for (SQUARE sq = 0; sq < 64; sq++) {
     BITBOARD mask  = bishop_masks[sq];
     BITBOARD magic = bishop_magics[sq];
@@ -382,7 +382,7 @@ BITBOARD in_check(const BOARD * board, COLOUR colour) {
 
 BITBOARD in_between_table[64][64];
 
-void initialize_in_between() {
+void initialize_in_between(void) {
   SQUARE file_a, rank_a, file_b, rank_b;
 
   for (file_a = 0; file_a < 8; ++file_a) {

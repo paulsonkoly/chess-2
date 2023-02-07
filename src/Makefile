@@ -18,7 +18,7 @@ version.h:
 	@echo Version: $(version)
 	@cat << EOS > version.h
 	@#ifndef __VERSION_H__
-	@#define __VERSION_h__
+	@#define __VERSION_H__
 	@  static const char * version = "$(version)";
 	@#endif
 	@EOS

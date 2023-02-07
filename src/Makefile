@@ -1,6 +1,6 @@
 src = uci.yy.c
 
-iwyu:version.h
+uci.iwyu: version.h
 
 include ../makefile.mk
 

@@ -1,7 +1,5 @@
 src = uci.yy.c
 
-uci.iwyu: version.h
-
 include ../makefile.mk
 
 version=$(shell                                             \
@@ -12,6 +10,7 @@ version=$(shell                                             \
   fi                                                        \
 )
 
+uci.iwyu: version.h
 uci.o: version.h
 
 .ONESHELL: version.h

@@ -1,28 +1,52 @@
+# no suffix rules
 .SUFFIXES:
 
-src += $(wildcard *.c)
+src = $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d)  # one dependency file for each source
-CFLAGS=-Wall -Werror -pedantic -O2 -g -DNDEBUG -I$(BUILDROOT)/src
+CFLAGS+=-Wall -Werror -pedantic -O2 -g -DNDEBUG
 
-build: $(obj)
+##
+# build
+##
+build: buildpreobj $(obj) buildpostobj
 
-%.o:
-	$(CC) -c $(CFLAGS) $(@:.o=.c) -o $@
+buildpreobj: $(dep)
 
--include $(dep)   # include all dep files in the makefile
+buildpostobj:
+
 
 # rule to generate a dep file by using the C preprocessor
 # (see man cpp for details on the -MM and -MT options)
 %.d: %.c
 	@$(CC) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
 
+-include $(dep)   # include all dep files in the makefile
+
+%.o: %.d
+	$(CC) -c $(CFLAGS) $(@:.o=.c) -o $@
+
 %.yy.c: %.fl
 	flex -o $@ $?
 
-.PHONY: cleandep
+##
+# Cleaning
+##
+
+.PHONY: clean
+clean: cleandep cleanobj cleanextras
+
 cleandep:
 	rm -f $(dep)
+
+cleanobj:
+	rm -f $(obj)
+
+cleanextras:
+
+##
+# IWYU
+##
 
 iwyus = $(src:.c=.iwyu)
 
@@ -36,5 +60,8 @@ iwyus = $(src:.c=.iwyu)
 	fi
 
 .PHONY: iwyu
-iwyu: $(iwyus)
+iwyu: $(iwyus) iwyuextras
+
+iwyuextras:
+
 

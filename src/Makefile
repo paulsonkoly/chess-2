@@ -1,7 +1,3 @@
-src = uci.yy.c
-
-include ../makefile.mk
-
 version=$(shell                                             \
   if [ "`git rev-parse --abbrev-ref HEAD`" = main ]; then   \
     git rev-parse HEAD;                                     \
@@ -10,20 +6,12 @@ version=$(shell                                             \
   fi                                                        \
 )
 
-uci.iwyu: version.h
-uci.o: version.h
+CFLAGS=-DVERSION="$(version)"
 
-.ONESHELL: version.h
-.PHONY: version.h
-version.h:
-	@echo Version: $(version)
-	@cat << EOS > version.h
-	@#ifndef __VERSION_H__
-	@#define __VERSION_H__
-	@  static const char * version = "$(version)";
-	@#endif
-	@EOS
+include ../makefile.mk
 
-.PHONY: clean
-clean:
-	rm -f $(obj) uci.yy.c version.h
+buildpreobj: uci.yy.o
+
+cleanextras:
+	rm -f uci.yy.c uci.yy.o
+

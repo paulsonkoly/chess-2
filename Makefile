@@ -1,20 +1,19 @@
-BUILDROOT=.
-
-build: chess2
+CFLAGS=-I./src
 
 include makefile.mk
 
-.PHONY: chess2
+buildpreobj:
+	cd src && make && cd ..
+
+buildpostobj: chess2
+
+cleanextras:
+	cd src && make clean && cd ..
+	cd test && make clean && cd ..
+	rm -f chess2
+
+iwyuextras:
+	cd src && make iwyu && cd ..
+
 chess2: $(obj)
-	@cd src && make
 	$(CC) $(CFLAGS) -o $@ $^ src/*.o
-
-.PHONY: clean
-clean:
-	@cd src && make clean
-	rm -f $(obj) chess2
-
-.PHONY: iwyu_recurse
-iwyu: iwyu_recurse
-iwyu_recurse:
-	@cd src && make iwyu

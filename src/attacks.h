@@ -12,8 +12,8 @@ extern BITBOARD bishop_attacks[64][512];
 extern BITBOARD rook_attacks[64][4096];
 extern BITBOARD in_between_table[64][64];
 
-void initialize_magic();
-void initialize_in_between();
+void initialize_magic(void);
+void initialize_in_between(void);
 
 BITBOARD bishop_bitboard(SQUARE sq, BITBOARD occ);
 BITBOARD rook_bitboard(SQUARE sq, BITBOARD occ);

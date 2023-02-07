@@ -10,6 +10,7 @@
 
 #include "attacks.h"
 #include "evaluate.h"
+#include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
 #include "movelist.h"
@@ -20,7 +21,7 @@ static struct timespec start;
 unsigned long long nodes;
 
 #define STDIN 0
-int check_for_input() {
+int check_for_input(void) {
   struct timespec timeout = { 0, 0 };
   fd_set fds;
 
@@ -48,7 +49,7 @@ int check_for_input() {
   return 0;
 }
 
-unsigned long long int time_delta() {
+unsigned long long int time_delta(void) {
   struct timespec end;
   unsigned long long int delta;
 

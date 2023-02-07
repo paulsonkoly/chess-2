@@ -2,7 +2,6 @@
 #define _CHESS_H_
 
 #include <stdint.h>
-#include <strings.h>
 
 #ifndef NDEBUG
 #define DEBUG_ENABLE (debug = 1)
@@ -66,7 +65,7 @@ typedef uint64_t BITBOARD;
 #define BITBOARD_SCAN(bb) \
   for (BITBOARD __## bb ##__bb__ = bb; __## bb ##__bb__  > 0; __## bb ##__bb__ &= __## bb ##__bb__ - 1)
 
-#define BITBOARD_SCAN_ITER(bb) (ffsl(__## bb ##__bb__) - 1)
+#define BITBOARD_SCAN_ITER(bb) (__builtin_ctzll(__## bb ##__bb__))
 
 #define NO_CASTLE    ((CASTLE)0)
 #define SHORT_CASTLE ((CASTLE)1)

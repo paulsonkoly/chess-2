@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <strings.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -8,7 +9,7 @@
 #include "moveexec.h"
 #include "zobrist.h"
 
-BOARD * initial_board() {
+BOARD * initial_board(void) {
   BOARD * board;
 
   if (NULL == (board = malloc(sizeof(BOARD)))) {

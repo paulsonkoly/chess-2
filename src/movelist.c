@@ -4,7 +4,6 @@
 #include <limits.h>
 
 #include "attacks.h"
-#include "moveexec.h"
 #include "chess.h"
 #include "see.h"
 #include "evaluate.h"
@@ -33,7 +32,7 @@ static MOVE * alloc;
 /* first move to play within ply */
 static MOVE * first[MAX_PLIES];
 
-void ml_open_frame() {
+void ml_open_frame(void) {
   ply++;
   if (ply == 0) {
     alloc = store;
@@ -42,12 +41,12 @@ void ml_open_frame() {
   first[ply] = NULL;
 }
 
-void ml_close_frame() {
+void ml_close_frame(void) {
   alloc = frame[ply];
   ply--;
 }
 
-MOVE * ml_allocate() {
+MOVE * ml_allocate(void) {
   MOVE * ret = alloc;
   alloc->next = first[ply];
   first[ply] = alloc;
@@ -57,7 +56,7 @@ MOVE * ml_allocate() {
 
 static void heuristic_weights(BOARD * board, const MOVE * pv, int depth, const KILLER * killer);
 static void forcing_weights(BOARD * board);
-static void sort();
+static void sort(void);
 
 MOVE * ml_sort(BOARD * board, const MOVE * pv, int depth, const KILLER * killer) {
   heuristic_weights(board, pv, depth, killer);
@@ -65,7 +64,7 @@ MOVE * ml_sort(BOARD * board, const MOVE * pv, int depth, const KILLER * killer)
   return first[ply];
 }
 
-MOVE * ml_first() {
+MOVE * ml_first(void) {
   return first[ply];
 }
 
@@ -111,7 +110,7 @@ static void forcing_weights(BOARD * board) {
   }
 }
 
-void sort() {
+void sort(void) {
   MOVEVAL min = 0;
   first[ply] = NULL;
 

@@ -51,7 +51,7 @@ unsigned long long nodes_per_gamephase[3];
 
 static void bench_run(BOARD * b);
 
-void bench() {
+void bench(void) {
   int i;
   const char * labels[] = { "openings", "middle games", "end games" };
   BOARD * boards[30];

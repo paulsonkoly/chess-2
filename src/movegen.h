@@ -2,7 +2,6 @@
 #define _MOVEGEN_H_
 
 #include "board.h"
-#include "move.h"
 #include "chess.h"
 
 #define ALL_MOVES 0

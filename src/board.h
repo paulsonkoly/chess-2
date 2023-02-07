@@ -36,7 +36,7 @@ typedef struct _BOARD_ {
 #define OCCUPANCY_BB(board)      (board->by_colour.whitepieces | board->by_colour.blackpieces)
 
 
-BOARD * initial_board();
+BOARD * initial_board(void);
 BOARD * parse_fen(const char * fen);
 void play_uci_moves(BOARD * board, const char * moves);
 PIECE piece_at_board(const BOARD* board, BITBOARD bb);

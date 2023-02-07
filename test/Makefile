@@ -1,19 +1,15 @@
-BUILDROOT=..
-CFLAGS+=$(shell pkg-config --cflags cmocka)
+CFLAGS=$(shell pkg-config --cflags cmocka) -I../src/
 LDFLAGS=$(shell pkg-config --libs cmocka)
-
-build: engineobjs test
 
 include ../makefile.mk
 
-test: $(obj) .engineobjs
-	$(CC) -o $@ $^ $(BUILDROOT)/src/*.o $(LDFLAGS)
+buildpreobj:
+	@cd ../src && make && cd -
 
-.PHONY: engineobjs
-engineobjs:
-	@cd $(BUILDROOT)/src && make
-	touch .engineobjs
+buildpostobj: test
 
-.PHONY: clean
-clean:
-	rm -f $(obj) .engineobjs test
+test: $(obj)
+	$(CC) -o $@ $^ ../src/*.o $(LDFLAGS)
+
+cleanextras:
+	rm -f test

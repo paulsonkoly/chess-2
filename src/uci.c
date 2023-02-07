@@ -9,7 +9,6 @@
 #include "evaluate.h"
 #include "mat_tables.h"
 #include "perft.h"
-#include "version.h"
 
 UCI_CMD * uci_parse(const char * line) {
   UCI_CMD * cmd;
@@ -122,7 +121,7 @@ void uci_free(UCI_CMD * cmd) {
   free(cmd);
 }
 
-void uci() {
+void uci(void) {
   BOARD * board;
 
   board = initial_board();
@@ -144,7 +143,7 @@ void uci() {
     switch (cmd->type) {
 
       case UCI:
-        printf("id name chess2 (%s)\n", version);
+        printf("id name chess2 (%s)\n", "#(VERSION)");
         printf("id author Paul Sonkoly\n");
         printf("uciok\n");
         break;

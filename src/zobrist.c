@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <strings.h>
 
 #include "zobrist.h"
 
@@ -12,7 +13,7 @@ static HASH rand_hash_pieces[2][7][64]; /* colour / piece type / square */
   (((HASH)(rand() & 0xffff) << 48) | ((HASH)(rand() & 0xffff) << 32) | \
    ((HASH)(rand() & 0xffff) << 16) | ((HASH)(rand() & 0xffff)))
 
-void initialize_hash() {
+void initialize_hash(void) {
   int i, j, k;
 
   for (i = 0; i < 2;  ++i) rand_hash_colour[i] = HASH_RAND_VAL;

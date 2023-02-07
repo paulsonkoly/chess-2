@@ -9,7 +9,7 @@ typedef uint64_t HASH;
 
 extern HASH rand_hash_colour_flip;
 
-void initialize_hash();
+void initialize_hash(void);
 
 HASH hash_colour(COLOUR colour);
 HASH hash_castle(CASTLE castle);

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "chess.h"
 #include "board.h"
 
 typedef struct __MAT_TABLE_ENTRY__ {
@@ -24,7 +25,7 @@ typedef struct __MAT_TABLE_ENTRY__ {
 
 extern MAT_TABLE_ENTRY * mat_table;
 
-void initialize_mat_tables();
+void initialize_mat_tables(void);
 const MAT_TABLE_ENTRY * get_mat_table_entry(const BOARD * board);
 
 #if DEBUG

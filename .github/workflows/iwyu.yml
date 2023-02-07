@@ -14,6 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install iwyu
-      run: sudo apt-get install include-what-you-see
+      run: sudo apt-get install iwyu
     - name: iwyu
       run: make iwyu

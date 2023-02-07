@@ -5,7 +5,7 @@ uci.iwyu: version.h
 include ../makefile.mk
 
 version=$(shell                                             \
-  if [ "`git rev-parse --abbrev-ref HEAD`" == main ]; then  \
+  if [ "`git rev-parse --abbrev-ref HEAD`" = main ]; then   \
     git rev-parse HEAD;                                     \
   else                                                      \
     git rev-parse --abbrev-ref HEAD;                        \

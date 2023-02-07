@@ -23,6 +23,8 @@ version.h:
 	@#endif
 	@EOS
 
+iwyu: version.h
+
 .PHONY: clean
 clean:
 	rm -f $(obj) uci.yy.c version.h

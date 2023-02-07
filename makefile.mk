@@ -26,9 +26,14 @@ cleandep:
 
 iwyus = $(src:.c=.iwyu)
 
+# unfortunately github doesn't have iwyu 0.19 which can control exit status
+.ONESHELL: %.iwyu
 .PHONY: %.iwyu
 %.iwyu: %.c
-	include-what-you-use -Xiwyu --error=1 $(filter-out -DNDEBUG, $(CFLAGS)) $<
+	if include-what-you-use -Wall -Werror -pedantic -O2 -g -I./src $< 2>&1 | grep -E 'should (add|remove)' > /dev/null; then
+	include-what-you-use -Wall -Werror -pedantic -O2 -g -I./src $< 2>&1
+	exit 1
+	fi
 
 .PHONY: iwyu
 iwyu: $(iwyus)

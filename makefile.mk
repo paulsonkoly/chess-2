@@ -4,7 +4,7 @@
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d)  # one dependency file for each source
-CFLAGS+=-Wall -Werror -pedantic -O2 -g -DNDEBUG
+CFLAGS+=-Wall -Werror -pedantic -O2 -g -march=native
 
 ##
 # build

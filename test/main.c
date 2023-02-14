@@ -72,14 +72,17 @@ static void forcing_moves_count_test(void **state)
     count ++;
   }
 
-  assert_int_equal(8, count);
+  assert_int_equal(14, count);
 }
 
 static void forcing_moves_test(void **state) {
   BOARD * b = parse_fen("2r3k1/1P2P3/8/8/4p3/3B4/8/6K1 w - - 0 1");
   MOVE * ptr;
   const char * mvs[] = {
-    "d3e4", "e7e8q", "e7e8r", "b7c8n", "b7c8b", "b7c8r", "b7c8q", "d3c4"
+    "d3e4", "d3c4",
+    "e7e8q", "e7e8r", "e7e8b", "e7e8n",
+    "b7c8q", "b7c8r", "b7c8b", "b7c8n",
+    "b7b8q", "b7b8r", "b7b8b", "b7b8n",
   };
   int first = 1;
 
@@ -90,7 +93,7 @@ static void forcing_moves_test(void **state) {
     first = 0;
     print_move_buffer(ptr, buffer);
 
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 14; ++i) {
       if (0 == strcmp(mvs[i], buffer)) {
         match = 1;
         break;

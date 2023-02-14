@@ -440,7 +440,7 @@ static MOVEGEN_STATE movegen_states[MAX_PLIES];
  * +-v-------+   | |    For forcing and other we have to generate all remaining moves
  * | KILLER1 <---+-+    for the phase because otherwise we couldn't guarantee right move
  * +-+-------+   | |    order.
- *   |           | |    Moves already yielded are marked by MOVE_VALUE_YIELDED flag.
+ *   |           | |
  * +-v-------+   | |
  * | KILLER2 |   | |
  * +-+-------+   | |

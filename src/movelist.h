@@ -3,14 +3,14 @@
 
 #include "move.h"
 
-/* very simple move store, with no fragmentation. We support allocating plys
- * and moves within plys. Active ply is the last one opened, and stays active
+/* very simple move store, with no fragmentation. We support allocating plies
+ * and moves within plies. Active ply is the last one opened, and stays active
  * until closed. Once a ply is closed its moves are freed. ml_first() points to
  * the first ml_last() points to the last allocated move in active ply.
  */
 
 /* we allow 2k moves for 64 plies it allows for 32 moves per ply on average.
- * However we don't allocate all moves for all plys and we only wish to be able
+ * However we don't allocate all moves for all plies and we only wish to be able
  * to go 64 (MAX_PLIES) plies
  */
 #define MAX_MOVES 2048

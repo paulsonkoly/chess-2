@@ -7,7 +7,7 @@
 #include "movegen.h"
 #include "moveexec.h"
 
-unsigned long long perft(BOARD * board, int depth, int print) {
+unsigned long long perft(BOARD * board, int ply, int depth, int print) {
   unsigned long long int count = 0;
   int first = 1;
   MOVE * move;
@@ -16,8 +16,9 @@ unsigned long long perft(BOARD * board, int depth, int print) {
     return 1;
   }
 
-  while ((move = moves(board, 0, NULL, NULL, MOVEGEN_NORMAL, first))) {
+  while ((move = moves(board, ply, NULL, NULL, MOVEGEN_NORMAL, first))) {
     unsigned long long int current;
+    first = 0;
 
     execute_move(board, move);
 
@@ -27,11 +28,9 @@ unsigned long long perft(BOARD * board, int depth, int print) {
       continue;
     }
 
-    first = 0;
-
     if (print) print_fen(board);
 
-    current = perft(board, depth - 1, 0);
+    current = perft(board, ply + 1, depth - 1, 0);
 
     undo_move(board, move);
 

@@ -456,7 +456,7 @@ static MOVEGEN_STATE movegen_states[MAX_PLIES];
  */
 MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_TYPE type, int first) {
   MOVEGEN_STATE * state = &movegen_states[ply];
-  MOVEGEN_PHASE next = state->phase;
+  MOVEGEN_PHASE next = first ? MOVEGEN_START : state->phase;
 
   while (1) {
     switch (next) {

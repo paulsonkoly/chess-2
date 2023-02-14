@@ -106,6 +106,7 @@ int quiesce(BOARD * board, int ply, int alpha, int beta) {
 
   while ((move = moves(board, ply, NULL, NULL, MOVEGEN_FORCING_ONLY, first))) {
     int score;
+    first = 0;
 
     execute_move(board, move);
 
@@ -113,8 +114,6 @@ int quiesce(BOARD * board, int ply, int alpha, int beta) {
       undo_move(board, move);
       continue;
     }
-
-    first = 0;
 
     score = -quiesce(board, ply + 1, -beta, -alpha);
 
@@ -170,6 +169,7 @@ int negascout(BOARD* board,
     KILLER * killer) {
   PV * lpv;
   int legal_found = 0;
+  int first = 1;
   int score;
   int beta2;
   unsigned long long delta;
@@ -212,7 +212,8 @@ int negascout(BOARD* board,
 
   count = 1;
 
-  while ((move = moves(board, ply, opv, killer, MOVEGEN_NORMAL, ! legal_found))) {
+  while ((move = moves(board, ply, opv, killer, MOVEGEN_NORMAL, first))) {
+    first = 0;
 
     execute_move(board, move);
 

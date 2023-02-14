@@ -84,9 +84,9 @@ int repetition(const BOARD * board) {
   return 0;
 }
 
-int quiesce(BOARD * board, int alpha, int beta) {
+int quiesce(BOARD * board, int ply, int alpha, int beta) {
   MOVE * move;
-  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_QUIESCE, 0 };
+  int first = 1;
   int stand_pat;
 
   nodes++;
@@ -104,7 +104,7 @@ int quiesce(BOARD * board, int alpha, int beta) {
   if (alpha < stand_pat)
     alpha = stand_pat;
 
-  while ((move = moves(board, 0, NULL, NULL, &mg_state))) {
+  while ((move = moves(board, ply, NULL, NULL, MOVEGEN_FORCING_ONLY, first))) {
     int score;
 
     execute_move(board, move);
@@ -114,12 +114,14 @@ int quiesce(BOARD * board, int alpha, int beta) {
       continue;
     }
 
-    score = -quiesce(board, -beta, -alpha);
+    first = 0;
+
+    score = -quiesce(board, ply + 1, -beta, -alpha);
 
     undo_move(board, move);
 
     if (score >= beta) {
-      moves_done(&mg_state);
+      moves_done(ply);
       return beta;
     }
 
@@ -173,7 +175,6 @@ int negascout(BOARD* board,
   unsigned long long delta;
   int count;
   MOVE * move;
-  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_SORT, 0 };
 
   assert(0 <= reduced_depth && reduced_depth <= depth);
 
@@ -198,7 +199,7 @@ int negascout(BOARD* board,
   }
 
   if (reduced_depth == 0) {
-    return quiesce(board, alpha, beta);
+    return quiesce(board, ply + 1, alpha, beta);
   }
 
   if (repetition(board)) {
@@ -211,7 +212,7 @@ int negascout(BOARD* board,
 
   count = 1;
 
-  while ((move = moves(board, ply, opv, killer, &mg_state))) {
+  while ((move = moves(board, ply, opv, killer, MOVEGEN_NORMAL, ! legal_found))) {
 
     execute_move(board, move);
 
@@ -243,7 +244,7 @@ int negascout(BOARD* board,
 
       pv_destroy(lpv);
 
-      moves_done(&mg_state);
+      moves_done(ply);
 
       return alpha;
     }
@@ -358,12 +359,6 @@ int iterative_deepening(BOARD * board, const SEARCH_LIMIT * search_limit) {
 
     pv_swap(&opv, &npv);
   }
-
-#if DEBUG
-  printf("info movegen phase counts %lld %lld %lld %lld %lld %lld %lld %lld\n",
-      phase_counts[0], phase_counts[1], phase_counts[2], phase_counts[3],
-      phase_counts[4], phase_counts[5], phase_counts[6], phase_counts[7]);
-#endif
 
   if (bestmove) {
     printf("bestmove ");

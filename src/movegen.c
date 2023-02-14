@@ -12,6 +12,43 @@
 #include "movelist.h"
 #include "attacks.h"
 
+typedef enum {
+  MOVEGEN_START = 0,
+  MOVEGEN_PV,
+  MOVEGEN_KILLER1,
+  MOVEGEN_KILLER2,
+  MOVEGEN_FORCING,
+  MOVEGEN_FORCING_YIELD,
+  MOVEGEN_OTHER,
+  MOVEGEN_OTHER_YIELD,
+} MOVEGEN_PHASE;
+
+#define MOVEGEN_FLAGS_FRAME_OPEN     1
+#define MOVEGEN_FLAGS_PAWN_PUSH      2
+#define MOVEGEN_FLAGS_PAWN_FORCING   4
+#define MOVEGEN_FLAGS_CASTLE         8
+
+#define MOVEGEN_IX_64BIT_LANES       2
+
+typedef struct __MOVEGEN_STATE__ {
+  MOVEGEN_PHASE phase;
+  unsigned flags;
+
+  /* per piece type bits indexed by to square of moves, the move with such
+   * target sq / piece type has already been generated
+   */
+  BITBOARD generated[7];
+
+  /* single per move flags indexed by move index from movelist stored in
+   * consecutive 64 bit numbers. Yielded is set when the move has been given to
+   * the caller, not_forcing is set when the move has been generated, but
+   * hasn't been yielded by the forcing phase.
+   */
+  uint64_t yielded[MOVEGEN_IX_64BIT_LANES];
+  uint64_t not_forcing[MOVEGEN_IX_64BIT_LANES];
+} MOVEGEN_STATE;
+
+
 static BITBOARD normal_attacks(const BOARD * board, PIECE piece, SQUARE sq, BITBOARD allowed_targets) {
   BITBOARD occ = OCCUPANCY_BB(board);
 
@@ -279,10 +316,6 @@ void add_castles(const BOARD * board) {
   }
 }
 
-#if DEBUG
-unsigned long long phase_counts[8] = { 0 };
-#endif
-
 #define IS_SET_IN_64(store, ix) ((store[(ix) >> 6]) & (1ULL << ((ix) & 63)))
 #define SET_IN_64(store, ix) ((store[(ix) >> 6]) |= (1ULL << ((ix) & 63)))
 
@@ -392,24 +425,9 @@ static MOVE * yield_max_weight(uint64_t enabled[MOVEGEN_IX_64BIT_LANES], MOVEGEN
   return max_move;
 }
 
-/* Semi-lazy phase based move generator
- *
- * Yields all pseudo-legal moves to the caller one move at a time and once
- * there is no more moves it yields NULL.
- *
- * Generates pseudo-legal moves in a given position in phases. Phases are mainly
- * defined by the heuristic ordering of the moves where the order is roughly
- * defined as PV > Killer moves > forcing moves > other moves.
- * Forcing moves are defined as captures and checks.
- * The generator tries to
- *  (1) return as early as possible before generating less valued moves
- *  allowing to omit generation of such moves in case of a beta cut
- *  (2) avoid multiple generation of moves
- *  (3) avoid yielding the same move multiple times
- *  (4) return moves in heuristic order within a single phase, thus see (static
- *  exchange evaluation) heuristics and psqt (piece-square table) heuristics
- *  are maintained for forcing move / other move generation.
- *
+static MOVEGEN_STATE movegen_states[MAX_PLIES];
+
+/*
  * FSM
  * +-------+
  * | START +-------+    Perft and quiesce can skip PV and Killer moves. Negascout can
@@ -435,7 +453,8 @@ static MOVE * yield_max_weight(uint64_t enabled[MOVEGEN_IX_64BIT_LANES], MOVEGEN
  * | OTHER |
  * +-------+
  */
-MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_STATE * state) {
+MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_TYPE type, int first) {
+  MOVEGEN_STATE * state = &movegen_states[ply];
   MOVEGEN_PHASE next = state->phase;
 
   while (1) {
@@ -591,7 +610,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
           state->phase = next;
           return result;
         } else {
-          if (state->movegen_type == MOVEGEN_QUIESCE) {
+          if (type == MOVEGEN_FORCING_ONLY) {
             ml_close_frame();
             return NULL;
           } else {
@@ -651,11 +670,9 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
   }
 }
 
-void moves_done(const MOVEGEN_STATE * mg_state) {
-#if DEBUG
-  phase_counts[mg_state->phase]++;
-#endif
-  if (mg_state->flags & MOVEGEN_FLAGS_FRAME_OPEN) {
+void moves_done(int ply) {
+  MOVEGEN_STATE * state = & movegen_states[ply];
+  if (state->flags & MOVEGEN_FLAGS_FRAME_OPEN) {
     ml_close_frame();
   }
 }

@@ -9,56 +9,36 @@
 #include "killer.h"
 #include "pv.h"
 
+/* what moves to generate */
 typedef enum {
-  MOVEGEN_START = 0,
-  MOVEGEN_PV,
-  MOVEGEN_KILLER1,
-  MOVEGEN_KILLER2,
-  MOVEGEN_FORCING,
-  MOVEGEN_FORCING_YIELD,
-  MOVEGEN_OTHER,
-  MOVEGEN_OTHER_YIELD,
-} MOVEGEN_PHASE;
-
-/* TODO this is temporary while the rest of the moves are in 1 phase */
-typedef enum {
-  MOVEGEN_PERFT,
-  MOVEGEN_SORT,
-  MOVEGEN_QUIESCE
+  MOVEGEN_NORMAL,        /* all moves */
+  MOVEGEN_FORCING_ONLY   /* checks and captures only */
 } MOVEGEN_TYPE;
 
-#define MOVEGEN_FLAGS_FRAME_OPEN     1
-#define MOVEGEN_FLAGS_PAWN_PUSH      2
-#define MOVEGEN_FLAGS_PAWN_FORCING   4
-#define MOVEGEN_FLAGS_CASTLE         8
-
-#define MOVEGEN_IX_64BIT_LANES       2
-
-typedef struct __MOVEGEN_STATE__ {
-  MOVEGEN_PHASE phase;
-  MOVEGEN_TYPE movegen_type; /* TODO this is temporary while the rest of the moves are in 1 phase */
-  unsigned flags;
-
-  /* per piece type bits indexed by to square of moves, the move with such
-   * target sq / piece type has already been generated
-   */
-  BITBOARD generated[7];
-
-  /* single per move flags indexed by move index from movelist stored in
-   * consecutive 64 bit numbers. Yielded is set when the move has been given to
-   * the caller, not_forcing is set when the move has been generated, but
-   * hasn't been yielded by the forcing phase.
-   */
-  uint64_t yielded[MOVEGEN_IX_64BIT_LANES];
-  uint64_t not_forcing[MOVEGEN_IX_64BIT_LANES];
-} MOVEGEN_STATE;
-
-#if DEBUG
-extern unsigned long long phase_counts[8];
-#endif
-
-MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_STATE * state);
-void moves_done(const MOVEGEN_STATE * state);
+/* Semi-lazy phase based move generator
+ *
+ * Yields all pseudo-legal moves to the caller one move at a time and once
+ * there is no more moves it yields NULL.
+ *
+ * Generates pseudo-legal moves in a given position in phases. Phases are mainly
+ * defined by the heuristic ordering of the moves where the order is roughly
+ * defined as PV > Killer moves > forcing moves > other moves.
+ * Forcing moves are defined as captures and checks.
+ * The generator tries to
+ *  (1) return as early as possible before generating less valued moves
+ *  allowing to omit generation of such moves in case of a beta cut
+ *  (2) avoid multiple generation of moves
+ *  (3) avoid yielding the same move multiple times
+ *  (4) return moves in heuristic order within a single phase, thus see (static
+ *  exchange evaluation) heuristics and psqt (piece-square table) heuristics
+ *  are maintained for forcing move / other move generation.
+ *
+ *  first should be set on the first call from a position then it shouldn't be
+ *  set on subsequent calls
+ */
+MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer, MOVEGEN_TYPE type, int first);
+/* call if a search returns early - before moves() returning NULL */
+void moves_done(int ply);
 
 /* TODO move these */
 CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto);

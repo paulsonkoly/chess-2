@@ -9,14 +9,14 @@
 
 unsigned long long perft(BOARD * board, int depth, int print) {
   unsigned long long int count = 0;
-  MOVEGEN_STATE mg_state = { MOVEGEN_START, MOVEGEN_PERFT, 0 };
+  int first = 1;
   MOVE * move;
 
   if (depth == 0) {
     return 1;
   }
 
-  while ((move = moves(board, 0, NULL, NULL, &mg_state))) {
+  while ((move = moves(board, 0, NULL, NULL, MOVEGEN_NORMAL, first))) {
     unsigned long long int current;
 
     execute_move(board, move);
@@ -26,6 +26,8 @@ unsigned long long perft(BOARD * board, int depth, int print) {
 
       continue;
     }
+
+    first = 0;
 
     if (print) print_fen(board);
 

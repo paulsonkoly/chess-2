@@ -3,6 +3,7 @@
 #include <strings.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "chess.h"
 #include "see.h"

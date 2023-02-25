@@ -8,7 +8,7 @@
  * so we have a better chance of getting the order right
  * thus beta cutting more
  **/
-static const int piece_values_mod[] = {NO_PIECE_V, PAWN_V, KNIGHT_V, BISHOP_V + 40, ROOK_V, QUEEN_V, KING_V};
+static const int piece_values_mod[] = {0, 100, 300, 340, 500, 900, 10000};
 
 int see(const BOARD * board, const MOVE * move) {
   BITBOARD from = move->from;

@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "board.h"
+#include "quiesce.h"
 #include "evaluate.h"
 #include "mat_tables.h"
 #include "tuned_values.h"
@@ -28,20 +30,90 @@ TUNED_VALUES tuned_values = {
   0,    /* king_shield_3    */
 };
 
-int main()
+typedef enum {
+  R_WHITE_WON = 0,
+  R_DRAWN = 1,
+  R_BLACK_WON = 2
+} RESULT;
+
+static RESULT get_result(char * buffer) {
+  int spaces = 0;
+
+  /* go to 5th column */
+  while (* buffer) {
+    if (spaces == 4) break;
+    if (*buffer == ' ') spaces++;
+    buffer++;
+  }
+
+  if (strncmp(buffer, "1-0", 3) == 0) {
+    return R_WHITE_WON;
+  } else if (strncmp(buffer, "0-1", 3) == 0) {
+    return R_BLACK_WON;
+  } else if (strncmp(buffer, "1/2-1/2", 7) == 0) {
+    return R_DRAWN;
+  } else {
+    printf("'%s' was invalid, no result string\n", buffer);
+    abort();
+  }
+
+  return 0;
+}
+
+static RESULT get_side_to_move(char * buffer) {
+  int spaces = 0;
+
+  /* go to 5th column */
+  while (* buffer) {
+    if (spaces == 1) break;
+    if (*buffer == ' ') spaces++;
+    buffer++;
+  }
+
+  if (strncmp(buffer, "w", 1) == 0) {
+    return WHITE;
+  } else if (strncmp(buffer, "b", 1) == 0) {
+    return BLACK;
+  } else {
+    printf("'%s' was invalid, no side to move\n", buffer);
+    abort();
+  }
+
+  return 0;
+}
+
+unsigned long long nodes;
+
+int main(int argc, const char * argv[])
 {
-  BOARD * board;
-  int score;
+  FILE * epd;
+  char buffer[1024];
 
   initialize_mat_tables();
 
-  printf("tuning...\n");
+  if (argc != 2 || NULL == (epd = fopen(argv[1], "r"))) {
+    printf("Usage: %s epd_file\n", argv[0]);
+    return -1;
+  }
 
-  board = parse_fen("r6r/ppp1kppp/3p4/Q2Bn1q1/7N/2P4b/P4PPP/RN3RK1 b - - 0 15");
-  score = evaluate(board);
+  while (NULL != fgets(buffer, 1024, epd)) {
+    BOARD * board;
+    int score;
+    RESULT result;
+    COLOUR stm;
 
-  printf("score: %d\n", score);
+    board = parse_fen(buffer);
+    score = quiesce(board, 0, -10000, 10000);
+    stm = get_side_to_move(buffer);
+    if (stm == BLACK) {
+      score *= -1;
+    }
+    result = get_result(buffer);
 
+    printf("score: %d\t\tresult: %d\n", score, result);
+  }
+
+  fclose(epd);
   free(mat_table);
 
   return 0;

@@ -46,6 +46,7 @@ void print_bitboard(BITBOARD bb) {
 }
 
 int stopped = 0;
+int nodes;
 
 int main(int argc, char *argv[])
 {

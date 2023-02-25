@@ -47,5 +47,6 @@ HASH calculate_hash(const BOARD* board);
 CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto);
 extern const BITBOARD castle_rook_from_to[4];
 extern const BITBOARD castle_king_from_to[4];
+int repetition(const BOARD * board);
 
 #endif /* ifndef _BOARD_H_ */

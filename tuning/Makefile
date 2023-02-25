@@ -13,7 +13,8 @@ evaluate.o: ../src/evaluate.c
 
 buildpostobj: tuning
 
-srcobjs=../src/board.o ../src/mat_tables.o ../src/pawns.o ../src/moveexec.o ../src/zobrist.o ../src/attacks.o
+srcobjs=../src/board.o ../src/mat_tables.o ../src/pawns.o ../src/moveexec.o ../src/zobrist.o \
+	      ../src/attacks.o ../src/quiesce.o ../src/movegen.o ../src/movelist.o ../src/see.o ../src/killer.o ../src/pv.o
 
 tuning: $(obj)
 	$(CC) $(CFLAGS) -o $@ $^ evaluate.o $(srcobjs)

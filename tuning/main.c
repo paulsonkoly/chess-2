@@ -13,33 +13,33 @@
 #include "tuned_values.h"
 
 TUNED_VALUES tuned_values = {
-  100,  /* piece_v_pawn_v   */
-  300,  /* piece_v_knight_v */
-  300,  /* piece_v_bishop_v */
-  500,  /* piece_v_rook_v   */
-  900,  /* piece_v_queen_v  */
-  0,    /* pawn_ranks_0     */
-  30,   /* pawn_ranks_1     */
-  35,   /* pawn_ranks_2     */
-  45,   /* pawn_ranks_3     */
-  65,   /* pawn_ranks_4     */
-  105,  /* pawn_ranks_5     */
-  185,  /* pawn_ranks_6     */
-  270,  /* pawn_ranks_7     */
-  -20,  /* pawn_isolated    */
-  -10,  /* pawn_weak        */
-  -40,  /* king_shield_0    */
-  -20,  /* king_shield_1    */
-  0,    /* king_shield_2    */
-  0,    /* king_shield_3    */
+  100, /* piece_v_pawn_v   */
+  159, /* piece_v_knight_v */
+  169, /* piece_v_bishop_v */
+  367, /* piece_v_rook_v   */
+  728, /* piece_v_queen_v  */
+  0, /* pawn_ranks_0     */
+  49, /* pawn_ranks_1     */
+  25, /* pawn_ranks_2     */
+  1, /* pawn_ranks_3     */
+  11, /* pawn_ranks_4     */
+  83, /* pawn_ranks_5     */
+  186, /* pawn_ranks_6     */
+  270, /* pawn_ranks_7     */
+  -8, /* pawn_isolated    */
+  -9, /* pawn_weak        */
+  -2, /* king_shield_0    */
+  -25, /* king_shield_1    */
+  5, /* king_shield_2    */
+  -9, /* king_shield_3    */
 };
 
 static float get_result(char * buffer) {
   int spaces = 0;
 
-  /* go to 5th column */
+  /* go to 6th column */
   while (* buffer) {
-    if (spaces == 4) break;
+    if (spaces == 5) break;
     if (*buffer == ' ') spaces++;
     buffer++;
   }
@@ -61,7 +61,7 @@ static float get_result(char * buffer) {
 static COLOUR get_side_to_move(char * buffer) {
   int spaces = 0;
 
-  /* go to 5th column */
+  /* go to 2nd column */
   while (* buffer) {
     if (spaces == 1) break;
     if (*buffer == ' ') spaces++;
@@ -110,10 +110,76 @@ static float error(FILE * epd) {
     error_sum += error;
     count++;
 
-    printf("score: %d\t\tresult: %f error: %f\n", score, result, error);
+    free(board);
+
+    /* printf("score: %d\t\tresult: %f error: %f\n", score, result, error); */
   }
 
   return error_sum / count;
+}
+
+static void print_values(void) {
+  printf("TUNED_VALUES tuned_values = {\n");
+  printf("  %d, /* piece_v_pawn_v   */\n", tuned_values.piece_v_pawn_v);
+  printf("  %d, /* piece_v_knight_v */\n", tuned_values.piece_v_knight_v);
+  printf("  %d, /* piece_v_bishop_v */\n", tuned_values.piece_v_bishop_v);
+  printf("  %d, /* piece_v_rook_v   */\n", tuned_values.piece_v_rook_v);
+  printf("  %d, /* piece_v_queen_v  */\n", tuned_values.piece_v_queen_v);
+  printf("  %d, /* pawn_ranks_0     */\n", tuned_values.pawn_ranks_0);
+  printf("  %d, /* pawn_ranks_1     */\n", tuned_values.pawn_ranks_1);
+  printf("  %d, /* pawn_ranks_2     */\n", tuned_values.pawn_ranks_2);
+  printf("  %d, /* pawn_ranks_3     */\n", tuned_values.pawn_ranks_3);
+  printf("  %d, /* pawn_ranks_4     */\n", tuned_values.pawn_ranks_4);
+  printf("  %d, /* pawn_ranks_5     */\n", tuned_values.pawn_ranks_5);
+  printf("  %d, /* pawn_ranks_6     */\n", tuned_values.pawn_ranks_6);
+  printf("  %d, /* pawn_ranks_7     */\n", tuned_values.pawn_ranks_7);
+  printf("  %d, /* pawn_isolated    */\n", tuned_values.pawn_isolated);
+  printf("  %d, /* pawn_weak        */\n", tuned_values.pawn_weak);
+  printf("  %d, /* king_shield_0    */\n", tuned_values.king_shield_0);
+  printf("  %d, /* king_shield_1    */\n", tuned_values.king_shield_1);
+  printf("  %d, /* king_shield_2    */\n", tuned_values.king_shield_2);
+  printf("  %d, /* king_shield_3    */\n", tuned_values.king_shield_3);
+  printf("};\n");
+}
+
+/* based on pseudo code from wiki */
+void local_optimize(FILE * epd) {
+  const int nParams = sizeof(tuned_values) / sizeof(int);
+  float bestE = error(epd);
+
+  int improved = 1;
+  int count = 0;
+
+  while (improved) {
+    improved = 0;
+
+    /* keep the pawn value at 100, to define the scale in cps */
+    for (int pi = 1; pi < nParams; pi++) {
+
+      ((int*) &tuned_values)[pi] += 1;
+
+      double newE = error(epd);
+
+      if (newE < bestE) {
+        printf("error %f -> %f\n", bestE, newE);
+        bestE = newE;
+        improved = 1;
+      } else {
+        ((int*) &tuned_values)[pi] -= 2;
+        newE = error(epd);
+        if (newE < bestE) {
+          printf("error %f -> %f\n", bestE, newE);
+          bestE = newE;
+          improved = 1;
+        } else {
+          ((int*) &tuned_values)[pi] += 1; /* reset to old value */
+        }
+      }
+    }
+    if (count++ % 1000) {
+      print_values();
+    }
+  }
 }
 
 unsigned long long nodes;
@@ -129,7 +195,10 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
-  printf("overall average error: %f\n", error(epd));
+  local_optimize(epd);
+
+  printf("new values:\n\n");
+  print_values();
 
   fclose(epd);
   free(mat_table);

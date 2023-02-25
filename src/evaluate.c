@@ -150,7 +150,7 @@ int evaluate(const BOARD * board) {
 
       pass &= pass - 1;
     }
-    pawn_value = tuned_values.pawn_weak * __builtin_popcountll(wk);
+    pawn_value += tuned_values.pawn_weak * __builtin_popcountll(wk);
 
     DEBUG_PRINT("%s pawn\t\t%d\n", colour_names[colour], pawn_value);
 

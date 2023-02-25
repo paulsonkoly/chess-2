@@ -4,6 +4,6 @@
 #include "move.h"
 #include "board.h"
 
-int see(BOARD * board, const MOVE * move);
+int see(const BOARD * board, const MOVE * move);
 
 #endif /* ifndef _SEE_H_ */

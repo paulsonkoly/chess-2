@@ -34,8 +34,6 @@ typedef struct _MOVE_ {
   BITBOARD to;
 
   MOVEVAL value;
-
-  struct _MOVE_ * next;
 } MOVE;
 
 void print_move(const MOVE * move);

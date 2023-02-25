@@ -169,7 +169,7 @@ void uci(void) {
             break;
 
           case PERFT:
-            perft(board, cmd->data.go.data.depth, 1);
+            perft(board, 0, cmd->data.go.data.depth, 1);
             break;
 
           case MOVETIME:

@@ -32,3 +32,4 @@ void print_move(const MOVE * move) {
 
   printf("%s", buffer);
 }
+

@@ -43,8 +43,8 @@ void pv_insert(PV * pv, const MOVE * move, int offset) {
 }
 
 
-MOVE * pv_getmove(const PV * pv, int offset) {
-  return (pv->count > offset ? (MOVE*)pv->store + offset : NULL);
+const MOVE * pv_get_move(const PV * pv, int offset) {
+  return (pv->count > offset ? pv->store + offset : NULL);
 }
 
 int pv_count(const PV* pv) { return pv->count; }

@@ -6,45 +6,41 @@
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
-#include "movelist.h"
 
-unsigned long long perft(BOARD * board, int depth, int print) {
+unsigned long long perft(BOARD * board, int ply, int depth, int print) {
   unsigned long long int count = 0;
+  int first = 1;
+  MOVE * move;
 
   if (depth == 0) {
     return 1;
   }
 
-  ml_open_frame();
-
-  add_moves(board, ALL_MOVES);
-
-  for (MOVE * ptr = ml_first(); ptr != NULL; ptr = ptr->next) {
+  while ((move = moves(board, ply, NULL, NULL, MOVEGEN_NORMAL, first))) {
     unsigned long long int current;
+    first = 0;
 
-    execute_move(board, ptr);
+    execute_move(board, move);
 
     if (in_check(board, 1 - board->next)) {
-      undo_move(board, ptr);
+      undo_move(board, move);
 
       continue;
     }
 
     if (print) print_fen(board);
 
-    current = perft(board, depth - 1, 0);
+    current = perft(board, ply + 1, depth - 1, 0);
 
-    undo_move(board, ptr);
+    undo_move(board, move);
 
     if (print) {
-      print_move(ptr);
+      print_move(move);
       printf(" %lld\n", current);
     }
 
     count += current;
   }
-
-  ml_close_frame();
 
   if (print) {
     printf(" %lld\n", count);

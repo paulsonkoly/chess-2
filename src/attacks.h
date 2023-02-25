@@ -24,6 +24,10 @@ BITBOARD double_pawn_pushes(BITBOARD pawns, BITBOARD empty, COLOUR colour);
 
 BITBOARD is_attacked(const BOARD * board, BITBOARD squares, BITBOARD occupancy, COLOUR colour);
 BITBOARD in_check(const BOARD * board, COLOUR colour);
+/* pieces that obstruct a sliding piece from checking
+ * can give false positives if a sliding piece is already giving checks
+ */
+BITBOARD discovered_checkers(const BOARD * board);
 /* does the move attack the square - either stepping out of an x-ray attack or directly */
 int move_attacks_sq(const BOARD * board, const MOVE * move, SQUARE sq);
 /* position is checkmate */

@@ -24,83 +24,77 @@ int stopped = 0;
 static void perft_unit_test1(void **state) {
   BOARD * b = initial_board();
 
-  assert_int_equal(20, perft(b, 1, 0));
+  assert_int_equal(20, perft(b, 0, 1, 0));
 }
 
 static void perft_unit_test2(void **state) {
   BOARD * b = initial_board();
 
-  assert_int_equal(400, perft(b, 2, 0));
+  assert_int_equal(400, perft(b, 0, 2, 0));
 }
 
 static void perft_unit_test3(void **state) {
   BOARD * b = initial_board();
 
-  assert_int_equal(8902, perft(b, 3, 0));
+  assert_int_equal(8902, perft(b, 0, 3, 0));
 }
 
 static void perft_unit_test4(void **state) {
   BOARD * b = initial_board();
 
-  assert_int_equal(197281, perft(b, 4, 0));
+  assert_int_equal(197281, perft(b, 0, 4, 0));
 }
 
 static void perft_unit_test5(void **state) {
   BOARD * b = initial_board();
 
-  assert_int_equal(4865609, perft(b, 5, 0));
+  assert_int_equal(4865609, perft(b, 0, 5, 0));
 }
 
 static void perft_unit_test6(void **state) {
   BOARD * b = initial_board();
 
-  assert_int_equal(119060324, perft(b, 6, 0));
+  assert_int_equal(119060324, perft(b, 0, 6, 0));
 }
 
 static void perft_unit_test_talkchess5(void **state) {
   BOARD * b = parse_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
 
-  assert_int_equal(89941194, perft(b, 5, 0));
+  assert_int_equal(89941194, perft(b, 0, 5, 0));
 }
 
 static void forcing_moves_count_test(void **state)
 {
   BOARD * b = parse_fen("2r3k1/1P2P3/8/8/4p3/3B4/8/6K1 w - - 0 1");
-  MOVE * ptr;
   int count = 0;
 
-  ml_open_frame();
-
-  add_moves(b, ALL_MOVES);
-
-  for (ptr = ml_forcing(b); ptr != NULL; ptr = ptr->next) {
+  while (moves(b, 0, NULL, NULL, MOVEGEN_FORCING_ONLY, count == 0)) {
     count ++;
   }
 
-  assert_int_equal(8, count);
-
-  ml_close_frame();
+  assert_int_equal(14, count);
 }
 
 static void forcing_moves_test(void **state) {
   BOARD * b = parse_fen("2r3k1/1P2P3/8/8/4p3/3B4/8/6K1 w - - 0 1");
   MOVE * ptr;
-  const char * moves[] = {
-    "d3e4", "e7e8q", "e7e8r", "b7c8n", "b7c8b", "b7c8r", "b7c8q", "d3c4"
+  const char * mvs[] = {
+    "d3e4", "d3c4",
+    "e7e8q", "e7e8r", "e7e8b", "e7e8n",
+    "b7c8q", "b7c8r", "b7c8b", "b7c8n",
+    "b7b8q", "b7b8r", "b7b8b", "b7b8n",
   };
+  int first = 1;
 
-  ml_open_frame();
-
-  add_moves(b, ALL_MOVES);
-
-  for (ptr = ml_forcing(b); ptr != NULL; ptr = ptr->next) {
+  while ((ptr = moves(b, 0, NULL, NULL, MOVEGEN_FORCING_ONLY, first))) {
     char buffer[6];
     int match = 0;
 
+    first = 0;
     print_move_buffer(ptr, buffer);
 
-    for (int i = 0; i < 8; ++i) {
-      if (0 == strcmp(moves[i], buffer)) {
+    for (int i = 0; i < 14; ++i) {
+      if (0 == strcmp(mvs[i], buffer)) {
         match = 1;
         break;
       }
@@ -108,9 +102,6 @@ static void forcing_moves_test(void **state) {
 
     assert_true(match);
   }
-
-
-  ml_close_frame();
 }
 
 static void see_capture_test(void ** state) {

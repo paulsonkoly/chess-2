@@ -1,4 +1,3 @@
-#include <strings.h>
 #include <stdio.h>
 
 #include "evaluate.h"

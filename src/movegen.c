@@ -1,6 +1,5 @@
 #include "movegen.h"
 
-#include <strings.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>

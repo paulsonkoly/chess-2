@@ -2,7 +2,6 @@
 #define _MOVEGEN_H_
 
 #include "board.h"
-#include "chess.h"
 #include "move.h"
 #include "killer.h"
 #include "pv.h"

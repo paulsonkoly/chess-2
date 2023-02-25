@@ -14,6 +14,7 @@ cleanextras:
 
 iwyuextras:
 	cd src && make iwyu && cd ..
+	cd tuning && make iwyu && cd ..
 
 chess2: $(obj)
 	$(CC) $(CFLAGS) -o $@ $^ src/*.o

@@ -143,7 +143,7 @@ int evaluate(const BOARD * board) {
     pawn_value -= 20 * __builtin_popcountll(iso);
     while (pass) {
       BITBOARD isolated = pass & -pass;
-      SQUARE sq         = ffsl(isolated) - 1;
+      SQUARE sq         = __builtin_ctzll(isolated);
       SQUARE rank       = sq >> 3;
       SQUARE erank      = colour == WHITE ? rank : 7 - rank;
 
@@ -164,7 +164,7 @@ int evaluate(const BOARD * board) {
 
       while (pieces) {
         BITBOARD single = pieces & -pieces;
-        SQUARE sq   = ffsl(single) - 1;
+        SQUARE sq   = __builtin_ctzll(single);
         SQUARE rank = sq >> 3;
         SQUARE file = sq & 7;
 

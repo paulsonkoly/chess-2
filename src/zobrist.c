@@ -56,7 +56,7 @@ HASH hash_en_passant(BITBOARD bitboard) {
 
   while (bitboard) {
     BITBOARD isolated = bitboard & - bitboard;
-    SQUARE   square = ffsl(isolated) - 1;
+    SQUARE   square = __builtin_ctzll(isolated);
     SQUARE   file = square & 0x7;
     SQUARE   rank = square >> 3;
 
@@ -73,7 +73,7 @@ HASH hash_piece(BITBOARD bitboard, PIECE piece, COLOUR colour) {
 
   while (bitboard) {
     BITBOARD isolated = bitboard & - bitboard;
-    SQUARE   square = ffsl(isolated) - 1;
+    SQUARE   square = __builtin_ctzll(isolated);
 
     result ^= rand_hash_pieces[colour][piece][square];
 

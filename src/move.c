@@ -1,12 +1,10 @@
 #include <stdio.h>
-#include <strings.h>
-
 
 #include "move.h"
 
 void print_move_buffer(const MOVE * move, char * buffer) {
-  SQUARE from = ffsl(move->from) - 1;
-  SQUARE to   = ffsl(move->to) - 1;
+  SQUARE from = __builtin_ctzll(move->from);
+  SQUARE to   = __builtin_ctzll(move->to);
 
   SQUARE ff = from & 7, fr = from >> 3, tf = to & 7, tr = to >> 3;
 

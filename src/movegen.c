@@ -1,6 +1,5 @@
 #include "movegen.h"
 
-#include <strings.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -94,7 +93,7 @@ static void add_normal_moves(const BOARD * board, PIECE piece, BITBOARD allowed_
 
   while (pieces) {
     BITBOARD from = pieces & - pieces;
-    SQUARE   f    = ffsl(from) - 1;
+    SQUARE   f    = __builtin_ctzll(from);
 
     BITBOARD attacks  = normal_attacks(board, piece, f, allowed_targets);
     BITBOARD attacked = attacks & ~ colour;

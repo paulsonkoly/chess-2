@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -257,7 +256,7 @@ void print_fen(const BOARD* board) {
   if (board->castle == 0) printf("-");
 
   if (board->en_passant) {
-    SQUARE ep = ffsl(board->en_passant) - 1;
+    SQUARE ep = __builtin_ctzll(board->en_passant);
     SQUARE f = (ep & 7), r = (ep >> 3);
 
     printf(" %c%c 0 1 ", 'a' + f, '1' + r);

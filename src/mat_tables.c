@@ -127,8 +127,8 @@ static const RULE rules[] = {
 
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
   { "a+1=b                                             ", {     0,   CONSTRAINT   } },
-  { "a  0  1      0      0  0  b  0  0      1      0  0", {    PAWN_V, 0} },    /* opposite colour bishop endgames */
-  { "b  0  1      0      0  0  a  0  0      1      0  0", { -1*PAWN_V, 0} },    /* 1 pawn diff: take away the pawn */
+  { "a  0  1      0      0  0  b  0  0      1      0  0", {   100,   0} },    /* opposite colour bishop endgames */
+  { "b  0  1      0      0  0  a  0  0      1      0  0", {  -100,   0} },    /* 1 pawn diff: take away the pawn */
   { "a+2=b                                             ", {     0,   CONSTRAINT   } },
   { "a  0  1      0      0  0  b  0  0      1      0  0", {    80,   0} },      /* 2 pawn diff: take away less than a pawn */
   { "b  0  1      0      0  0  a  0  0      1      0  0", {   -80,   0} },      /* 3 pawn diff: should be winning? */

@@ -11,6 +11,7 @@
 #include "board.h"
 #include "movelist.h"
 #include "attacks.h"
+#include "tuned_values.h"
 
 typedef enum {
   MOVEGEN_START = 0,
@@ -72,18 +73,6 @@ static BITBOARD normal_attacks(const BOARD * board, PIECE piece, SQUARE sq, BITB
     default:
       return 0;
   }
-}
-
-CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
-  CASTLE castle =
-    ((fromto & ((BITBOARD)1 << 0)) << 1)   | ((fromto & ((BITBOARD)1 << 7)) >> 7) |
-    ((fromto & ((BITBOARD)1 << 56)) >> 53) | ((fromto & ((BITBOARD)1 << 63)) >> 61);
-
-  if (piece == KING) {
-    castle |= CASTLES_OF(board->next);
-  }
-
-  return board->castle ^ (board->castle & ~castle);
 }
 
 /* knight, bishop, rook, queen and king moves excluding specials like castling */
@@ -267,17 +256,6 @@ void add_pawn_pushes(const BOARD * board) {
   }
 }
 
-static const BITBOARD castle_king_from_to[4] = {
-  0x0000000000000050, 0x0000000000000014, 0x5000000000000000, 0x1400000000000000
-};
-
-static const BITBOARD castle_rook_from_to[4] = {
-  0x00000000000000a0, 0x0000000000000009, 0xa000000000000000, 0x0900000000000000
-};
-
-BITBOARD castling_rook_from_to(CASTLE castle) {
-  return castle_rook_from_to[castle];
-}
 
 /* from 0000...010.....010.... you get
  *      0000000001111111000000
@@ -582,7 +560,8 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
               move->value = see(board, move) + 10000;
             } else if (move->special & PROMOTION_MOVE_MASK) {
               PIECE promo = (move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT;
-              move->value = piece_values[promo] + 9900;
+              int piece_value = *(& tuned_values.piece_v_pawn_v + promo - PAWN);
+              move->value = piece_value + 9900;
             } else if (move->special & EN_PASSANT_CAPTURE_MOVE_MASK) {
               move->value = 9900;
             } else if (move_attacks_sq(board, move, king)) {

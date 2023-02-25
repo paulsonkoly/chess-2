@@ -38,8 +38,4 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
 /* call if a search returns early - before moves() returning NULL */
 void moves_done(int ply);
 
-/* TODO move these */
-CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto);
-BITBOARD castling_rook_from_to(CASTLE castle);
-
 #endif /* ifndef _MOVEGEN_H_ */

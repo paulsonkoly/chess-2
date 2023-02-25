@@ -153,7 +153,7 @@ void play_uci_moves(BOARD * board, const char * moves) {
     } else if (piece == KING && ((ff - tf) == 2 || (tf - ff) == 2)) {
       unsigned index = ((fr & BLACK) << 1) | (ff < tf ? 0 : 1);
 
-      castle = castling_rook_from_to(index);
+      castle = castle_rook_from_to[index];
     }
 
     move.from            = from;
@@ -285,3 +285,22 @@ HASH calculate_hash(const BOARD * board) {
   return result;
 }
 
+CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
+  CASTLE castle =
+    ((fromto & ((BITBOARD)1 << 0)) << 1)   | ((fromto & ((BITBOARD)1 << 7)) >> 7) |
+    ((fromto & ((BITBOARD)1 << 56)) >> 53) | ((fromto & ((BITBOARD)1 << 63)) >> 61);
+
+  if (piece == KING) {
+    castle |= CASTLES_OF(board->next);
+  }
+
+  return board->castle ^ (board->castle & ~castle);
+}
+
+const BITBOARD castle_king_from_to[4] = {
+  0x0000000000000050, 0x0000000000000014, 0x5000000000000000, 0x1400000000000000
+};
+
+const BITBOARD castle_rook_from_to[4] = {
+  0x00000000000000a0, 0x0000000000000009, 0xa000000000000000, 0x0900000000000000
+};

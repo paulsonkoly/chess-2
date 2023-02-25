@@ -1,27 +1,35 @@
 #ifndef __TUNED_VALUES_H__
 #define __TUNED_VALUES_H__
 
-#define PIECE_V_PAWN_V   100
-#define PIECE_V_KNIGHT_V 300
-#define PIECE_V_BISHOP_V 300
-#define PIECE_V_ROOK_V   500
-#define PIECE_V_QUEEN_V  900
+typedef struct __TUNED_VALUES__ {
+  int piece_v_pawn_v;
+  int piece_v_knight_v;
+  int piece_v_bishop_v;
+  int piece_v_rook_v;
+  int piece_v_queen_v;
 
-#define PAWN_RANKS_0 0
-#define PAWN_RANKS_1 30
-#define PAWN_RANKS_2 35
-#define PAWN_RANKS_3 45
-#define PAWN_RANKS_4 65
-#define PAWN_RANKS_5 105
-#define PAWN_RANKS_6 185
-#define PAWN_RANKS_7 270
+  int pawn_ranks_0;
+  int pawn_ranks_1;
+  int pawn_ranks_2;
+  int pawn_ranks_3;
+  int pawn_ranks_4;
+  int pawn_ranks_5;
+  int pawn_ranks_6;
+  int pawn_ranks_7;
 
-#define PAWN_ISOLATED (-20)
-#define PAWN_WEAK     (-10)
+  int pawn_isolated;
+  int pawn_weak;
 
-#define KING_SHIELD_0 (-40)
-#define KING_SHIELD_1 (-20)
-#define KING_SHIELD_2 0
-#define KING_SHIELD_3 0
+  int king_shield_0;
+  int king_shield_1;
+  int king_shield_2;
+  int king_shield_3;
+} TUNED_VALUES;
+
+#if defined(TUNING)
+extern TUNED_VALUES tuned_values;
+#else
+extern const TUNED_VALUES tuned_values;
+#endif
 
 #endif /* ifndef __TUNED_VALUES_H__ */

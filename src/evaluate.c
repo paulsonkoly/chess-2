@@ -109,12 +109,6 @@ int psqt_value(PIECE piece, COLOUR colour, SQUARE from, SQUARE to) {
 
 static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], const BOARD * board);
 
-
-static const int rank_values[] = {
-  PAWN_RANKS_0, PAWN_RANKS_1, PAWN_RANKS_2, PAWN_RANKS_3,
-  PAWN_RANKS_4, PAWN_RANKS_5, PAWN_RANKS_6, PAWN_RANKS_7
-};
-
 int evaluate(const BOARD * board) {
   int value = 0;
   int dir[] = {1, -1};
@@ -144,19 +138,19 @@ int evaluate(const BOARD * board) {
     DEBUG_PRINT("%s passer\t\t%8.8lx\n", colour_names[colour], pass);
     DEBUG_PRINT("%s weak\t\t%8.8lx\n", colour_names[colour], wk);
 
-    pawn_value += piece_values[PAWN] * __builtin_popcountll(my_pawns);
-    pawn_value += PAWN_ISOLATED * __builtin_popcountll(iso);
+    pawn_value += tuned_values.piece_v_pawn_v * __builtin_popcountll(my_pawns);
+    pawn_value += tuned_values.pawn_isolated * __builtin_popcountll(iso);
     while (pass) {
       BITBOARD isolated = pass & -pass;
       SQUARE sq         = __builtin_ctzll(isolated);
       SQUARE rank       = sq >> 3;
       SQUARE erank      = colour == WHITE ? rank : 7 - rank;
 
-      pawn_value += rank_values[erank];
+      pawn_value += *(&tuned_values.pawn_ranks_0 + erank);
 
       pass &= pass - 1;
     }
-    pawn_value = PAWN_WEAK * __builtin_popcountll(wk);
+    pawn_value = tuned_values.pawn_weak * __builtin_popcountll(wk);
 
     DEBUG_PRINT("%s pawn\t\t%d\n", colour_names[colour], pawn_value);
 
@@ -166,6 +160,7 @@ int evaluate(const BOARD * board) {
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
     for (PIECE piece = PAWN + 1; piece < KING; ++piece) {
       BITBOARD pieces = *(&board->pawns + piece - PAWN) & COLOUR_BB(board, colour);
+      int piece_value = *(&tuned_values.piece_v_pawn_v + piece - PAWN);
 
       while (pieces) {
         BITBOARD single = pieces & -pieces;
@@ -175,13 +170,13 @@ int evaluate(const BOARD * board) {
 
         if (colour == WHITE) {
           sq = ((7 - rank) << 3) | file;
-          value += piece_values[piece] + bonuses[piece][sq];
+          value += piece_value + bonuses[piece][sq];
         }
         else {
-          value -= piece_values[piece] + bonuses[piece][sq];
+          value -= piece_value + bonuses[piece][sq];
         }
         DEBUG_PRINT("%s %s\t\t%d\n",
-            colour_names[colour], piece_names[piece], piece_values[piece] + bonuses[piece][sq]);
+            colour_names[colour], piece_names[piece], piece_value + bonuses[piece][sq]);
 
         pieces &= pieces - 1;
       }
@@ -205,10 +200,6 @@ int evaluate(const BOARD * board) {
 
   return (board->next == WHITE ? value : -value);
 }
-
-static const int shield_value[] = {
-  KING_SHIELD_0, KING_SHIELD_1, KING_SHIELD_2, KING_SHIELD_3
-};
 
 /* kings: square, file, rank, square, file, rank */
 static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUARE kings[6], const BOARD * board) {
@@ -248,11 +239,12 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
 
   /* default - piece square interpolate between middle game - endgame */
   endgame_factor = mt->flags & ENDGAME_MASK;
+  int shield_value = *(&tuned_values.king_shield_0 + endgame_factor);
   int safety = __builtin_popcountll(
       shield((board->pawns | board->bishops) & COLOUR_BB(board, colour), /* fianchettoed bishops */
              colour,
              board->kings & COLOUR_BB(board, colour))
-      ) * shield_value[endgame_factor];
+      ) * shield_value;
   DEBUG_PRINT("%s king shield\t%d\n", colour_names[colour], safety);
 
   static const int mdl_psqt_weight[] = { 2, 2, 1, 0};

@@ -200,7 +200,7 @@ void mat_tables_test16(void **state) {
   board = parse_fen("5bk1/5pp1/8/8/8/8/4KPB1/8 w - - 0 1");
   e = get_mat_table_entry(board);
 
-  assert_int_equal(e->value, PAWN_V);
+  assert_int_equal(e->value, 100);
 
   free(board);
 }

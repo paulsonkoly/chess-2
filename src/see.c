@@ -4,12 +4,6 @@
 #include "see.h"
 #include "attacks.h"
 
-/* make bishops worth more because the evaluation gives bonuses to bishop pairs,
- * so we have a better chance of getting the order right
- * thus beta cutting more
- **/
-static const int piece_values_mod[] = {NO_PIECE_V, PAWN_V, KNIGHT_V, BISHOP_V + 40, ROOK_V, QUEEN_V, KING_V};
-
 int see(const BOARD * board, const MOVE * move) {
   BITBOARD from = move->from;
   BITBOARD to   = move->to;
@@ -119,7 +113,7 @@ int see(const BOARD * board, const MOVE * move) {
         ply--;
         for (ply--; ply >= 0; ply--) {
           value = MAX(value, 0);
-          value = piece_values_mod[captures[ply]] - value;
+          value = piece_values[captures[ply]] - value;
         }
 
         /* THE END */

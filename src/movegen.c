@@ -11,6 +11,7 @@
 #include "board.h"
 #include "movelist.h"
 #include "attacks.h"
+#include "tuned_values.h"
 
 typedef enum {
   MOVEGEN_START = 0,
@@ -72,18 +73,6 @@ static BITBOARD normal_attacks(const BOARD * board, PIECE piece, SQUARE sq, BITB
     default:
       return 0;
   }
-}
-
-CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto) {
-  CASTLE castle =
-    ((fromto & ((BITBOARD)1 << 0)) << 1)   | ((fromto & ((BITBOARD)1 << 7)) >> 7) |
-    ((fromto & ((BITBOARD)1 << 56)) >> 53) | ((fromto & ((BITBOARD)1 << 63)) >> 61);
-
-  if (piece == KING) {
-    castle |= CASTLES_OF(board->next);
-  }
-
-  return board->castle ^ (board->castle & ~castle);
 }
 
 /* knight, bishop, rook, queen and king moves excluding specials like castling */
@@ -267,17 +256,6 @@ void add_pawn_pushes(const BOARD * board) {
   }
 }
 
-static const BITBOARD castle_king_from_to[4] = {
-  0x0000000000000050, 0x0000000000000014, 0x5000000000000000, 0x1400000000000000
-};
-
-static const BITBOARD castle_rook_from_to[4] = {
-  0x00000000000000a0, 0x0000000000000009, 0xa000000000000000, 0x0900000000000000
-};
-
-BITBOARD castling_rook_from_to(CASTLE castle) {
-  return castle_rook_from_to[castle];
-}
 
 /* from 0000...010.....010.... you get
  *      0000000001111111000000

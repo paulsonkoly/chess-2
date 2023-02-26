@@ -17,7 +17,7 @@
 #include "chess.h"
 
 static struct timespec start;
-unsigned long long nodes;
+extern unsigned long long nodes;
 
 #define STDIN 0
 int check_for_input(void) {

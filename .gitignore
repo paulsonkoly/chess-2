@@ -5,3 +5,4 @@ src/version.h
 .*
 chess2
 test/test
+tuning/tuning

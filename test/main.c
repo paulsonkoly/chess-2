@@ -20,6 +20,7 @@
 #include "evaluate_tests.h"
 
 int stopped = 0;
+unsigned long long nodes = 0;
 
 static void perft_unit_test1(void **state) {
   BOARD * b = initial_board();

@@ -44,4 +44,8 @@ void print_board(const BOARD* board);
 void print_fen(const BOARD* board);
 HASH calculate_hash(const BOARD* board);
 
+CASTLE castle_update(const BOARD * board, PIECE piece, BITBOARD fromto);
+extern const BITBOARD castle_rook_from_to[4];
+extern const BITBOARD castle_king_from_to[4];
+
 #endif /* ifndef _BOARD_H_ */

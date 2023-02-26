@@ -20,16 +20,13 @@ typedef struct __TUNED_VALUES__ {
   int pawn_isolated;
   int pawn_weak;
 
-  int king_shield_0;
-  int king_shield_1;
-  int king_shield_2;
-  int king_shield_3;
+  int king_shield;
 } TUNED_VALUES;
 
 #if defined(TUNING)
-extern TUNED_VALUES tuned_values;
+extern TUNED_VALUES tuned_values[4];
 #else
-extern const TUNED_VALUES tuned_values;
+extern const TUNED_VALUES tuned_values[4];
 #endif
 
 #endif /* ifndef __TUNED_VALUES_H__ */

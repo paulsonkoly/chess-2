@@ -560,8 +560,7 @@ MOVE * moves(const BOARD * board, int ply, const PV * pv, const KILLER * killer,
               move->value = see(board, move) + 10000;
             } else if (move->special & PROMOTION_MOVE_MASK) {
               PIECE promo = (move->special & PROMOTION_MOVE_MASK) >> PROMOTION_MOVE_SHIFT;
-              int piece_value = *(& tuned_values.piece_v_pawn_v + promo - PAWN);
-              move->value = piece_value + 9900;
+              move->value = piece_values[promo] + 9900;
             } else if (move->special & EN_PASSANT_CAPTURE_MOVE_MASK) {
               move->value = 9900;
             } else if (move_attacks_sq(board, move, king)) {

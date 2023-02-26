@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 #include "evaluate.h"
 #include "tuned_values.h"
@@ -114,6 +115,9 @@ int evaluate(const BOARD * board) {
   int dir[] = {1, -1};
   const MAT_TABLE_ENTRY * mt = get_mat_table_entry(board);
   SQUARE kings[6];
+  int gp = mt->flags & ENDGAME_MASK;
+
+  assert(0 <= gp && gp <= 3);
 
   if (mt->flags & DRAWN) {
     return 0;
@@ -138,19 +142,19 @@ int evaluate(const BOARD * board) {
     DEBUG_PRINT("%s passer\t\t%8.8lx\n", colour_names[colour], pass);
     DEBUG_PRINT("%s weak\t\t%8.8lx\n", colour_names[colour], wk);
 
-    pawn_value += tuned_values.piece_v_pawn_v * __builtin_popcountll(my_pawns);
-    pawn_value += tuned_values.pawn_isolated * __builtin_popcountll(iso);
+    pawn_value += tuned_values[gp].piece_v_pawn_v * __builtin_popcountll(my_pawns);
+    pawn_value += tuned_values[gp].pawn_isolated * __builtin_popcountll(iso);
     while (pass) {
       BITBOARD isolated = pass & -pass;
       SQUARE sq         = __builtin_ctzll(isolated);
       SQUARE rank       = sq >> 3;
       SQUARE erank      = colour == WHITE ? rank : 7 - rank;
 
-      pawn_value += *(&tuned_values.pawn_ranks_0 + erank);
+      pawn_value += *(&tuned_values[gp].pawn_ranks_0 + erank);
 
       pass &= pass - 1;
     }
-    pawn_value += tuned_values.pawn_weak * __builtin_popcountll(wk);
+    pawn_value += tuned_values[gp].pawn_weak * __builtin_popcountll(wk);
 
     DEBUG_PRINT("%s pawn\t\t%d\n", colour_names[colour], pawn_value);
 
@@ -160,7 +164,7 @@ int evaluate(const BOARD * board) {
   for (COLOUR colour = WHITE; colour <= BLACK; colour++) {
     for (PIECE piece = PAWN + 1; piece < KING; ++piece) {
       BITBOARD pieces = *(&board->pawns + piece - PAWN) & COLOUR_BB(board, colour);
-      int piece_value = *(&tuned_values.piece_v_pawn_v + piece - PAWN);
+      int piece_value = *(&tuned_values[gp].piece_v_pawn_v + piece - PAWN);
 
       while (pieces) {
         BITBOARD single = pieces & -pieces;
@@ -238,8 +242,8 @@ static inline int king_evaluate(const MAT_TABLE_ENTRY * mt, COLOUR colour, SQUAR
   SQUARE sq = sqs[colour];
 
   /* default - piece square interpolate between middle game - endgame */
-  endgame_factor = mt->flags & ENDGAME_MASK;
-  int shield_value = *(&tuned_values.king_shield_0 + endgame_factor);
+  int gp = mt->flags & ENDGAME_MASK;
+  int shield_value = tuned_values[gp].king_shield;
   int safety = __builtin_popcountll(
       shield((board->pawns | board->bishops) & COLOUR_BB(board, colour), /* fianchettoed bishops */
              colour,

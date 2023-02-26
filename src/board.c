@@ -304,22 +304,3 @@ const BITBOARD castle_rook_from_to[4] = {
   0x00000000000000a0, 0x0000000000000009, 0xa000000000000000, 0x0900000000000000
 };
 
-int repetition(const BOARD * board) {
-  int ply;
-  int cnt = 0;
-
-  if (board->halfmovecnt > 2) {
-    for (ply = board->halfmovecnt - 2; ply > 0; ply -= 2) {
-      if ((board->history[ply].flags | board->history[ply+1].flags) & HIST_CANT_REPEAT) {
-        return 0;
-      }
-      if (board->history[ply].hash == board->history[board->halfmovecnt].hash) {
-        if (++cnt == 2) {
-          return 1;
-        }
-      }
-    }
-  }
-
-  return 0;
-}

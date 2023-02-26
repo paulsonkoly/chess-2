@@ -9,12 +9,12 @@
 #include <assert.h>
 
 #include "attacks.h"
+#include "evaluate.h"
 #include "move.h"
 #include "movegen.h"
 #include "moveexec.h"
 #include "pv.h"
 #include "chess.h"
-#include "quiesce.h"
 
 static struct timespec start;
 extern unsigned long long nodes;
@@ -64,7 +64,72 @@ unsigned long long int time_delta(void) {
 extern int stopped;
 unsigned long long movetime;
 
+int repetition(const BOARD * board) {
+  int ply;
+  int cnt = 0;
 
+  if (board->halfmovecnt > 2) {
+    for (ply = board->halfmovecnt - 2; ply > 0; ply -= 2) {
+      if ((board->history[ply].flags | board->history[ply+1].flags) & HIST_CANT_REPEAT) {
+        return 0;
+      }
+      if (board->history[ply].hash == board->history[board->halfmovecnt].hash) {
+        if (++cnt == 2) {
+          return 1;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+int quiesce(BOARD * board, int ply, int alpha, int beta) {
+  MOVE * move;
+  int first = 1;
+  int stand_pat;
+
+  nodes++;
+
+  if (repetition(board)) return 0;
+  if (checkmate(board))  return -10000;
+  if (stalemate(board))  return 0;
+
+  stand_pat = evaluate(board);
+
+  if (stand_pat >= beta) {
+    return beta;
+  }
+
+  if (alpha < stand_pat)
+    alpha = stand_pat;
+
+  while ((move = moves(board, ply, NULL, NULL, MOVEGEN_FORCING_ONLY, first))) {
+    int score;
+    first = 0;
+
+    execute_move(board, move);
+
+    if (in_check(board, 1 - board->next)) {
+      undo_move(board, move);
+      continue;
+    }
+
+    score = -quiesce(board, ply + 1, -beta, -alpha);
+
+    undo_move(board, move);
+
+    if (score >= beta) {
+      moves_done(ply);
+      return beta;
+    }
+
+    if (score > alpha)
+      alpha = score;
+  }
+
+  return alpha;
+}
 
 /* * 100 */
 static const int log[] = {

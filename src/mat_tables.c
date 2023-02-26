@@ -125,6 +125,8 @@ static const RULE rules[] = {
   { "0  0  0      0      0  0  0  0  0      0      a  b", {     0,   B_CHECKMATING} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
 
+#if 0
+
   /* WP WN WB_LSQ WB_DSQ WR WQ BP BN BB_LSQ BB_DSQ BR BQ        V    F */
   { "a+1=b                                             ", {     0,   CONSTRAINT   } },
   { "a  0  1      0      0  0  b  0  0      1      0  0", {   100,   0} },    /* opposite colour bishop endgames */
@@ -201,6 +203,7 @@ static const RULE rules[] = {
   { "b+c+d+e+f=6                                       ", {     0,   CONSTRAINT   } },
   { ">a b  c      d      e  f a   b  c      d      e  f", {     5,   0} },
   { NULL,                                                 {     0,   CONSTRAINT   } },
+#endif
 
   { NULL,                                                 {     0,   0} }
 };

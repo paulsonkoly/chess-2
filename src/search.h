@@ -7,6 +7,8 @@
 
 extern unsigned long long nodes;
 
+int quiesce(BOARD * board, int ply, int alpha, int beta);
+
 int negascout(BOARD* board,
     int ply,
     int depth,

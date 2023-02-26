@@ -25,20 +25,20 @@ TUNED_VALUES tuned_values[4] = {
    * (j) : weak pawn
    * (k) : king shield
    */
-  /*  P    K    B    R     Q  (a)  (b)  (c)  (d)  (e)  (f)  (g)  (h)  (i)  (j)  (k) */
-  { 100, 159, 169, 367,  728,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9,  -2 }, /* game phase (0) */
-  { 100, 159, 169, 367,  728,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9, -25 }, /* game phase (1) */
-  { 100, 159, 169, 367,  728,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9, -25 }, /* game phase (2) */
-  { 100, 159, 169, 367,  728,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9,  -9 }, /* game phase (3) */
+  /*  P    N    B    R     Q  (a)  (b)  (c)  (d)  (e)  (f)  (g)  (h)  (i)  (j)  (k) */
+  { 100, 300, 340, 500,  900,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9,  -2 }, /* game phase (0) */
+  { 100, 300, 340, 500,  900,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9, -25 }, /* game phase (1) */
+  { 100, 300, 340, 500,  900,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9, -25 }, /* game phase (2) */
+  { 100, 300, 340, 500,  900,   0,  49,  25,   1,  11,  83, 186, 270,  -8,  -9,  -9 }, /* game phase (3) */
 };
 
 static float get_result(char * buffer) {
   int spaces = 0;
   char * ptr = buffer;
 
-  /* go to 6th column */
+  /* go to 7th column */
   while (* ptr) {
-    if (spaces == 5) break;
+    if (spaces == 6) break;
     if (*ptr == ' ') spaces++;
     ptr++;
   }
@@ -132,7 +132,7 @@ static void print_values(void) {
     "  * (j) : weak pawn\n"
     "  * (k) : king shield\n"
     "  */\n"
-    " /*  P    K    B    R     Q  (a)  (b)  (c)  (d)  (e)  (f)  (g)  (h)  (i)  (j)  (k) */\n");
+    " /*  P    N    B    R     Q  (a)  (b)  (c)  (d)  (e)  (f)  (g)  (h)  (i)  (j)  (k) */\n");
   for (int i = 0; i < 4; ++i) {
     printf("  {");
     for (int j = 0; j < sizeof(tuned_values[0]) / sizeof(int); ++j) {
@@ -142,6 +142,7 @@ static void print_values(void) {
     }
     printf("  }, /* game phase (%i) */\n", i);
   }
+  printf("};\n");
 }
 
 /* based on pseudo code from wiki */

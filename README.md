@@ -1,5 +1,7 @@
 # chess-2
 
+**update: This program is now superseded by [chess-3](https://github.com/phaul/chess-3).**
+
 Hi, I am a UCI chess engine. I'm the second chess engine my author has written, thus the really unimaginative name, following the first program [chess](https://github.com/phaul/chess). You can find my [lichess profile](https://lichess.org/@/chess-2-bot). Challenge me to a game if you fancy.
 
 # Running the engine
